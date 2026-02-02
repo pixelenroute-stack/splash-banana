@@ -10,7 +10,11 @@ build/
 dist/
 .vercel/
 
-# Environment files
+# Testing
+coverage/
+.nyc_output/
+
+# Environment files (IMPORTANT: ne pas commiter les secrets!)
 .env
 .env.local
 .env.development.local
@@ -21,17 +25,50 @@ dist/
 logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Local cache
+.cache/
+*.tsbuildinfo
 
 # IDE
 .idea/
 .vscode/
 *.swp
+*.swo
+*~
 
 # OS files
 .DS_Store
 Thumbs.db
+ehthumbs.db
+desktop.ini
 
-# Cache
-.cache/
+# TypeScript cache
 *.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
 .eslintcache
+
+# Yarn
+.yarn-integrity
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Sentry
+.sentryclirc
+
+# PM2
+.pm2/
+
+# Hostinger specific
+public_html/

@@ -1,0 +1,9 @@
+# Hostinger Node.js Proxy Configuration
+# Ce fichier redirige les requêtes vers l'application Node.js
+
+DirectoryIndex disabled
+
+RewriteEngine On
+
+# Proxy vers Node.js (port configuré dans Hostinger)
+RewriteRule ^(.*)$ http://127.0.0.1:%{ENV:PORT}/$1 [P,L]

@@ -334,13 +334,27 @@ export interface SystemSettings {
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
-  text: string;
-  timestamp: Date;
+  text?: string;
+  content?: string;
+  timestamp: Date | string;
   toolResponse?: { id: string, name: string, result: any };
   modelUsed?: string;
   isLoading?: boolean;
-  source?: 'web' | 'telegram'; 
-  telegramChatId?: string;     
+  source?: 'web' | 'telegram' | 'api';
+  telegramChatId?: string;
+  sessionId?: string;
+  userId?: string;
+  metadata?: any;
+}
+
+export interface UserSession {
+  id: string;
+  userId: string;
+  sessionToken: string;
+  source: 'web' | 'telegram' | 'api';
+  deviceInfo?: any;
+  expiresAt: string;
+  createdAt: string;
 }
 
 export interface NotionClient {

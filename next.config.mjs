@@ -3,20 +3,12 @@ const nextConfig = {
   // Mode standalone pour le déploiement (optimise la taille du bundle)
   output: 'standalone',
 
-  // Désactive l'optimisation d'image par défaut de Next.js
-  // (Utile si sharp n'est pas installé sur le serveur de prod)
+  // Désactive l'optimisation d'image (économise mémoire + pas besoin de sharp)
   images: {
     unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-    ],
   },
 
   // Ignore les erreurs TypeScript/ESLint lors du build
-  // (Désactiver pour un contrôle strict en développement)
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -24,14 +16,20 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // Configuration webpack pour supporter Three.js et les shaders
-  webpack: (config, { isServer }) => {
-    // Support des fichiers GLSL shaders
-    config.module.rules.push({
-      test: /\.(glsl|vs|fs|vert|frag)$/,
-      use: ['raw-loader'],
-    });
+  // Optimisations pour environnements à mémoire limitée
+  swcMinify: true,
 
+  // Désactive la génération de source maps en production
+  productionBrowserSourceMaps: false,
+
+  // Désactive le powered by header
+  poweredByHeader: false,
+
+  // Désactive la compression (sera gérée par le serveur)
+  compress: false,
+
+  // Configuration webpack simplifiée
+  webpack: (config, { isServer }) => {
     // Fix pour certaines dépendances côté serveur
     if (!isServer) {
       config.resolve.fallback = {
@@ -42,40 +40,23 @@ const nextConfig = {
       };
     }
 
+    // Optimisation mémoire
+    config.optimization = {
+      ...config.optimization,
+      minimize: true,
+    };
+
     return config;
   },
 
-  // Headers de sécurité
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
-        ],
-      },
-    ];
-  },
-
-  // Redirections
-  async redirects() {
-    return [];
-  },
-
-  // Réécritures (utile pour proxy API)
-  async rewrites() {
-    return [];
+  // Expérimental: réduire le bundle
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      'recharts',
+      'date-fns',
+    ],
   },
 };
 

@@ -37,8 +37,8 @@ const App: React.FC = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
-  const [loginEmail, setLoginEmail] = useState('pixelenroute@gmail.com');
-  const [loginPass, setLoginPass] = useState('Victoria&8530');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPass, setLoginPass] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -167,8 +167,8 @@ const App: React.FC = () => {
   const handleLogout = async () => {
       await authService.logout();
       setUser(null);
-      setLoginPass('Victoria&8530'); 
-      setLoginEmail('pixelenroute@gmail.com'); 
+      setLoginPass('');
+      setLoginEmail('');
   };
 
   const handleSwitchAccount = async (targetEmail?: string) => {

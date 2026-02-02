@@ -74,11 +74,15 @@ export async function GET(request: Request) {
       }
     }
 
-    // Sauvegarde
+    // Sauvegarde côté serveur (pour les API routes qui peuvent y accéder)
     db.saveGoogleAccount(userId, account);
 
-    // Redirection vers Google Workspace avec succès
-    return NextResponse.redirect(new URL('/#workspace?google_auth=success', origin));
+    // Encoder les données du compte pour que le client puisse les sauvegarder dans localStorage
+    // On passe les données encodées en base64 pour que le client puisse les persister
+    const accountData = Buffer.from(JSON.stringify(account)).toString('base64');
+
+    // Redirection vers Google Workspace avec les données du compte
+    return NextResponse.redirect(new URL(`/#workspace?google_auth=success&account_data=${encodeURIComponent(accountData)}`, origin));
 
   } catch (err: any) {
     console.error("Auth Callback Error:", err);

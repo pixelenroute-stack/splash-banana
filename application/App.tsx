@@ -280,7 +280,7 @@ const App: React.FC = () => {
   return (
     <NotificationProvider>
         {/* APP CONTAINER : Gère le Background selon le mode */}
-        <div className={`flex h-screen overflow-hidden text-slate-100 ${isDevMode ? 'bg-dev-gradient' : 'bg-background'}`} key={refreshKey}>
+        <div className={`flex h-screen overflow-hidden text-slate-100 ${isDevMode ? 'bg-dev-gradient' : 'bg-background'}`}>
             
             {/* OVERLAY LÉGER POUR LE MODE DEV (20% Opacity + Blur pour garder la couleur visible) */}
             {isDevMode && <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] pointer-events-none z-0" />}

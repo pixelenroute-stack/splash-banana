@@ -5,6 +5,7 @@ import { CalendarClient } from '../CalendarClient';
 import { DriveClient } from '../DriveClient';
 import { googleService } from '../../services/googleService';
 import { googleSyncService } from '../../services/googleSyncService';
+import { db } from '../../services/mockDatabase';
 import { LoginOverlay } from '../auth/LoginOverlay';
 import { Mail, Calendar, HardDrive, RefreshCw, Loader2, Lock, ShieldAlert, Wifi, WifiOff, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
@@ -23,8 +24,48 @@ export const GoogleWorkspace: React.FC = () => {
     const { notify } = useNotification();
     const USER_ID = "user_1";
 
+    // Gestion du retour OAuth avec les données du compte
     useEffect(() => {
-        checkStatus();
+        const handleOAuthReturn = () => {
+            const hash = window.location.hash;
+            const params = new URLSearchParams(hash.replace('#workspace?', '').replace('#workspace', ''));
+
+            const googleAuth = params.get('google_auth');
+            const accountData = params.get('account_data');
+            const googleError = params.get('google_error');
+
+            if (googleError) {
+                notify(`Erreur Google: ${decodeURIComponent(googleError)}`, 'error');
+                // Nettoyer l'URL
+                window.history.replaceState(null, '', '/#workspace');
+                return;
+            }
+
+            if (googleAuth === 'success' && accountData) {
+                try {
+                    // Décoder les données du compte depuis base64
+                    const decodedData = JSON.parse(atob(decodeURIComponent(accountData)));
+
+                    // Sauvegarder dans localStorage via mockDatabase
+                    db.saveGoogleAccount(USER_ID, decodedData);
+
+                    notify('Compte Google connecté avec succès!', 'success');
+
+                    // Nettoyer l'URL pour ne pas réimporter les données
+                    window.history.replaceState(null, '', '/#workspace');
+
+                    // Vérifier le status
+                    checkStatus();
+                } catch (e) {
+                    console.error('Failed to parse account data:', e);
+                    notify('Erreur lors de la connexion Google', 'error');
+                }
+            } else {
+                checkStatus();
+            }
+        };
+
+        handleOAuthReturn();
     }, []);
 
     // Abonnement à la synchronisation automatique

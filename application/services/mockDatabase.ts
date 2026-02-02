@@ -21,7 +21,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
   id: 'sys_1',
   version: 1,
   timezone: 'Europe/Paris',
-  appMode: 'production', 
+  appMode: 'developer', 
   branding: {
     name: 'Pixel En Route',
     initials: 'PE',
@@ -32,11 +32,11 @@ const DEFAULT_SETTINGS: SystemSettings = {
   },
   storage: { mode: 'supabase' }, // CHANGED: FORCE SUPABASE
   aiConfig: {
-    geminiKey: '',     
-    openaiKey: '',
-    perplexityKey: '',
-    anthropicKey: '',
-    deepseekKey: ''
+    geminiKey: process.env.GEMINI_API_KEY || '',
+    openaiKey: process.env.OPENAI_API_KEY || '',
+    perplexityKey: process.env.PERPLEXITY_API_KEY || '',
+    anthropicKey: process.env.ANTHROPIC_API_KEY || '',
+    deepseekKey: process.env.DEEPSEEK_API_KEY || ''
   },
   webhooks: {
       chat: { ...DEFAULT_WEBHOOK, enabled: true },
@@ -50,11 +50,12 @@ const DEFAULT_SETTINGS: SystemSettings = {
   },
   chat: { provider: 'n8n', value: '' },
   contentCreation: { provider: 'gemini', value: '' },
-  telegram: { 
-      enabled: false, 
-      botToken: '',
-      allowedUsernames: '', 
-      webAppUrl: '' 
+  telegram: {
+      enabled: !!process.env.TELEGRAM_BOT_TOKEN,
+      botToken: process.env.TELEGRAM_BOT_TOKEN || '',
+      chatId: process.env.TELEGRAM_CHAT_ID || '',
+      allowedUsernames: '',
+      webAppUrl: ''
   },
   drive: { syncFolderUrl: '' },
   google: {
@@ -62,16 +63,16 @@ const DEFAULT_SETTINGS: SystemSettings = {
     gmailValue: '',
     calendarProvider: 'google-api',
     calendarValue: '',
-    clientId: '',
-    clientSecret: '',
-    redirectUri: '',
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    redirectUri: process.env.GOOGLE_REDIRECT_URI || '',
   },
-  clients: { 
+  clients: {
     mode: 'sheets',
     spreadsheetId: '',
     n8nUrl: '',
-    notionApiKey: '', 
-    notionDbUrl: '',
+    notionApiKey: process.env.NOTION_API_KEY || '',
+    notionDbUrl: process.env.NOTION_DATABASE_ID || '',
     notionProjectsUrl: ''
   },
   notionTokenEncrypted: '',

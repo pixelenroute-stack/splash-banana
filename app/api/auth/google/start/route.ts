@@ -1,28 +1,32 @@
-
 import { NextResponse } from 'next/server';
-import { db } from '../../../../../services/mockDatabase';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
-  
+
   if (!userId) {
     return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
   }
 
-  const settings = db.getSystemSettings();
-  const { clientId, redirectUri } = settings.google;
+  // Récupérer la configuration depuis les variables d'environnement
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${baseUrl}/api/auth/google/callback`;
 
-  if (!clientId || !redirectUri) {
-      return NextResponse.json({ error: "Configuration Google OAuth incomplète (Admin Settings)." }, { status: 500 });
+  if (!clientId) {
+    return NextResponse.json({
+      error: "Configuration Google OAuth incomplète. GOOGLE_CLIENT_ID manquant dans les variables d'environnement."
+    }, { status: 500 });
   }
-  
+
   // Scopes requis pour l'application
   const scopes = [
-    'https://www.googleapis.com/auth/userinfo.email',
+    'openid',
+    'email',
+    'profile',
     'https://www.googleapis.com/auth/gmail.modify',
     'https://www.googleapis.com/auth/calendar',
-    'https://www.googleapis.com/auth/drive',
+    'https://www.googleapis.com/auth/drive.file',
     'https://www.googleapis.com/auth/spreadsheets'
   ].join(' ');
 
@@ -31,9 +35,9 @@ export async function GET(request: Request) {
   authUrl.searchParams.set('redirect_uri', redirectUri);
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('scope', scopes);
-  authUrl.searchParams.set('access_type', 'offline'); // CRUCIAL pour obtenir le Refresh Token
-  authUrl.searchParams.set('prompt', 'consent'); // Force le consentement pour ravoir le refresh token si perdu
-  authUrl.searchParams.set('state', userId); // Passage simple du userId comme state (En prod: utiliser un token signé)
-  
+  authUrl.searchParams.set('access_type', 'offline');
+  authUrl.searchParams.set('prompt', 'consent');
+  authUrl.searchParams.set('state', userId);
+
   return NextResponse.redirect(authUrl.toString());
 }

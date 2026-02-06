@@ -107,6 +107,8 @@ export interface SystemSettings {
     news?: WebhookConfig;
     clients?: WebhookConfig;
     invoices?: WebhookConfig;
+    contracts?: WebhookConfig;
+    email_sender?: WebhookConfig;
     prospection?: WebhookConfig;
     projects?: WebhookConfig;
     google_workspace?: WebhookConfig;

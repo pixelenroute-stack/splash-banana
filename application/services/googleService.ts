@@ -61,9 +61,13 @@ export class GoogleIntegrationService {
       const logPayload = { action, ...payload };
 
       try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
           const response = await fetch(webhook.url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              signal: controller.signal,
               // Structure claire pour le nœud Switch de n8n
               body: JSON.stringify({
                   action: action, // Utiliser cette clé dans le Switch n8n
@@ -72,6 +76,8 @@ export class GoogleIntegrationService {
                   timestamp: new Date().toISOString()
               })
           });
+
+          clearTimeout(timeoutId);
 
           const responseText = await response.text();
           let json: any = {};

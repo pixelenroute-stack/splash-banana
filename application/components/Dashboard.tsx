@@ -75,7 +75,7 @@ export const Dashboard: React.FC = () => {
         if (statusRes.connected) {
             const [emails, events] = await Promise.all([
                 googleService.listMessages(CURRENT_USER_ID, 'INBOX'),
-                googleService.listEvents(CURRENT_USER_ID, new Date(), new Date())
+                googleService.listEvents(CURRENT_USER_ID, new Date(), new Date(Date.now() + 7 * 86400000))
             ]);
             setRecentEmails(emails.slice(0, 5));
             setUpcomingEvents(events.slice(0, 5));

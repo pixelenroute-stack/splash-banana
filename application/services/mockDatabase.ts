@@ -79,10 +79,12 @@ class MockDatabase {
       videos: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/video-gen' },
       video_editor: { ...DEFAULT_WEBHOOK, enabled: true },
       news: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/news-agent' },
-      clients: { ...DEFAULT_WEBHOOK, enabled: true },
-      invoices: { ...DEFAULT_WEBHOOK, enabled: true },
+      clients: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/crm-clients' },
+      invoices: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/invoice-generator' },
+      contracts: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/contract-generator' },
+      email_sender: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/email-sender' },
       prospection: { ...DEFAULT_WEBHOOK, enabled: true },
-      projects: { ...DEFAULT_WEBHOOK, enabled: true },
+      projects: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/projects-manager' },
       google_workspace: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/google-workspace-sync' }
     },
     modules: {}

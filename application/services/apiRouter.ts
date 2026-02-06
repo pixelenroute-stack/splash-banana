@@ -53,11 +53,17 @@ export class APIRouter {
 
       data = await circuitBreaker.execute(webhookUrl, async () => {
           return await this.retryWithBackoff(async () => {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
+
               const response = await fetch(webhookUrl, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
+                  signal: controller.signal,
                   body: JSON.stringify(requestBody)
               });
+
+              clearTimeout(timeoutId);
 
               if (!response.ok) {
                   const errBody = await response.text(); 

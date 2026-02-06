@@ -11,6 +11,96 @@ interface EffectDefinition {
     }
 }
 
+const BLENDER_EFFECTS: Record<string, EffectDefinition> = {
+    'Transform': {
+        parameters: {
+            'Location': { unit: 'm' },
+            'Rotation': { unit: '°' },
+            'Scale': { min: 0 }
+        }
+    },
+    'Subdivision Surface': {
+        parameters: {
+            'Levels Viewport': { min: 0, max: 6 },
+            'Render': { min: 0, max: 6 }
+        }
+    },
+    'Bevel': {
+        parameters: {
+            'Amount': { min: 0, max: 10, unit: 'm' },
+            'Segments': { min: 1, max: 100 },
+            'Profile': { min: 0, max: 1 }
+        }
+    },
+    'Boolean': {
+        parameters: {
+            'Operation': { values: ['Intersect', 'Union', 'Difference'] },
+            'Solver': { values: ['Fast', 'Exact'] }
+        }
+    },
+    'Array': {
+        parameters: {
+            'Count': { min: 1, max: 10000 },
+            'Relative Offset': {},
+            'Constant Offset': {}
+        }
+    },
+    'Solidify': {
+        parameters: {
+            'Thickness': { unit: 'm' },
+            'Offset': { min: -1, max: 1 }
+        }
+    },
+    'Principled BSDF': {
+        parameters: {
+            'Base Color': {},
+            'Metallic': { min: 0, max: 1 },
+            'Roughness': { min: 0, max: 1 },
+            'IOR': { min: 0, max: 3 },
+            'Transmission': { min: 0, max: 1 },
+            'Emission': {}
+        }
+    },
+    'Extrude Region': {
+        parameters: {
+            'Move': { unit: 'm' }
+        }
+    },
+    'Inset Faces': {
+        parameters: {
+            'Thickness': { unit: 'm' },
+            'Depth': { unit: 'm' }
+        }
+    },
+    'Loop Cut': {
+        parameters: {
+            'Number of Cuts': { min: 1 }
+        }
+    },
+    'Camera Settings': {
+        parameters: {
+            'Focal Length': { min: 1, max: 1000, unit: 'mm' },
+            'Clip Start': { min: 0.001 },
+            'Clip End': {}
+        }
+    },
+    'Light Settings': {
+        parameters: {
+            'Power': { min: 0, unit: 'W' },
+            'Radius': { min: 0, unit: 'm' },
+            'Color': {}
+        }
+    },
+    'Render Settings': {
+        parameters: {
+            'Resolution X': { min: 1, unit: 'px' },
+            'Resolution Y': { min: 1, unit: 'px' },
+            'Frame Rate': { min: 1, unit: 'fps' },
+            'Engine': { values: ['Eevee', 'Cycles', 'Workbench'] }
+        }
+    }
+};
+
 const PREMIERE_EFFECTS: Record<string, EffectDefinition> = {
   'Gaussian Blur': {
     parameters: {
@@ -332,7 +422,7 @@ export interface TutorialStep {
     value: string;
     unit?: string;
   }>;
-  software: 'premiere' | 'after-effects' | 'photoshop' | 'illustrator';
+  software: 'premiere' | 'after-effects' | 'photoshop' | 'illustrator' | 'blender';
 }
 
 export interface ValidationResult {
@@ -353,6 +443,7 @@ export class TutorialValidator {
     else if (tutorial.software === 'after-effects') effectsDB = AFTER_EFFECTS_EFFECTS;
     else if (tutorial.software === 'photoshop') effectsDB = PHOTOSHOP_EFFECTS;
     else if (tutorial.software === 'illustrator') effectsDB = ILLUSTRATOR_EFFECTS;
+    else if (tutorial.software === 'blender') effectsDB = BLENDER_EFFECTS;
     else return { valid: false, errors: ['Logiciel inconnu'], warnings: [] };
     
     // Attempt exact match first
@@ -391,7 +482,7 @@ export class TutorialValidator {
       }
       
       const paramDef = effectDef.parameters[paramKey];
-      const valueStr = param.value.replace('%', '').replace('px', '').replace('°', '').replace('pt', '').trim();
+      const valueStr = param.value.replace('%', '').replace('px', '').replace('°', '').replace('pt', '').replace('m', '').replace('W', '').trim();
       const value = parseFloat(valueStr);
       
       if (isNaN(value)) continue; // Skip non-numeric values
@@ -447,6 +538,7 @@ export class TutorialValidator {
     else if (tutorial.software === 'after-effects') effectsDB = AFTER_EFFECTS_EFFECTS;
     else if (tutorial.software === 'photoshop') effectsDB = PHOTOSHOP_EFFECTS;
     else if (tutorial.software === 'illustrator') effectsDB = ILLUSTRATOR_EFFECTS;
+    else if (tutorial.software === 'blender') effectsDB = BLENDER_EFFECTS;
     else return corrected;
     
     // Resolve Effect Name
@@ -472,7 +564,7 @@ export class TutorialValidator {
       if (!paramKey) return param;
       
       const paramDef = effectDef.parameters[paramKey];
-      const valueStr = param.value.replace('%', '').replace('px', '').replace('°', '').replace('pt', '').trim();
+      const valueStr = param.value.replace('%', '').replace('px', '').replace('°', '').replace('pt', '').replace('m', '').replace('W', '').trim();
       let value = parseFloat(valueStr);
       
       if (isNaN(value)) return param;
@@ -491,6 +583,8 @@ export class TutorialValidator {
       else if (param.value.includes('px') || paramDef.unit === 'px' || paramDef.unit === 'pixels') suffix = 'px';
       else if (param.value.includes('°') || paramDef.unit === '°' || paramDef.unit === 'degrees') suffix = '°';
       else if (param.value.includes('pt') || paramDef.unit === 'pt') suffix = 'pt';
+      else if (param.value.includes('m') || paramDef.unit === 'm') suffix = 'm';
+      else if (param.value.includes('W') || paramDef.unit === 'W') suffix = 'W';
 
       return {
         ...param,

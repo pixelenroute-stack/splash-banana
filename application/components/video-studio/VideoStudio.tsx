@@ -2,35 +2,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { VideoJob, VideoGenerationParams } from '../../types';
 import { videoService } from '../../services/videoService';
-import { db } from '../../services/mockDatabase'; // Import DB
+import { db } from '../../services/mockDatabase';
 import { VIDEO_TEMPLATES, VideoTemplate } from './VideoTemplates';
 import { PromptBar } from './PromptBar';
 import { SettingsPanel } from './SettingsPanel';
 import { VideoJobItem } from './VideoJobItem';
-import { Video, History, Clock, Key, Zap, Loader2, LayoutGrid, Code } from 'lucide-react';
-
-const generateRandomVideoPrompt = () => {
-    const cameras = ["Cinematic drone shot over", "Slow motion tracking shot of", "First person view of", "Wide angle shot of", "Close up macro shot of"];
-    const subjects = ["a futuristic city at night", "a formula 1 car racing", "a chef cooking in a busy kitchen", "a mystical forest with glowing plants", "a samurai training in the rain", "water droplets falling on a leaf"];
-    const atmospheres = ["with neon lights and heavy rain", "at sunset with golden hour lighting", "in a foggy mysterious atmosphere", "with vibrant colors and high contrast", "in black and white noir style"];
-    
-    const cam = cameras[Math.floor(Math.random() * cameras.length)];
-    const sub = subjects[Math.floor(Math.random() * subjects.length)];
-    const atm = atmospheres[Math.floor(Math.random() * atmospheres.length)];
-
-    return `[SIMULATION] ${cam} ${sub}, ${atm}, 4k render`;
-};
-
-const MOCK_VIDEO_URLS = [
-    "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4",
-    "https://test-videos.co.uk/vids/jellyfish/mp4/h264/1080/Jellyfish_1080_10s_1MB.mp4",
-    "https://test-videos.co.uk/vids/sintel/mp4/av1/1080/Sintel_1080_10s_1MB.mp4"
-];
+import { Video, History, Clock, Key, LayoutGrid } from 'lucide-react';
 
 export const VideoStudio: React.FC = () => {
     const [jobs, setJobs] = useState<VideoJob[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [isSimulating, setIsSimulating] = useState(false);
     const [viewMode, setViewMode] = useState<'create' | 'history'>('create');
     const [prompt, setPrompt] = useState('');
     const [params, setParams] = useState<VideoGenerationParams>({
@@ -44,8 +25,6 @@ export const VideoStudio: React.FC = () => {
 
     const pollingRef = useRef<any>(null);
     const USER_ID = 'user_1';
-    const settings = db.getSystemSettings();
-    const isDev = settings.appMode === 'developer';
 
     useEffect(() => {
         loadJobs();
@@ -67,7 +46,7 @@ export const VideoStudio: React.FC = () => {
     };
 
     const startPolling = () => {
-        pollingRef.current = setInterval(loadJobs, 2000); // Polling plus rapide pour réactivité UI
+        pollingRef.current = setInterval(loadJobs, 2000);
     };
 
     const stopPolling = () => {
@@ -90,69 +69,6 @@ export const VideoStudio: React.FC = () => {
         }
     };
 
-    // --- SIMULATION LOGIC ---
-    const runSimulation = async () => {
-        if (isSimulating || isGenerating) return;
-        setIsSimulating(true);
-        setViewMode('create');
-
-        const randomPrompt = generateRandomVideoPrompt();
-        const randomUrl = MOCK_VIDEO_URLS[Math.floor(Math.random() * MOCK_VIDEO_URLS.length)];
-
-        setPrompt(randomPrompt); // Visual feedback
-
-        // 1. Fake Job
-        const fakeJobId = `sim_vid_${Date.now()}`;
-        const fakeJob: VideoJob = {
-            id: fakeJobId,
-            userId: USER_ID,
-            provider: 'simulation-veo',
-            modelId: 'veo-mock',
-            status: 'QUEUED',
-            progress: 0,
-            params: { ...params, prompt: randomPrompt },
-            createdAt: new Date().toISOString()
-        };
-
-        db.createVideoJob(fakeJob);
-        await loadJobs();
-
-        // 2. Simulate Progress
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 10;
-            db.updateVideoJob(fakeJobId, { status: 'RUNNING', progress });
-            loadJobs();
-
-            if (progress >= 100) {
-                clearInterval(interval);
-                finishSimulation(fakeJobId, randomPrompt, randomUrl);
-            }
-        }, 800); // Fast simulation
-    };
-
-    const finishSimulation = async (jobId: string, promptUsed: string, videoUrl: string) => {
-        db.createVideoAsset({
-            id: `va_sim_${Date.now()}`,
-            jobId: jobId,
-            userId: USER_ID,
-            publicUrl: videoUrl,
-            duration: 10,
-            width: 640,
-            height: 360,
-            fps: 24,
-            mimeType: 'video/mp4',
-            promptCopy: promptUsed,
-            isFavorite: false,
-            isArchived: false,
-            createdAt: new Date().toISOString()
-        });
-
-        db.updateVideoJob(jobId, { status: 'COMPLETED', progress: 100 });
-        await loadJobs();
-        setIsSimulating(false);
-    };
-
     const openKeyDialog = async () => {
         await (window as any).aistudio.openSelectKey();
     };
@@ -164,27 +80,10 @@ export const VideoStudio: React.FC = () => {
                     <div>
                         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
                             <Video className="text-purple-500" /> Video Studio
-                            {isDev && (
-                                <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700 font-mono flex items-center gap-1">
-                                    <Code size={10}/> API: Google Veo 3.1
-                                </span>
-                            )}
                         </h1>
                         <p className="text-slate-400 text-sm">Générez des séquences avec Google Veo</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        {/* BOUTON SIMULATION (DEV ONLY) */}
-                        {isDev && (
-                            <button 
-                                onClick={runSimulation}
-                                disabled={isSimulating || isGenerating}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-bold uppercase tracking-wider transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-                            >
-                                {isSimulating ? <Loader2 size={14} className="animate-spin"/> : <Zap size={14} className="fill-amber-400"/>}
-                                {isSimulating ? 'Test en cours...' : '⚡ Simuler'}
-                            </button>
-                        )}
-
                         <button onClick={openKeyDialog} className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs border border-slate-700">
                             <Key size={14}/> Clé API
                         </button>

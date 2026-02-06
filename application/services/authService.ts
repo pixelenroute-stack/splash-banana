@@ -1,7 +1,7 @@
 
 import { supabase } from '../lib/supabaseClient';
 import { db } from './mockDatabase';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 
 const STORAGE_KEY_ACCOUNTS = 'sb_accounts_history';
 
@@ -12,9 +12,15 @@ export class AuthService {
    */
   async login(email: string, password: string): Promise<User> {
     
-    // Si Supabase n'est pas configuré, fallback local (legacy mode dev)
+    // SÉCURITÉ : Si des clés Supabase sont présentes dans l'environnement, on REFUSE le mode Mock.
+    // Cela empêche tout contournement de l'auth en production.
+    const isSupabaseConfigured = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
     if (!supabase) {
-        console.warn("Supabase non configuré, utilisation du Mock Auth.");
+        if (isSupabaseConfigured) {
+            throw new Error("Erreur critique : Client Supabase non initialisé malgré la configuration présente.");
+        }
+        console.warn("Supabase non configuré, utilisation du Mock Auth (Dev Mode uniquement).");
         return this.mockLogin(email, password);
     }
 
@@ -56,12 +62,27 @@ export class AuthService {
 
   /**
    * Méthode Legacy pour Dev Mode sans internet
+   * MODIFIÉ : Crée automatiquement l'utilisateur s'il n'existe pas pour faciliter les tests.
    */
   private async mockLogin(email: string, password: string): Promise<User> {
       await new Promise(r => setTimeout(r, 500));
-      const user = db.getUsers().find(u => u.email.toLowerCase() === email.toLowerCase());
-      if (!user) throw new Error("Compte inexistant (Mock).");
-      // Accepte le mot de passe hardcodé ou tout mot de passe en mode dev
+      let user = db.getUsers().find(u => u.email.toLowerCase() === email.toLowerCase());
+      
+      // Auto-création en mode Mock pour éviter le blocage
+      if (!user) {
+          console.log(`[MockAuth] Nouvel utilisateur détecté, création automatique du profil pour : ${email}`);
+          user = {
+              id: `mock_user_${Date.now()}`,
+              email: email,
+              name: email.split('@')[0], // ex: "jean" pour "jean@gmail.com"
+              role: UserRole.ADMIN, // On donne les droits ADMIN par défaut en mode dev pour faciliter les tests
+              status: 'active',
+              allowedViews: ['dashboard', 'chat', 'clients', 'projects', 'invoices', 'settings', 'admin', 'images', 'videos', 'library', 'prospection', 'news'],
+              createdAt: new Date().toISOString()
+          };
+          db.createUser(user);
+      }
+      
       return user;
   }
 

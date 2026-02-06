@@ -7,7 +7,11 @@ import {
     Download, Trash2, UploadCloud, FolderPlus, ChevronRight, Home, Loader2, ArrowLeft, RefreshCw 
 } from 'lucide-react';
 
-export const DriveClient: React.FC = () => {
+interface DriveClientProps {
+    refreshTrigger?: number;
+}
+
+export const DriveClient: React.FC<DriveClientProps> = ({ refreshTrigger = 0 }) => {
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -17,13 +21,15 @@ export const DriveClient: React.FC = () => {
 
   const CURRENT_USER_ID = "user_1";
 
+  // Recharger quand le dossier change OU quand le trigger d'actualisation est activé
   useEffect(() => {
       loadFiles(currentFolderId);
-  }, [currentFolderId]);
+  }, [currentFolderId, refreshTrigger]);
 
   const loadFiles = async (folderId: string) => {
       setLoading(true);
       try {
+          // Cet appel contacte N8N (webhook list_files) et attend la réponse
           const res = await googleService.listDriveFiles(CURRENT_USER_ID, folderId);
           setFiles(res);
       } catch (e) {
@@ -107,7 +113,9 @@ export const DriveClient: React.FC = () => {
   };
 
   // Helper Icon
-  const getFileIcon = (mime: string) => {
+  const getFileIcon = (mime?: string) => {
+      if (!mime) return <FileText className="text-slate-400" size={24} />;
+      
       if (mime.includes('folder')) return <Folder className="text-blue-400 fill-blue-400/20" size={24} />;
       if (mime.includes('image')) return <ImageIcon className="text-purple-400" size={24} />;
       if (mime.includes('video')) return <Film className="text-red-400" size={24} />;
@@ -191,7 +199,7 @@ export const DriveClient: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
               <div className="flex items-center justify-center h-full text-slate-500 gap-3">
-                  <Loader2 className="animate-spin" /> Chargement du Drive...
+                  <Loader2 className="animate-spin" /> Chargement du Drive (N8N)...
               </div>
           ) : files.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-4 opacity-50">
@@ -204,7 +212,7 @@ export const DriveClient: React.FC = () => {
                       <div 
                         key={file.id} 
                         className="group bg-surface border border-slate-700 rounded-xl p-4 hover:border-slate-500 hover:bg-slate-800/50 transition-all cursor-pointer relative"
-                        onClick={() => file.mimeType.includes('folder') && navigateTo(file.id, file.name)}
+                        onClick={() => file.mimeType?.includes('folder') && navigateTo(file.id, file.name)}
                       >
                           <div className="flex items-start justify-between mb-3">
                               <div className="p-3 bg-slate-900 rounded-lg border border-slate-800 group-hover:border-slate-600">
@@ -216,12 +224,12 @@ export const DriveClient: React.FC = () => {
                           </div>
                           <h3 className="font-medium text-white truncate mb-1" title={file.name}>{file.name}</h3>
                           <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono">
-                              <span>{file.mimeType.includes('folder') ? 'Dossier' : formatSize(file.size)}</span>
+                              <span>{file.mimeType?.includes('folder') ? 'Dossier' : formatSize(file.size)}</span>
                               <span>{new Date(file.modifiedTime).toLocaleDateString()}</span>
                           </div>
                           
                           {/* Hover Actions */}
-                          {!file.mimeType.includes('folder') && (
+                          {(!file.mimeType || !file.mimeType.includes('folder')) && (
                               <div className="absolute top-4 right-12 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-surface rounded-lg border border-slate-700 p-1 shadow-lg">
                                   <button className="p-1.5 hover:bg-slate-700 rounded text-primary" title="Télécharger">
                                       <Download size={14}/>

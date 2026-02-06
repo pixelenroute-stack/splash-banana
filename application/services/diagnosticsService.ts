@@ -2,7 +2,8 @@
 import { db } from './mockDatabase';
 import { testSupabaseConnection } from '../lib/supabaseClient';
 import { SystemSettings, DiagnosticResult } from '../types';
-import { googleService } from './googleService'; // To test sheet connectivity
+import { googleService } from './googleService'; 
+import { metricsCollector } from './metricsCollector'; // Pour inclure les stats API
 
 class DiagnosticsService {
     private maskSecret(secret?: string, visibleChars = 4): string {
@@ -17,7 +18,6 @@ class DiagnosticsService {
         }
         try {
             // Utilise 'no-cors' pour tester la joignabilité cross-origin sans erreur CORS.
-            // Une réponse opaque (status 0) est un succès, une erreur réseau est un échec.
             const response = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
             return { status: 'success', message: 'Endpoint joignable.' };
         } catch (e) {
@@ -66,11 +66,10 @@ class DiagnosticsService {
             });
         }
         
-        // 3. CRM Connection (Sheets or Notion)
+        // 3. CRM Connection
         if (settings.clients.mode === 'sheets') {
              const { spreadsheetId } = settings.clients;
              if (spreadsheetId) {
-                // Test simple call
                 const authStatus = await googleService.getAccountStatus("user_1");
                 if (authStatus.status === 'live' || authStatus.status === 'mock') {
                     results.push({
@@ -95,24 +94,14 @@ class DiagnosticsService {
                     details: 'Non configuré'
                 });
              }
-        } else if (settings.clients.mode === 'notion') {
-             const { notionApiKey, notionDbUrl } = settings.clients;
-             if (notionApiKey && notionDbUrl) {
-                results.push({
-                    serviceName: 'Notion API (Legacy)',
-                    status: 'success',
-                    message: 'Clé API configurée (Mode déprécié).',
-                    details: `API Key: ${this.maskSecret(notionApiKey)}`
-                });
-             }
         }
         
         // 4. n8n Webhooks
         const n8nEndpoints = [
             { name: 'n8n Chat Agent', url: settings.chat.value },
             { name: 'n8n CRM Sync', url: settings.clients.n8nUrl },
-            { name: 'n8n Image Gen (Banana)', url: settings.images.endpoint },
-            { name: 'n8n Video Gen (Veo)', url: settings.videos.endpoint },
+            { name: 'n8n Image Gen (Banana)', url: settings.images.endpoint.url },
+            { name: 'n8n Video Gen (Veo)', url: settings.videos.endpoint.url },
             { name: 'n8n Billing', url: settings.invoices.n8nUrl },
         ];
         
@@ -130,42 +119,60 @@ class DiagnosticsService {
     }
 
     /**
-     * Génère un rapport d'inspection complet pour l'IA (Simulation d'audit de code + runtime)
+     * Génère un rapport d'inspection complet pour l'IA.
+     * Compile Diagnostics + Configuration + Métriques + Logs.
      */
     async generateFullSystemReport() {
         const diagnostics = await this.runDiagnostics();
         const settings = db.getSystemSettings();
         const stats = db.getStats();
+        const apiStats = metricsCollector.getStats(); // Métriques techniques détaillées
         
+        // Sécurité: On masque les clés dans le rapport envoyé à l'IA
+        const safeSettings = JSON.parse(JSON.stringify(settings));
+        safeSettings.aiConfig.geminiKey = this.maskSecret(safeSettings.aiConfig.geminiKey);
+        safeSettings.google.clientSecret = this.maskSecret(safeSettings.google.clientSecret);
+
         const report = {
-            timestamp: new Date().toISOString(),
-            environment: {
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                screen: `${window.innerWidth}x${window.innerHeight}`
-            },
-            architecture: {
-                frontend: "React 19, TailwindCSS, Lucide Icons",
-                backend_simulation: "MockDatabase (LocalStorage persistence)",
-                services: ["GoogleService", "SupabaseService", "N8NAgentService", "GeminiService"],
-                integrations: {
-                    google: settings.google.clientId ? "Configured (OAuth)" : "Mock Mode",
-                    supabase: settings.storage.mode === 'supabase' ? "Active" : "Disabled (Local only)",
-                    crm: settings.clients.mode,
-                    ai_provider: settings.contentCreation.provider
+            metadata: {
+                timestamp: new Date().toISOString(),
+                environment: {
+                    userAgent: navigator.userAgent,
+                    screen: `${window.innerWidth}x${window.innerHeight}`,
+                    appMode: settings.appMode
                 }
             },
-            database_metrics: {
-                clients_count: stats.totalClients,
-                invoices_pending: stats.pendingInvoices,
-                ai_usage: `${stats.aiTokensUsed}/${stats.aiTokenLimit}`
+            architecture: {
+                frontend: "Next.js 15 (App Router), React 19, TailwindCSS",
+                backend_strategy: "Serverless Functions + MockDB Fallback + Supabase",
+                integrations: {
+                    storage: settings.storage.mode,
+                    crm: settings.clients.mode,
+                    ai_provider: "Gemini / Google AI Studio",
+                    automation: "n8n Webhooks"
+                }
             },
-            connectivity_check: diagnostics.map(d => ({
-                service: d.serviceName,
-                status: d.status,
-                details: d.message
-            })),
-            critical_alerts: diagnostics.filter(d => d.status === 'error').map(d => `${d.serviceName}: ${d.message}`)
+            status: {
+                health_checks: diagnostics.map(d => ({
+                    service: d.serviceName,
+                    status: d.status,
+                    details: d.message
+                })),
+                critical_issues: diagnostics.filter(d => d.status === 'error').map(d => d.serviceName)
+            },
+            metrics: {
+                database: {
+                    clients: stats.totalClients,
+                    invoices_pending: stats.pendingInvoices,
+                },
+                api_usage: {
+                    total_requests: apiStats.totalRequests,
+                    error_rate: `${apiStats.errorRate.toFixed(2)}%`,
+                    avg_latency: `${apiStats.avgLatency}ms`,
+                    tokens_consumed: stats.aiTokensUsed
+                }
+            },
+            configuration_snapshot: safeSettings
         };
 
         return report;

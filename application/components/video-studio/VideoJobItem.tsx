@@ -2,15 +2,22 @@
 import React, { useEffect, useState } from 'react';
 import { VideoJob, VideoAsset } from '../../types';
 import { db } from '../../services/mockDatabase';
-import { Loader2, Play, Download, MoreHorizontal, Clock, Film } from 'lucide-react';
+import { supabaseService } from '../../services/supabaseService';
+import { Loader2, Download, Clock, HardDrive, Check, CloudUpload } from 'lucide-react';
+import { useNotification } from '../../context/NotificationContext';
 
 interface VideoJobItemProps {
     job: VideoJob;
 }
 
+const CURRENT_USER_ID = "user_1";
+
 export const VideoJobItem: React.FC<VideoJobItemProps> = ({ job }) => {
     const [asset, setAsset] = useState<VideoAsset | undefined>(undefined);
     const [elapsed, setElapsed] = useState(0);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+    const { notify } = useNotification();
 
     // Load asset if completed
     useEffect(() => {
@@ -31,6 +38,26 @@ export const VideoJobItem: React.FC<VideoJobItemProps> = ({ job }) => {
         }
         return () => clearInterval(interval);
     }, [job.status, job.createdAt]);
+
+    const handleSaveToCloud = async () => {
+        if (!asset) return;
+        setIsSaving(true);
+        notify("Envoi vers Supabase Storage...", "loading");
+        try {
+            // Convert base64 to blob
+            const response = await fetch(asset.publicUrl);
+            const blob = await response.blob();
+            const filename = `Video_${asset.id}.mp4`;
+            
+            await supabaseService.uploadFile(CURRENT_USER_ID, blob, filename, 'video/mp4', 'video');
+            setIsSaved(true);
+            notify("Vidéo sauvegardée dans la Bibliothèque.", "success");
+        } catch (e) {
+            notify("Erreur de sauvegarde Cloud", "error");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     if (job.status === 'FAILED') {
         return (
@@ -77,10 +104,10 @@ export const VideoJobItem: React.FC<VideoJobItemProps> = ({ job }) => {
                 controls 
                 loop 
                 playsInline
-                poster={asset.thumbnailUrl} // Optional if we had one
+                poster={asset.thumbnailUrl}
             />
             
-            {/* Overlay Info (Hidden when playing usually, but here shown on hover/pause) */}
+            {/* Overlay Info */}
             <div className="p-4 bg-surface border-t border-slate-700">
                 <p className="text-sm text-white line-clamp-1 mb-2">{job.params.prompt}</p>
                 <div className="flex items-center justify-between">
@@ -90,7 +117,15 @@ export const VideoJobItem: React.FC<VideoJobItemProps> = ({ job }) => {
                         <span className="bg-slate-800 px-1.5 py-0.5 rounded">{asset.fps} FPS</span>
                     </div>
                     <div className="flex gap-2">
-                        <a href={asset.publicUrl} download className="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white" title="Download">
+                        <button 
+                            onClick={handleSaveToCloud}
+                            disabled={isSaving || isSaved}
+                            className={`p-1.5 rounded transition-colors flex items-center gap-1 ${isSaved ? 'text-green-400' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`} 
+                            title="Sauvegarder dans Supabase"
+                        >
+                            {isSaving ? <Loader2 size={14} className="animate-spin"/> : isSaved ? <Check size={14}/> : <CloudUpload size={14}/>}
+                        </button>
+                        <a href={asset.publicUrl} download={`video_${job.id}.mp4`} className="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white" title="Télécharger">
                             <Download size={14} />
                         </a>
                     </div>

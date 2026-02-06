@@ -3,11 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --primary-color: #3b82f6;
   --background: #0f172a;
   --surface: #1e293b;
+  --primary: #3b82f6;
   --secondary: #64748b;
   --accent: #f59e0b;
+  --foreground: #f8fafc;
+
+  /* Couleurs Mode Développeur */
   --dev-start: #6366f1;
   --dev-mid: #22d3ee;
   --dev-end: #a3e635;
@@ -24,7 +27,7 @@ body {
   max-width: 100vw;
   overflow-x: hidden;
   background-color: var(--background);
-  color: #f8fafc;
+  color: var(--foreground);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -47,7 +50,52 @@ body {
   background: #64748b;
 }
 
-/* Utility Classes */
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes zoom-in {
+  from {
+    transform: scale(0.95);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.animate-in {
+  animation-duration: 300ms;
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fade-in;
+}
+
+.zoom-in {
+  animation-name: zoom-in;
+}
+
+.slide-in-from-top {
+  animation-name: slide-in-from-top;
+}
+
+/* Utility classes */
 .bg-background {
   background-color: var(--background);
 }
@@ -57,217 +105,18 @@ body {
 }
 
 .bg-primary {
-  background-color: var(--primary-color);
+  background-color: var(--primary);
 }
 
 .text-primary {
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 .border-primary {
-  border-color: var(--primary-color);
+  border-color: var(--primary);
 }
 
-.ring-primary {
-  --tw-ring-color: var(--primary-color);
-}
-
-.shadow-primary\/20 {
-  --tw-shadow-color: rgba(59, 130, 246, 0.2);
-}
-
-/* Developer Mode Gradient */
+/* Dev gradient */
 .bg-dev-gradient {
-  background: linear-gradient(135deg, #6366f1 0%, #22d3ee 50%, #a3e635 100%);
-}
-
-/* Animation utilities */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideInFromTop {
-  from {
-    transform: translateY(-100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes zoomIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-in {
-  animation-duration: 0.3s;
-  animation-fill-mode: both;
-}
-
-.fade-in {
-  animation-name: fadeIn;
-}
-
-.zoom-in {
-  animation-name: zoomIn;
-}
-
-.slide-in-from-top {
-  animation-name: slideInFromTop;
-}
-
-.duration-300 {
-  animation-duration: 0.3s;
-}
-
-.duration-500 {
-  animation-duration: 0.5s;
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-/* Scrollbar thin variant */
-.scrollbar-thin::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-/* Glass effect */
-.backdrop-blur-md {
-  backdrop-filter: blur(12px);
-}
-
-.backdrop-blur-sm {
-  backdrop-filter: blur(4px);
-}
-
-/* Active scale effect */
-.active\:scale-95:active {
-  transform: scale(0.95);
-}
-
-/* Focus styles */
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none;
-  border-color: var(--primary-color);
-}
-
-/* Button base styles */
-button {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Link styles */
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-/* Form input styles */
-input,
-textarea,
-select {
-  font-family: inherit;
-}
-
-/* Code blocks */
-pre,
-code {
-  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
-}
-
-/* Prose styles for markdown content */
-.prose {
-  max-width: 65ch;
-  color: #e2e8f0;
-}
-
-.prose h1,
-.prose h2,
-.prose h3 {
-  color: #f8fafc;
-}
-
-.prose a {
-  color: var(--primary-color);
-}
-
-.prose code {
-  background-color: #334155;
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
-}
-
-/* Loading states */
-.loading-shimmer {
-  background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-/* Toast styles */
-.toast-container {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  z-index: 9999;
-}
-
-/* Modal overlay */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  z-index: 50;
-}
-
-/* Card hover effect */
-.card-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, var(--dev-start) 0%, var(--dev-mid) 50%, var(--dev-end) 100%);
 }

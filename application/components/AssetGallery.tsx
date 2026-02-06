@@ -1,8 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GeminiService } from '../services/geminiService';
-import { googleService } from '../services/googleService';
-import { apiRouter } from '../services/apiRouter'; 
+import { videoEditorService } from '../services/videoEditorService';
+import { supabaseService } from '../services/supabaseService';
 import { tutorialValidator, TutorialStep } from '../services/tutorialValidator'; 
 import { pdfExportService, TutorialForPDF } from '../services/pdfExportService'; 
 import { MoodboardData, CreativeAnalysisData, DriveFile, AdvancedTechnique, DetailedStep, AdvancedTechnique as CustomTutorial, TutorialSetting } from '../types';
@@ -17,123 +16,11 @@ import {
     Film, ScrollText, Copy, Droplet, Move, Image as ImageIcon,
     BookOpen, PlayCircle, Star, Upload, Video, AlertTriangle, Code,
     FileVideo, X, Plus, ScanEye, ArrowUpRight, Keyboard, Command, Edit3,
-    MousePointer2, Brush
+    MousePointer2, Brush, CloudUpload, Box
 } from 'lucide-react';
+import { useNotification } from '../context/NotificationContext';
 
-const LIBRARY_FOLDER_ID = '1PjCsaOfNkcKE2qZFR0NQnKOdJ7RVdDX9';
 const CURRENT_USER_ID = "user_1";
-
-// --- SYSTEM PROMPT FOR TUTORIAL GENERATION ---
-const TUTORIAL_SYSTEM_PROMPT = `
-ROLE : Expert certifié Adobe (After Effects, Premiere Pro, Photoshop, Illustrator) et Senior Digital Artist.
-OBJECTIF : Générer des tutoriels techniques ultra-précis, reproductibles à l'identique.
-
-FORMAT DE SORTIE (JSON STRICT) :
-[
-  {
-    "id": "unique_id",
-    "title": "Nom de la technique",
-    "software": "After Effects" | "Premiere Pro" | "Photoshop" | "Illustrator",
-    "difficulty": "Débutant" | "Intermédiaire" | "Expert",
-    "estimatedTime": "XX min",
-    "description": "Courte description",
-    "steps": [
-      {
-        "order": 1,
-        "category": "Préparation" | "Texte" | "Effets" | "Animation" | "Rendu" | "Ajustements" | "Dessin" | "Retouche",
-        "action": "Action principale (verbe infinitif)",
-        "tool": "Nom exact de l'outil ou effet (EN ANGLAIS)",
-        "keyboard": "Raccourci clavier (Win / Mac)",
-        "settings": [
-          { "name": "Paramètre Exact", "value": "Valeur Numérique", "unit": "px/|%/°" }
-        ],
-        "tip": "Conseil pro contextuel",
-        "explanation": "Pourquoi on fait ça"
-      }
-    ],
-    "validationErrors": []
-  }
-]
-
-RÈGLES D'OR :
-1. VALEURS EXACTES : Interdit d'utiliser "ajuster selon goût". Donne des valeurs numériques précises (ex: "Gaussian Blur > Blurriness: 15px").
-2. NOMS EN ANGLAIS : Utilise les noms d'effets exacts d'Adobe en Anglais (ex: "Drop Shadow", "Lumetri Color", "Fast Box Blur").
-3. RACCOURCIS : Toujours inclure le raccourci clavier si applicable.
-4. ORDRE LOGIQUE : Préparation -> Action -> Effets -> Finalisation.
-5. EXHAUSTIVITÉ : Ne saute aucune étape critique (création de calque, conversion en objet dynamique, etc.).
-
-EFFETS DISPONIBLES (After Effects) :
-- Blur: Fast Box Blur, Gaussian Blur, Radial Blur
-- Color: Curves, Levels, Hue/Saturation, Lumetri Color
-- Generate: Fractal Noise, 4-Color Gradient, Fill, Stroke
-- Stylize: Glow, Roughen Edges
-- Transition: Linear Wipe, Radial Wipe
-- Distort: Turbulent Displace, Wave Warp
-- Keying: Keylight (1.2)
-
-EFFETS DISPONIBLES (Premiere Pro) :
-- Color: Lumetri Color (Basic, Creative, Curves, Wheels, HSL, Vignette)
-- Blur: Gaussian Blur, Directional Blur
-- Transform: Crop, Horizontal Flip, Transform
-- Keying: Ultra Key
-- Warp Stabilizer
-
-EFFETS DISPONIBLES (Photoshop) :
-- Filters: Gaussian Blur, Motion Blur, High Pass, Liquify, Camera Raw Filter, Unsharp Mask
-- Adjustments: Levels, Curves, Hue/Saturation
-- Layer Styles: Drop Shadow, Inner Shadow, Outer Glow, Stroke, Bevel & Emboss, Color Overlay
-- Select & Mask
-
-EFFETS DISPONIBLES (Illustrator) :
-- 3D: 3D Extrude & Bevel
-- Stylize: Drop Shadow, Feather, Round Corners
-- Blur: Gaussian Blur
-- Path: Offset Path, Outline Stroke
-- Pathfinder: Unite, Minus Front, Intersect, Exclude
-- Distort & Transform: Zig Zag, Roughen, Transform, Twist
-- Image Trace
-`;
-
-// --- HELPERS ---
-
-const cleanAndParseJson = <T = any>(text: string): T | null => {
-    if (!text) return null;
-    let clean = text.trim();
-    
-    // Remove markdown code blocks
-    const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/;
-    const match = clean.match(codeBlockRegex);
-    if (match) {
-        clean = match[1].trim();
-    }
-
-    // Attempt to find JSON object or array boundaries
-    const firstBrace = clean.indexOf('{');
-    const firstBracket = clean.indexOf('[');
-    
-    // Determine which comes first to decide if we look for Object or Array
-    let start = -1;
-    let end = -1;
-
-    if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
-        start = firstBrace;
-        end = clean.lastIndexOf('}');
-    } else if (firstBracket !== -1) {
-        start = firstBracket;
-        end = clean.lastIndexOf(']');
-    }
-
-    if (start !== -1 && end !== -1 && end > start) {
-        clean = clean.substring(start, end + 1);
-    }
-
-    try {
-        return JSON.parse(clean) as T;
-    } catch (e) {
-        console.warn("JSON Clean Parse failed. Raw text:", text);
-        return null;
-    }
-};
 
 // --- TYPES NOUVEAUX ---
 
@@ -159,9 +46,6 @@ interface ScriptWithScore {
   };
 }
 
-// CustomTutorial interface updated to match DetailedStep from types.ts via aliasing or direct usage
-// We'll use the AdvancedTechnique type from types.ts which matches the new structure
-
 // NEW TYPE FOR RUSH ANALYSIS
 interface RushAnalysisItem {
     id: string;
@@ -174,8 +58,6 @@ interface RushAnalysisItem {
 }
 
 // --- MOCK DATA TUTORIALS (Fallback) ---
-// Note: We use CustomTutorial type which is aliased to AdvancedTechnique in types.ts imports
-// But here we need a local static version compatible with display
 const TUTORIALS_DB: any[] = [
     // AFTER EFFECTS
     {
@@ -189,68 +71,12 @@ const TUTORIALS_DB: any[] = [
             { order: 1, category: 'Préparation', action: 'Créer une composition', tool: 'Composition Settings', settings: [], explanation: 'Base du projet' },
             { order: 2, category: 'Animation', action: 'Position Keyframes', tool: 'Transform', settings: [], explanation: 'Mouvement simple' }
         ]
-    },
-    // PHOTOSHOP
-    {
-        id: 'ps_1',
-        title: 'Retouche Peau Haute Fréquence',
-        difficulty: 'Intermédiaire',
-        estimatedTime: '20 min',
-        software: 'Photoshop',
-        description: 'Séparation de fréquences pour lisser la peau tout en gardant la texture.',
-        steps: [
-            { order: 1, category: 'Préparation', action: 'Dupliquer le calque', tool: 'Layers', settings: [], explanation: 'Sécurité' },
-            { order: 2, category: 'Retouche', action: 'Appliquer Flou Gaussien', tool: 'Gaussian Blur', settings: [{name: 'Radius', value: '5px'}], explanation: 'Base basse fréquence' }
-        ]
-    },
-    // ILLUSTRATOR
-    {
-        id: 'ai_1',
-        title: 'Effet Texte 3D Retro',
-        difficulty: 'Avancé',
-        estimatedTime: '25 min',
-        software: 'Illustrator',
-        description: 'Création d\'un titre vectoriel avec extrusion et dégradés style 80s.',
-        steps: [
-            { order: 1, category: 'Texte', action: 'Ecrire le titre', tool: 'Type Tool', settings: [], explanation: 'Base vectorielle' },
-            { order: 2, category: 'Effets', action: 'Extrusion', tool: '3D Extrude & Bevel', settings: [{name: 'Extrude Depth', value: '50pt'}], explanation: 'Volume 3D' }
-        ]
     }
 ];
 
-// --- SCENARIO GENERATOR ---
-const generateRandomMoodboardScenario = () => {
-    const clients = ["Boisson Énergisante", "Marque de Luxe", "Documentaire Nature", "Tech Startup", "Festival Musique", "Mode Streetwear"];
-    const styles = ["Cyberpunk dynamique", "Cinématique calme", "Minimaliste épuré", "Rétro 80s", "Organique et fluide", "Glitch Art"];
-    const names = ["Neon Pulse", "Velvet Touch", "Terra Viva", "NextGen AI", "Sonar Fest", "Urban Soul"];
-    
-    const colors = [
-        ["#0A0A0A", "#1F1F1F", "#00FF41", "#FF00FF", "#00FFFF"],
-        ["#2D3A1E", "#5D7052", "#E0C097", "#5C4033", "#A8BCA1"],
-        ["#FF0000", "#FFFFFF", "#000000", "#FFD700", "#FFA500"]
-    ];
-
-    const idx = Math.floor(Math.random() * clients.length);
-    const client = clients[idx];
-    const style = styles[Math.floor(Math.random() * styles.length)];
-    const name = names[idx] || "Projet X";
-    const palette = colors[Math.floor(Math.random() * colors.length)];
-
-    return {
-        input: `Campagne pour ${client} '${name}' - Style ${style}`,
-        moodboard: {
-            title: `${name} - ${style}`,
-            description: `Une direction artistique ${style.toLowerCase()} pour une marque de ${client.toLowerCase()}.`,
-            colors: palette,
-            dominant: palette[0]
-        },
-        script: `HOOK (0-3s): Plan d'introduction impactant pour ${name}. Mouvements rapides synchronisés à la musique.\nBODY: Présentation des features.\nOUTRO: Logo animé.`,
-        tutoTitle: `Technique ${style} sur After Effects`
-    };
-};
-
 export const Moodboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'moodboard' | 'analysis' | 'saved' | 'script' | 'ae' | 'pr' | 'ps' | 'ai' | 'rush_analysis'>('moodboard');
+  const [activeTab, setActiveTab] = useState<'moodboard' | 'analysis' | 'script' | 'ae' | 'pr' | 'ps' | 'ai' | 'blender' | 'rush_analysis'>('moodboard');
+  const { notify } = useNotification();
   
   // --- STATES MOODBOARD ---
   const [moodboardInput, setMoodboardInput] = useState('');
@@ -260,7 +86,6 @@ export const Moodboard: React.FC = () => {
   const [loadingMoodboard, setLoadingMoodboard] = useState(false);
   const [loadingVisuals, setLoadingVisuals] = useState(false);
   const [moodboardData, setMoodboardData] = useState<MoodboardData | null>(null);
-  const [isSavingDA, setIsSavingDA] = useState(false);
 
   // --- STATES SCRIPT IA ---
   const [scripts, setScripts] = useState<ScriptWithScore[]>([]);
@@ -279,7 +104,7 @@ export const Moodboard: React.FC = () => {
   const [rushAnalysisData, setRushAnalysisData] = useState<RushAnalysisItem[]>([]);
   const rushAnalysisInputRef = useRef<HTMLInputElement>(null);
 
-  // --- STATES TUTORIALS (AE, PR, PS, AI) ---
+  // --- STATES TUTORIALS (AE, PR, PS, AI, Blender) ---
   const [selectedTutorial, setSelectedTutorial] = useState<CustomTutorial | null>(null);
   const [customTutorials, setCustomTutorials] = useState<CustomTutorial[]>([]);
   const [loadingTutorials, setLoadingTutorials] = useState(false);
@@ -289,63 +114,32 @@ export const Moodboard: React.FC = () => {
   // Context passing for generation (when coming from Rush Analysis)
   const [externalContext, setExternalContext] = useState<string | null>(null);
 
-  // --- STATES SAVED ---
-  const [savedFiles, setSavedFiles] = useState<DriveFile[]>([]);
-  const [loadingSaved, setLoadingSaved] = useState(false);
-  const [loadingFileId, setLoadingFileId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // --- STATE SIMULATION ---
-  const [isSimulating, setIsSimulating] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
-  const geminiService = useRef(new GeminiService());
 
   const settings = db.getSystemSettings();
   const isDev = settings.appMode === 'developer';
 
-  const loadSavedFiles = async () => {
-      setLoadingSaved(true);
+  // --- SAVE HELPERS ---
+  const saveContentToLibrary = async (filename: string, content: string | object) => {
+      setIsSaving(true);
+      notify("Sauvegarde vers Supabase...", "loading");
       try {
-          const files = await googleService.listDriveFiles(CURRENT_USER_ID, LIBRARY_FOLDER_ID);
-          const relevantFiles = files.filter(f => 
-              (f.mimeType === 'application/json' || f.name.endsWith('.json')) &&
-              (f.name.startsWith('DA_Moodboard') || 
-               f.name.startsWith('Creative_') || 
-               f.name.startsWith('Script_IA_'))
-          );
-          setSavedFiles(relevantFiles);
-      } catch (e) {
-          console.error("Error loading saved files:", e);
-      } finally {
-          setLoadingSaved(false);
-      }
-  };
-
-  useEffect(() => {
-      if (activeTab === 'saved') {
-          loadSavedFiles();
-      }
-      if (activeTab !== 'ae' && activeTab !== 'pr' && activeTab !== 'ps' && activeTab !== 'ai') {
-          setSelectedTutorial(null);
-      }
-  }, [activeTab]);
-
-  // --- AUTO-SAVE HELPER ---
-  const autoSaveToDrive = async (filename: string, content: object) => {
-      try {
-          const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
+          const stringContent = typeof content === 'object' ? JSON.stringify(content, null, 2) : content;
+          const blob = new Blob([stringContent], { type: 'application/json' });
           const file = new File([blob], filename, { type: 'application/json' });
-          await googleService.uploadFile(CURRENT_USER_ID, file, LIBRARY_FOLDER_ID);
-          console.log(`[AutoSave] ${filename} uploaded to Drive.`);
-          return true;
+          
+          await supabaseService.uploadFile(CURRENT_USER_ID, file, filename, 'application/json', 'file');
+          notify("Fichier enregistré dans la Bibliothèque Supabase", "success");
       } catch (e) {
-          console.error("AutoSave Failed:", e);
-          return false;
+          notify("Erreur lors de l'enregistrement", "error");
+      } finally {
+          setIsSaving(false);
       }
   };
 
-  // --- HANDLERS MOODBOARD ---
+  // --- HANDLERS MOODBOARD (via videoEditorService) ---
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
           setVideoFile(e.target.files[0]);
@@ -359,32 +153,18 @@ export const Moodboard: React.FC = () => {
       setMoodboardData(null);
       
       try {
-          let promptContext = moodboardInput;
-          if (videoUrl) promptContext += `\nAnalyse cette vidéo URL : ${videoUrl}`;
-          if (videoFile) promptContext += `\nAnalyse ce fichier vidéo local (simulation contextuelle) : ${videoFile.name}`;
-
-          const response = await apiRouter.routeRequest({
-              type: 'moodboard_generation',
-              prompt: promptContext,
-              qualityRequired: 'high'
-          });
-
-          const data = cleanAndParseJson<MoodboardData>(response.content);
-          if (!data) throw new Error("Impossible de lire la réponse du modèle (JSON invalide).");
+          // Appel au service N8N
+          const data = await videoEditorService.generateMoodboard(
+              moodboardInput, 
+              videoFile, 
+              videoUrl
+          );
           
           setMoodboardData(data);
           
-          if (data.visual_prompts && data.visual_prompts.length > 0) {
-              setLoadingVisuals(true);
-              const imagePromises = data.visual_prompts.slice(0, 3).map(prompt => 
-                  geminiService.current.generateImage(prompt, '16:9').catch(e => null)
-              );
-              const results = await Promise.all(imagePromises);
-              data.generated_visuals = results.filter(img => img !== null) as string[];
-              setMoodboardData({ ...data }); 
-              setLoadingVisuals(false);
-          }
-          await autoSaveToDrive(`DA_Moodboard_${new Date().toISOString().split('T')[0]}.json`, data);
+          // Sauvegarde automatique via le service (local N8N backup logic kept for internal robustness)
+          await videoEditorService.autoSaveResult(`DA_Moodboard_${new Date().toISOString().split('T')[0]}.json`, data);
+
       } catch (e) {
           alert("Erreur génération Moodboard : " + (e as Error).message);
       } finally {
@@ -393,7 +173,7 @@ export const Moodboard: React.FC = () => {
       }
   };
 
-  // --- HANDLERS RUSH IMPORT (SCRIPT) ---
+  // --- HANDLERS RUSH ANALYSIS (via videoEditorService) ---
   const handleRushUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files.length > 0) {
           const newFiles = Array.from(e.target.files);
@@ -405,7 +185,6 @@ export const Moodboard: React.FC = () => {
       setRushFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // --- HANDLERS RUSH ANALYSIS (NEW) ---
   const handleAnalysisRushUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
           setAnalysisRushFile(e.target.files[0]);
@@ -418,39 +197,9 @@ export const Moodboard: React.FC = () => {
       setRushAnalysisData([]);
 
       try {
-          const prompt = `
-            Agis comme un monteur vidéo senior. Analyse le contenu de ce fichier vidéo : "${analysisRushFile.name}" (Taille: ${(analysisRushFile.size / 1024 / 1024).toFixed(1)}MB).
-            
-            Identifie les moments "morts" ou les opportunités d'ajouter du B-Roll, des illustrations ou des animations After Effects pour augmenter la rétention.
-            
-            Génère une liste JSON stricte au format suivant :
-            [
-                {
-                    "timecode": "00:15",
-                    "duration": "5s",
-                    "type": "broll" | "illustration" | "animation" | "vfx",
-                    "suggestion": "Titre court de l'idée",
-                    "visualDescription": "Description très détaillée pour un prompteur d'image ou un animateur (ex: 'Drone shot over a cyberpunk city', 'Kinetic typography with glitch effect saying HELLO')",
-                    "complexity": "Low" | "Medium" | "High"
-                }
-            ]
-            
-            Génère au moins 4 suggestions pertinentes.
-          `;
-
-          const response = await apiRouter.routeRequest({
-              type: 'vision_analysis', // Or text if file not really uploaded
-              prompt: prompt,
-              qualityRequired: 'high'
-          });
-
-          const results = cleanAndParseJson<RushAnalysisItem[]>(response.content);
-          if (results) {
-              setRushAnalysisData(results.map((r, i) => ({ ...r, id: `rush_item_${i}` })));
-          } else {
-              throw new Error("Format de réponse invalide");
-          }
-
+          // Appel au service N8N (qui gère l'upload Drive + Analyse)
+          const results = await videoEditorService.analyzeRush(analysisRushFile);
+          setRushAnalysisData(results.map((r, i) => ({ ...r, id: `rush_item_${i}` })));
       } catch (e) {
           console.error(e);
           alert("Erreur analyse rush : " + (e as Error).message);
@@ -460,82 +209,46 @@ export const Moodboard: React.FC = () => {
   };
 
   const handleSendToSoftware = (item: RushAnalysisItem, software: 'After Effects' | 'Premiere Pro' | 'Photoshop' | 'Illustrator') => {
-      // 1. Prepare Context
       const context = `CONTEXTE TECHNIQUE (${software}):\nCréer : ${item.suggestion} (${item.type})\nDescription Visuelle : ${item.visualDescription}\nDurée : ${item.duration}\nComplexité : ${item.complexity}`;
-      
-      // 2. Set External Context
       setExternalContext(context);
-      
-      // 3. Switch Tab
       if (software === 'After Effects') setActiveTab('ae');
       else if (software === 'Premiere Pro') setActiveTab('pr');
       else if (software === 'Photoshop') setActiveTab('ps');
       else if (software === 'Illustrator') setActiveTab('ai');
-      
-      // 4. Auto-trigger generation (Optional, or just pre-fill)
-      // We will handle the pre-fill in the AE/PR/PS/AI tab render logic
   };
 
-  // --- HANDLERS SCRIPT IA ---
+  // --- HANDLERS SCRIPT IA (via videoEditorService) ---
   const generateScripts = async () => {
       setGeneratingScripts(true);
       try {
-        let context = moodboardData ? `Based on this Moodboard: ${JSON.stringify(moodboardData.concept)}` : `Topic: ${scriptTopic}`;
-        if (rushFiles.length > 0) {
-            const rushDescriptions = rushFiles.map(f => `File: ${f.name}`).join('\n');
-            context += `\n\nAVAILABLE RUSHES:\n${rushDescriptions}`;
-        }
-
-        const genPrompt = `
-            ${context}
-            Génère 3 scripts vidéo VIRAUX pour ${scriptFormat}.
-            Format JSON strict:
-            [{"content": "Full script...", "timecodes": [{"startTime": "00:00", "endTime": "00:05", "action": "...", "brollSuggestion": "..."}]}]
-        `;
-
-        const response = await apiRouter.routeRequest({
-          type: 'tutorial_generation',
-          prompt: genPrompt,
-          qualityRequired: 'high'
-        });
+        let contextData = moodboardData ? { moodboard: moodboardData.concept } : {};
         
-        const generatedScripts = cleanAndParseJson<any[]>(response.content) || [];
-        if (generatedScripts.length === 0) throw new Error("Échec de la génération des scripts");
-
-        const scriptsWithScores = await Promise.all(
-          generatedScripts.map(async (script: any) => {
-            const scoreResponse = await apiRouter.routeRequest({
-              type: 'viral_trends_research',
-              prompt: `Analyse viralité script: "${script.content.substring(0, 300)}..." JSON: { "overall": 85, "breakdown": {...}, "predictions": {...} }`,
-              qualityRequired: 'medium' // Faster for scoring
-            });
-            const scoreData = cleanAndParseJson<any>(scoreResponse.content) || { overall: 50 };
-            return {
-              id: Math.random().toString(36).substr(2, 9),
-              content: script.content,
-              viralScore: scoreData.overall || 50,
-              breakdown: scoreData.breakdown || {},
-              timecodes: script.timecodes || [],
-              predictions: scoreData.predictions || {}
-            };
-          })
+        const scriptsWithScores = await videoEditorService.generateScripts(
+            scriptTopic,
+            contextData,
+            scriptFormat
         );
         
-        setScripts(scriptsWithScores);
-        await autoSaveToDrive(`Script_IA_${Date.now()}.json`, scriptsWithScores);
+        // Ensure IDs
+        const formattedScripts = scriptsWithScores.map((s, i) => ({
+            ...s,
+            id: s.id || `script_${Date.now()}_${i}`
+        }));
+
+        setScripts(formattedScripts);
+        await videoEditorService.autoSaveResult(`Script_IA_${Date.now()}.json`, formattedScripts);
 
       } catch (error) {
         console.error('Erreur génération scripts:', error);
+        alert((error as Error).message);
       } finally {
         setGeneratingScripts(false);
       }
   };
 
-  // --- HANDLERS TUTORIALS ---
-  const generateCustomTutorials = async (software: 'After Effects' | 'Premiere Pro' | 'Photoshop' | 'Illustrator') => {
-      // Prioritize Manual Input
+  // --- HANDLERS TUTORIALS (via videoEditorService) ---
+  const generateCustomTutorials = async (software: 'After Effects' | 'Premiere Pro' | 'Photoshop' | 'Illustrator' | 'Blender') => {
       let context = "";
-      
       if (manualTutorialPrompt.trim()) {
           context = `Demande manuelle : "${manualTutorialPrompt}"`;
       } else if (externalContext) {
@@ -547,83 +260,62 @@ export const Moodboard: React.FC = () => {
       
       setLoadingTutorials(true);
       try {
-        const fullPrompt = `
-            ${TUTORIAL_SYSTEM_PROMPT}
-            
-            DEMANDE UTILISATEUR :
-            Génère un tutoriel pour ${software} pour réaliser la tâche suivante :
-            "${context}"
-        `;
-
-        const response = await apiRouter.routeRequest({
-          type: 'tutorial_generation',
-          prompt: fullPrompt,
-          qualityRequired: 'high'
-        });
+        const generatedTutos = await videoEditorService.generateTutorial(software, context);
         
-        const generatedRaw = cleanAndParseJson<CustomTutorial[]>(response.content);
+        // --- VALIDATION LOCALE (Client-side safety net) ---
+        let softwareKey: 'after-effects' | 'premiere' | 'photoshop' | 'illustrator' | 'blender';
+        if (software === 'After Effects') softwareKey = 'after-effects';
+        else if (software === 'Premiere Pro') softwareKey = 'premiere';
+        else if (software === 'Photoshop') softwareKey = 'photoshop';
+        else if (software === 'Illustrator') softwareKey = 'illustrator';
+        else softwareKey = 'blender';
         
-        if (generatedRaw) {
-            let generatedTutos = generatedRaw.map((t) => ({
-                ...t, 
-                // Ensure ID is unique
-                id: t.id || `tuto_${Date.now()}`,
-                scriptId: selectedScript || 'manual_request', 
-                software 
+        const validatedTutos = generatedTutos.map((t) => {
+            // Mapping pour le validateur
+            const stepsToValidate: TutorialStep[] = t.steps.map((step) => ({
+                effect: step.tool || step.action,
+                parameters: step.settings ? step.settings.map((s) => ({ name: s.name, value: s.value, unit: s.unit })) : [],
+                software: softwareKey
             }));
 
-            // --- VALIDATION & AUTO-CORRECTION ---
-            let softwareKey: 'after-effects' | 'premiere' | 'photoshop' | 'illustrator';
-            
-            if (software === 'After Effects') softwareKey = 'after-effects';
-            else if (software === 'Premiere Pro') softwareKey = 'premiere';
-            else if (software === 'Photoshop') softwareKey = 'photoshop';
-            else softwareKey = 'illustrator';
-            
-            generatedTutos = generatedTutos.map((t) => {
-                const stepsToValidate: TutorialStep[] = t.steps.map((step) => ({
-                    effect: step.tool || step.action,
-                    parameters: step.settings ? step.settings.map((s) => ({ name: s.name, value: s.value, unit: s.unit })) : [],
-                    software: softwareKey
-                }));
+            const { valid, results } = tutorialValidator.validateBatch(stepsToValidate);
+            let validationErrors: string[] = [];
 
-                const { valid, results } = tutorialValidator.validateBatch(stepsToValidate);
-                let validationErrors: string[] = [];
+            if (!valid) {
+                validationErrors = results.flatMap(r => r.validation.errors);
+                const correctedSteps = t.steps.map((step, idx) => {
+                    const valRes = results[idx];
+                    if (valRes.validation.valid) return step;
+                    const corrected = tutorialValidator.autoCorrect(valRes.tutorial);
+                    return {
+                        ...step,
+                        tool: corrected.effect,
+                        settings: corrected.parameters.map((p) => ({ name: p.name, value: p.value, unit: p.unit }))
+                    };
+                });
+                return { ...t, steps: correctedSteps, validationErrors, id: t.id || `tuto_${Date.now()}` };
+            }
+            return { ...t, id: t.id || `tuto_${Date.now()}` };
+        });
 
-                if (!valid) {
-                    validationErrors = results.flatMap(r => r.validation.errors);
-                    const correctedSteps = t.steps.map((step, idx) => {
-                        const valRes = results[idx];
-                        if (valRes.validation.valid) return step;
-                        const corrected = tutorialValidator.autoCorrect(valRes.tutorial);
-                        return {
-                            ...step,
-                            tool: corrected.effect,
-                            settings: corrected.parameters.map((p) => ({ name: p.name, value: p.value, unit: p.unit }))
-                        };
-                    });
-                    return { ...t, steps: correctedSteps, validationErrors };
-                }
-                return t;
-            });
+        setCustomTutorials(validatedTutos);
+        setExternalContext(null);
 
-            setCustomTutorials(generatedTutos);
-            // Don't clear manual prompt automatically to allow refinement
-            setExternalContext(null);
-        }
       } catch (error) {
         console.error('Erreur génération tutoriels:', error);
+        alert((error as Error).message);
       } finally {
         setLoadingTutorials(false);
       }
   };
 
   const handleExportPDF = async () => {
-      let software: 'After Effects' | 'Premiere Pro' | 'Photoshop' | 'Illustrator';
+      let software: 'After Effects' | 'Premiere Pro' | 'Photoshop' | 'Illustrator' | 'Blender';
       if (activeTab === 'ae') software = 'After Effects';
       else if (activeTab === 'pr') software = 'Premiere Pro';
       else if (activeTab === 'ps') software = 'Photoshop';
-      else software = 'Illustrator';
+      else if (activeTab === 'ai') software = 'Illustrator';
+      else software = 'Blender';
 
       const tutorialsToExport = customTutorials.filter(t => t.software === software);
       if (tutorialsToExport.length === 0) return;
@@ -632,7 +324,7 @@ export const Moodboard: React.FC = () => {
       try {
           const mappedTutorials: TutorialForPDF[] = tutorialsToExport.map(t => ({
               title: t.title,
-              software: t.software as 'After Effects' | 'Premiere Pro', // Cast quick fix for existing type, functionality is generic
+              software: t.software as any, 
               difficulty: t.difficulty,
               estimatedTime: parseInt(t.estimatedTime) || 10,
               instructions: t.steps.map(s => ({
@@ -656,21 +348,6 @@ export const Moodboard: React.FC = () => {
       }
   };
 
-  const handleLoadSavedItem = async (file: DriveFile) => { 
-      setLoadingFileId(file.id);
-      try {
-          const content = await googleService.getFileContent(CURRENT_USER_ID, file.id);
-          if (file.name.startsWith('DA_Moodboard')) {
-              setMoodboardData(content as MoodboardData);
-              setActiveTab('moodboard');
-          } else if (file.name.startsWith('Script_IA_')) {
-              setScripts(content as ScriptWithScore[]);
-              setActiveTab('script');
-          }
-      } catch(e) { console.error(e); }
-      setLoadingFileId(null);
-  };
-
   const InfoCard = ({ title, icon: Icon, children, color = 'text-white' }: any) => (
       <div className="bg-surface border border-slate-700/50 rounded-2xl p-6 shadow-xl hover:border-slate-600 transition-all flex flex-col h-full relative overflow-hidden group">
           <div className={`absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none ${color}`}>
@@ -692,11 +369,12 @@ export const Moodboard: React.FC = () => {
           case 'pr': return 'Premiere Pro';
           case 'ps': return 'Photoshop';
           case 'ai': return 'Illustrator';
+          case 'blender': return 'Blender';
           default: return 'After Effects';
       }
   };
 
-  const isTutorialTab = ['ae', 'pr', 'ps', 'ai'].includes(activeTab);
+  const isTutorialTab = ['ae', 'pr', 'ps', 'ai', 'blender'].includes(activeTab);
 
   return (
     <div className="flex flex-col h-full bg-[#020617] overflow-hidden">
@@ -706,11 +384,9 @@ export const Moodboard: React.FC = () => {
           <div className="flex items-center gap-4">
               <h1 className="text-xl font-bold text-white flex items-center gap-2">
                   <Layout className="text-primary" /> Studio Créatif
-                  {isDev && (
-                      <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700 font-mono flex items-center gap-1">
-                          <Code size={10}/> API: Gemini 3 Pro
-                      </span>
-                  )}
+                  <span className="text-[10px] bg-purple-900/50 text-purple-400 px-2 py-0.5 rounded border border-purple-500/30 font-mono flex items-center gap-1">
+                      <Zap size={10}/> Powered by N8N Workflows
+                  </span>
               </h1>
               
               <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-700 overflow-x-auto max-w-[60vw] scrollbar-hide">
@@ -765,11 +441,11 @@ export const Moodboard: React.FC = () => {
                       <Brush size={14}/> Illustrator
                   </button>
                   <button 
-                    onClick={() => setActiveTab('saved')}
+                    onClick={() => setActiveTab('blender')}
                     className={`px-4 py-2 rounded-md text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap
-                        ${activeTab === 'saved' ? 'bg-amber-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+                        ${activeTab === 'blender' ? 'bg-[#EA7600] text-white shadow' : 'text-slate-400 hover:text-white'}`}
                   >
-                      <FileJson size={14}/> Sauvegardes
+                      <Box size={14}/> Blender
                   </button>
               </div>
           </div>
@@ -844,6 +520,17 @@ export const Moodboard: React.FC = () => {
                   {/* RESULTS DISPLAY */}
                   {moodboardData && (
                       <div className="max-w-6xl mx-auto pb-20 animate-in fade-in slide-in-from-bottom-4">
+                          <div className="flex justify-end mb-4 gap-2">
+                              <button 
+                                  onClick={() => saveContentToLibrary(`DA_${moodboardData.concept.title.replace(/\s+/g, '_')}.json`, moodboardData)}
+                                  disabled={isSaving}
+                                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold shadow-lg transition-all"
+                              >
+                                  {isSaving ? <Loader2 size={16} className="animate-spin"/> : <CloudUpload size={16}/>}
+                                  Enregistrer (Supabase)
+                              </button>
+                          </div>
+
                           <div className="mb-8">
                               <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-8 border border-slate-700 relative overflow-hidden shadow-2xl">
                                   <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none"><Layout size={200}/></div>
@@ -905,7 +592,7 @@ export const Moodboard: React.FC = () => {
               </div>
           )}
 
-          {/* --- NEW TAB: RUSH ANALYSIS --- */}
+          {/* --- TAB: RUSH ANALYSIS --- */}
           {activeTab === 'rush_analysis' && (
               <div className="h-full overflow-y-auto p-8 scrollbar-thin">
                   <div className="max-w-6xl mx-auto flex flex-col gap-8 h-full">
@@ -917,7 +604,7 @@ export const Moodboard: React.FC = () => {
                                   <ScanEye className="text-orange-500"/> Analyse de Rush & B-Roll
                               </h2>
                               <p className="text-slate-400 text-sm mt-1">
-                                  L'IA scanne votre vidéo brute et identifie les moments parfaits pour insérer des illustrations ou des animations.
+                                  L'IA (N8N) scanne votre vidéo brute et identifie les moments parfaits pour insérer des illustrations ou des animations.
                               </p>
                           </div>
                           
@@ -956,12 +643,12 @@ export const Moodboard: React.FC = () => {
                       {/* CONTENT */}
                       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8">
                           
-                          {/* LEFT: PREVIEW (Placeholder) */}
+                          {/* LEFT: PREVIEW */}
                           <div className="bg-black rounded-2xl border border-slate-800 flex items-center justify-center relative overflow-hidden aspect-video lg:aspect-auto lg:h-full">
                               {analysisRushFile ? (
                                   <div className="text-center">
                                       <FileVideo size={64} className="text-slate-700 mx-auto mb-4"/>
-                                      <p className="text-slate-500 text-sm">Aperçu non disponible pour les gros fichiers (Simulé)</p>
+                                      <p className="text-slate-500 text-sm">Aperçu non disponible (Cloud Processing)</p>
                                       <p className="text-orange-500 text-xs mt-2 font-mono">{analysisRushFile.name}</p>
                                   </div>
                               ) : (
@@ -982,7 +669,7 @@ export const Moodboard: React.FC = () => {
                                   {analyzingRush && (
                                       <div className="text-center py-20">
                                           <Loader2 size={40} className="animate-spin text-orange-500 mx-auto mb-4"/>
-                                          <p className="text-slate-400 animate-pulse">Analyse visuelle frame-by-frame en cours...</p>
+                                          <p className="text-slate-400 animate-pulse">Upload vers N8N et analyse visuelle en cours...</p>
                                       </div>
                                   )}
 
@@ -1042,7 +729,7 @@ export const Moodboard: React.FC = () => {
               </div>
           )}
 
-          {/* --- TAB 2: SCRIPT IA --- */}
+          {/* --- TAB: SCRIPT IA --- */}
           {activeTab === 'script' && (
               <div className="h-full overflow-y-auto p-8 scrollbar-thin">
                   <div className="flex flex-col md:flex-row gap-8 h-full">
@@ -1051,7 +738,7 @@ export const Moodboard: React.FC = () => {
                       <div className="w-full md:w-1/3 min-w-[320px] flex flex-col gap-6">
                           <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-xl">
                               <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                                  <Sparkles className="text-emerald-500" size={20}/> Générateur Viral
+                                  <Sparkles className="text-emerald-500" size={20}/> Générateur Viral (N8N)
                               </h3>
                               
                               <div className="space-y-4">
@@ -1120,7 +807,7 @@ export const Moodboard: React.FC = () => {
                                       className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
                                   >
                                       {generatingScripts ? <Loader2 size={18} className="animate-spin"/> : <Wand2 size={18}/>}
-                                      {generatingScripts ? (rushFiles.length > 0 ? 'Analyse des rushs...' : 'Rédaction...') : 'Générer 3 Scripts'}
+                                      {generatingScripts ? 'Rédaction via N8N...' : 'Générer 3 Scripts'}
                                   </button>
                               </div>
                           </div>
@@ -1152,6 +839,18 @@ export const Moodboard: React.FC = () => {
                               if (!s) return null;
                               return (
                                   <div className="space-y-8 animate-in fade-in duration-300">
+                                      <div className="flex justify-between items-center pb-4 border-b border-slate-700">
+                                          <h2 className="text-xl font-bold text-white">Détails Script</h2>
+                                          <button 
+                                              onClick={() => saveContentToLibrary(`Script_${Date.now()}.json`, s)}
+                                              disabled={isSaving}
+                                              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-bold shadow-lg"
+                                          >
+                                              {isSaving ? <Loader2 size={16} className="animate-spin"/> : <CloudUpload size={16}/>}
+                                              Enregistrer (Supabase)
+                                          </button>
+                                      </div>
+
                                       {/* HEADER METRICS */}
                                       <div className="grid grid-cols-4 gap-4 pb-6 border-b border-slate-700">
                                           <div className="text-center">
@@ -1210,14 +909,14 @@ export const Moodboard: React.FC = () => {
               </div>
           )}
 
-          {/* --- TAB 3: CUSTOM TUTORIALS (AE/PR/PS/AI) --- */}
+          {/* --- TAB: CUSTOM TUTORIALS --- */}
           {isTutorialTab && (
               <div className="h-full flex gap-6 p-6">
                   {/* SIDEBAR: LIST */}
                   <div className="w-1/3 min-w-[300px] flex flex-col gap-4 overflow-y-auto scrollbar-thin pr-2">
                       <div className="p-4 bg-slate-900 rounded-xl border border-slate-700">
                           <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-                              {activeTab === 'ps' ? <MousePointer2 size={16}/> : activeTab === 'ai' ? <Brush size={16}/> : activeTab === 'ae' ? <Layers size={16}/> : <Film size={16}/>}
+                              {activeTab === 'ps' ? <MousePointer2 size={16}/> : activeTab === 'ai' ? <Brush size={16}/> : activeTab === 'ae' ? <Layers size={16}/> : activeTab === 'blender' ? <Box size={16}/> : <Film size={16}/>}
                               Générateur de Tuto
                           </h3>
                           <p className="text-xs text-slate-400 mb-4">Créez un guide pas-à-pas basé sur votre script ou une demande manuelle pour {getActiveSoftwareName()}.</p>
@@ -1230,7 +929,7 @@ export const Moodboard: React.FC = () => {
                               <textarea
                                   value={manualTutorialPrompt}
                                   onChange={(e) => setManualTutorialPrompt(e.target.value)}
-                                  placeholder="Ex: Effet de texte néon qui clignote..."
+                                  placeholder={activeTab === 'blender' ? "Ex: Modélisation d'une tasse low-poly..." : "Ex: Effet de texte néon qui clignote..."}
                                   className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-xs text-white focus:border-blue-500 outline-none h-20 resize-none placeholder:text-slate-600"
                               />
                           </div>
@@ -1384,36 +1083,6 @@ export const Moodboard: React.FC = () => {
                               <p>Sélectionnez ou générez un tutoriel.</p>
                           </div>
                       )}
-                  </div>
-              </div>
-          )}
-
-          {/* --- TAB 4: SAVED (Existing) --- */}
-          {activeTab === 'saved' && (
-              <div className="h-full p-8 overflow-y-auto scrollbar-thin">
-                  {/* ... (Existing Saved Logic) ... */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {savedFiles.map((file) => (
-                          <div key={file.id} className="bg-surface border border-slate-800 rounded-2xl p-6 hover:border-slate-600 transition-all shadow-xl group flex flex-col">
-                              <div className="flex items-center gap-4 mb-4">
-                                  <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
-                                      <FileJson size={24}/>
-                                  </div>
-                                  <div className="min-w-0">
-                                      <h3 className="font-bold text-white truncate text-sm mb-1">{file.name}</h3>
-                                      <p className="text-[10px] text-slate-500 font-mono">{new Date(file.createdTime).toLocaleDateString()}</p>
-                                  </div>
-                              </div>
-                              <button 
-                                  onClick={() => handleLoadSavedItem(file)}
-                                  disabled={loadingFileId === file.id}
-                                  className="mt-auto w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2"
-                              >
-                                  {loadingFileId === file.id ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
-                                  Charger
-                              </button>
-                          </div>
-                      ))}
                   </div>
               </div>
           )}

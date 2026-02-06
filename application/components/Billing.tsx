@@ -63,7 +63,7 @@ export const Billing: React.FC = () => {
       }
   };
 
-  const updateInvoiceStatus = async (id: string, newStatus: string) => {
+  const updateInvoiceStatus = async (id: string, newStatus: Invoice['status']) => {
       await supabaseService.updateInvoice(id, { status: newStatus });
       loadData();
   };

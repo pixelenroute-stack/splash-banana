@@ -1,6 +1,7 @@
 
 import { db } from './mockDatabase';
 import { GoogleAccount, EmailMessage, CalendarEvent, DriveFile } from '../types';
+import { n8nAgentService } from '../lib/n8nAgentService'; // Import pour logging
 
 export class GoogleIntegrationService {
   
@@ -39,19 +40,76 @@ export class GoogleIntegrationService {
       }
   }
 
-  // --- TOKEN MANAGEMENT (VIA API BACKEND) ---
-
+  // --- HELPER N8N ---
+  
   /**
-   * Obtient un token d'accès valide via l'API sécurisée.
-   * L'API gère le déchiffrement et le rafraîchissement.
+   * Tente d'appeler le webhook N8N configuré.
+   * Retourne null si non configuré ou échec.
    */
+  private async callN8nGoogleWebhook(action: string, payload: any = {}): Promise<any> {
+      const settings = db.getSystemSettings();
+      // On cherche spécifiquement le webhook Google Workspace
+      const webhook = settings.webhooks?.google_workspace;
+
+      if (!webhook || !webhook.enabled || !webhook.url) {
+          console.debug(`[GoogleService] Webhook not configured for action: ${action}`);
+          return null; // Pas de webhook configuré
+      }
+
+      console.log(`[GoogleService] Calling N8N Webhook: ${action} - Waiting for response...`);
+      const startTime = Date.now();
+      const logPayload = { action, ...payload };
+
+      try {
+          const response = await fetch(webhook.url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              // Structure claire pour le nœud Switch de n8n
+              body: JSON.stringify({
+                  action: action, // Utiliser cette clé dans le Switch n8n
+                  payload: payload,
+                  userId: 'user_1', // Mock ID
+                  timestamp: new Date().toISOString()
+              })
+          });
+
+          const responseText = await response.text();
+          let json: any = {};
+          try {
+              json = JSON.parse(responseText);
+          } catch(e) {
+              json = { raw: responseText };
+          }
+
+          if (!response.ok) {
+              // Log failure to monitor
+              n8nAgentService.logExecution('google_workspace', logPayload, json, 'error', Date.now() - startTime);
+              throw new Error(`N8N Webhook Error: ${response.status}`);
+          }
+          
+          console.log(`[GoogleService] N8N Response received for ${action}:`, json);
+          
+          // Log success to monitor
+          n8nAgentService.logExecution('google_workspace', logPayload, json, 'success', Date.now() - startTime);
+
+          // On suppose que n8n renvoie directement les données ou encapsulées dans 'data'
+          return json.data || json; 
+      } catch (e: any) {
+          console.warn(`[GoogleService] Webhook '${action}' failed, falling back to mock/api.`, e);
+          // Log error if not already logged (network failure)
+          n8nAgentService.logExecution('google_workspace', logPayload, { error: e.message }, 'error', Date.now() - startTime);
+          return null;
+      }
+  }
+
+  // --- TOKEN MANAGEMENT (Legacy / Direct API) ---
+
   private async getAccessToken(userId: string): Promise<string> {
       try {
           const response = await fetch(`/api/auth/google/refresh?userId=${userId}`);
           
           if (!response.ok) {
               if (response.status === 401 || response.status === 403) {
-                  // Token invalide ou expiré non renouvelable
                   db.disconnectGoogleAccount(userId); 
                   throw new Error("AUTH_REQUIRED");
               }
@@ -59,36 +117,27 @@ export class GoogleIntegrationService {
           }
 
           const data = await response.json();
-          return data.accessToken; // Token en clair temporaire pour le client
+          return data.accessToken;
       } catch (error: any) {
           if (error.message === "AUTH_REQUIRED") throw error;
-          
-          // FALLBACK DEV/MOCK UNIQUEMENT SI API INACCESSIBLE
           const acc = db.getGoogleAccount(userId);
           if (acc && acc.status === 'connected') {
-              // On suppose que c'est un mock local si l'API route échoue (ex: environnement sans backend Node)
               return 'mock_token';
           }
           throw error;
       }
   }
 
-  // --- CORE FETCH ---
-
   public async fetchGoogle(endpoint: string, userId: string, options: RequestInit = {}) {
         let accessToken;
         try {
             accessToken = await this.getAccessToken(userId);
         } catch (e: any) {
-            if (e.message === "AUTH_REQUIRED") {
-                throw new Error("Session Google expirée. Veuillez vous reconnecter.");
-            }
+            if (e.message === "AUTH_REQUIRED") throw new Error("Session Google expirée.");
             throw e;
         }
         
-        if (accessToken === 'mock_token') {
-            throw new Error("MOCK_MODE"); // Signal pour déclencher le fallback
-        }
+        if (accessToken === 'mock_token') throw new Error("MOCK_MODE");
 
         const headers: Record<string, string> = {
           'Authorization': `Bearer ${accessToken}`,
@@ -99,12 +148,11 @@ export class GoogleIntegrationService {
         const response = await fetch(endpoint, { ...options, headers });
 
         if (response.status === 401) {
-            // Token révoqué ou expiré malgré le refresh
             await this.disconnectAccount(userId);
-            throw new Error("Session Google révoquée. Reconnexion requise.");
+            throw new Error("Session Google révoquée.");
         }
 
-        if (response.status === 429) throw new Error("Google API Rate Limit. Réessayez plus tard.");
+        if (response.status === 429) throw new Error("Google API Rate Limit.");
 
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
@@ -115,21 +163,19 @@ export class GoogleIntegrationService {
   }
 
   async getAccountStatus(userId: string): Promise<{ connected: boolean; email?: string; status: 'live' | 'mock' | 'error' | 'disconnected'; lastSyncedAt?: string }> {
-    try {
-        // Vérification via API Backend pour état réel (validité refresh token)
-        const res = await fetch(`/api/google/status?userId=${userId}`);
-        if (res.ok) {
-            const data = await res.json();
-            return { 
-                connected: data.connected, 
-                status: data.status, // 'live' | 'error' | 'disconnected'
-                email: data.email,
-                lastSyncedAt: data.lastSyncedAt
-            };
-        }
-    } catch(e) {}
+    // 1. Priorité au Webhook N8N pour le statut "Live"
+    // Si le webhook est actif et contient une URL, on considère que le service est connecté (mode délégué)
+    const settings = db.getSystemSettings();
+    if (settings.webhooks?.google_workspace?.enabled && settings.webhooks?.google_workspace?.url && settings.webhooks.google_workspace.url.startsWith('http')) {
+        return { 
+            connected: true, 
+            status: 'live', // On force 'live' pour que les composants (MailClient, CalendarClient) tentent de fetcher
+            email: 'n8n-managed@workspace.com', 
+            lastSyncedAt: new Date().toISOString() 
+        };
+    }
 
-    // Fallback Local Check (si API down ou latence)
+    // 2. Legacy / Direct Auth
     const acc = db.getGoogleAccount(userId);
     if (acc) {
         return { 
@@ -143,16 +189,33 @@ export class GoogleIntegrationService {
     return { connected: false, status: 'disconnected' };
   }
 
-  /**
-   * Génère l'URL d'auth OAuth.
-   */
   getAuthUrl(userId: string) {
       return `/api/auth/google/start?userId=${userId}`;
   }
 
-  // --- SAFE WRAPPERS FOR SERVICES (With MOCK Data Fallback) ---
+  // --- SERVICES IMPLEMENTATION (WEBHOOK FIRST -> API -> MOCK) ---
 
   async listMessages(userId: string, label: string = 'INBOX'): Promise<EmailMessage[]> {
+    // 1. Try N8N Webhook with action 'list_messages'
+    // IMPORTANT: Le callN8nGoogleWebhook vérifie si l'URL est configurée dans settings.webhooks.google_workspace
+    const n8nData = await this.callN8nGoogleWebhook('list_messages', { label, userId });
+
+    // Le workflow n8n retourne un objet combiné {success, emails: [...], events: [...]}
+    // On extrait le champ 'emails', ou on accepte un tableau direct
+    const emailsArray = n8nData?.emails || (Array.isArray(n8nData) ? n8nData : null);
+
+    if (emailsArray && Array.isArray(emailsArray)) {
+        return emailsArray.map((m: any) => ({
+            ...m,
+            // Fallback fields si n8n renvoie un objet partiel
+            id: m.id || `msg_${Date.now()}_${Math.random()}`,
+            threadId: m.threadId || m.id,
+            snippet: m.snippet || "",
+            isRead: m.isRead !== undefined ? m.isRead : true
+        }));
+    }
+
+    // 2. Fallback Direct Google API (Seulement si OAuth classique configuré)
     try {
         const data = await this.fetchGoogle(`https://gmail.googleapis.com/gmail/v1/users/me/messages?q=label:${label}&maxResults=20`, userId);
         if (data.messages) {
@@ -171,7 +234,9 @@ export class GoogleIntegrationService {
         }
         return [];
     } catch (e) {
-        // MOCK DATA FALLBACK
+        // 3. Fallback Mock (Activé si N8N échoue ou API échoue)
+        console.warn("N8N/Google API failed, falling back to Mock Data.", e);
+
         return [
             { id: '1', threadId: '1', labelIds: ['INBOX'], from: 'Client A', to: 'Me', subject: 'Nouveau projet vidéo', snippet: 'Bonjour, je voudrais discuter...', body: 'Bonjour, je voudrais discuter du projet X.', date: new Date().toISOString(), isRead: false, hasAttachments: false },
             { id: '2', threadId: '2', labelIds: ['INBOX', 'STARRED'], from: 'Partenaire B', to: 'Me', subject: 'Facture #402', snippet: 'Veuillez trouver ci-joint...', body: 'Merci pour votre paiement.', date: new Date(Date.now() - 86400000).toISOString(), isRead: true, hasAttachments: true },
@@ -181,6 +246,7 @@ export class GoogleIntegrationService {
   }
 
   async modifyMessage(userId: string, msgId: string, addLabelIds: string[], removeLabelIds: string[]): Promise<any> {
+    await this.callN8nGoogleWebhook('modify_message', { msgId, addLabelIds, removeLabelIds, userId });
     try {
         await this.fetchGoogle(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}/modify`, userId, {
             method: 'POST', body: JSON.stringify({ addLabelIds, removeLabelIds })
@@ -190,6 +256,9 @@ export class GoogleIntegrationService {
   }
 
   async sendDraft(userId: string, data: { to: string, subject: string, body: string }): Promise<boolean> {
+    const n8nRes = await this.callN8nGoogleWebhook('send_email', { ...data, userId });
+    if (n8nRes) return true;
+
     try {
         const utf8Subject = `=?utf-8?B?${btoa(unescape(encodeURIComponent(data.subject)))}?=`;
         const email = [`To: ${data.to}`, `Subject: ${utf8Subject}`, 'Content-Type: text/html; charset=utf-8', 'MIME-Version: 1.0', '', data.body].join('\r\n');
@@ -202,6 +271,23 @@ export class GoogleIntegrationService {
   }
 
   async listEvents(userId: string, timeMin: Date, timeMax: Date): Promise<CalendarEvent[]> {
+    // 1. Try N8N Webhook with action 'list_events'
+    const n8nData = await this.callN8nGoogleWebhook('list_events', { timeMin, timeMax, userId });
+
+    // Le workflow n8n retourne un objet combiné {success, emails: [...], events: [...]}
+    // On extrait le champ 'events', ou on accepte un tableau direct
+    const eventsArray = n8nData?.events || (Array.isArray(n8nData) ? n8nData : null);
+    if (eventsArray && Array.isArray(eventsArray)) {
+        return eventsArray.map((e: any) => ({
+            id: e.id || `evt_${Date.now()}`,
+            title: e.title || e.summary || '',
+            start: typeof e.start === 'object' ? (e.start?.dateTime || e.start?.date || '') : (e.start || ''),
+            end: typeof e.end === 'object' ? (e.end?.dateTime || e.end?.date || '') : (e.end || ''),
+            description: e.description || '',
+            location: e.location || ''
+        }));
+    }
+
     try {
         const data = await this.fetchGoogle(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin.toISOString()}&timeMax=${timeMax.toISOString()}&singleEvents=true&orderBy=startTime`, userId);
         return (data.items || []).map((item: any) => ({
@@ -209,7 +295,7 @@ export class GoogleIntegrationService {
             end: item.end.dateTime || item.end.date, description: item.description, location: item.location
         }));
     } catch (e) {
-        // MOCK EVENTS
+        // MOCK EVENTS Fallback
         return [
             { id: '1', title: 'Point Client: Studio Lumière', start: new Date(new Date().setHours(10,0)).toISOString(), end: new Date(new Date().setHours(11,0)).toISOString(), location: 'Google Meet' },
             { id: '2', title: 'Montage Rushs Projet A', start: new Date(new Date().setHours(14,0)).toISOString(), end: new Date(new Date().setHours(16,0)).toISOString(), description: 'Urgent' },
@@ -219,6 +305,9 @@ export class GoogleIntegrationService {
   }
 
   async createEvent(userId: string, event: Partial<CalendarEvent>): Promise<CalendarEvent> {
+    const n8nRes = await this.callN8nGoogleWebhook('create_event', { event, userId });
+    if (n8nRes) return n8nRes;
+
     try {
         const data = await this.fetchGoogle(`https://www.googleapis.com/calendar/v3/calendars/primary/events`, userId, {
             method: 'POST',
@@ -234,12 +323,16 @@ export class GoogleIntegrationService {
   }
 
   async listDriveFiles(userId: string, folderId: string = 'root'): Promise<DriveFile[]> {
+    // 1. Try N8N Webhook with action 'list_files'
+    const n8nData = await this.callN8nGoogleWebhook('list_files', { folderId, userId });
+    if (n8nData && Array.isArray(n8nData)) return n8nData;
+
     try {
         const query = `'${folderId}' in parents and trashed = false`;
         const data = await this.fetchGoogle(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id, name, mimeType, webViewLink, webContentLink, parents, createdTime, modifiedTime, size, owners)`, userId);
         return data.files || [];
     } catch (e) {
-        // MOCK FILES
+        // MOCK FILES Fallback
         if (folderId === 'root') {
             return [
                 { id: 'f1', name: 'Projets Clients', mimeType: 'application/vnd.google-apps.folder', createdTime: new Date().toISOString(), modifiedTime: new Date().toISOString() },
@@ -259,6 +352,7 @@ export class GoogleIntegrationService {
   }
 
   async createDriveFolder(userId: string, name: string, parentId: string = 'root'): Promise<DriveFile> {
+      await this.callN8nGoogleWebhook('create_folder', { name, parentId, userId });
       try {
           return await this.fetchGoogle(`https://www.googleapis.com/drive/v3/files`, userId, {
               method: 'POST', body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
@@ -269,13 +363,14 @@ export class GoogleIntegrationService {
   }
 
   async uploadFile(userId: string, file: File, parentId: string = 'root'): Promise<DriveFile> {
+      // NOTE: Upload binaire est souvent plus simple via API direct ou lien présigné
       try {
           const metadata = { name: file.name, parents: [parentId] };
           const formData = new FormData();
           formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
           formData.append('file', file);
           
-          const accessToken = await this.getAccessToken(userId); // Access token raw required for upload fetch
+          const accessToken = await this.getAccessToken(userId); 
           const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
               method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}` }, body: formData
           });
@@ -287,17 +382,7 @@ export class GoogleIntegrationService {
   }
 
   async triggerN8NSync(userId: string, email: string): Promise<boolean> {
-      const settings = db.getSystemSettings();
-      // Si N8N n'est pas configuré, on retourne juste true (succès simulé)
-      if (!settings.google.gmailValue || settings.google.gmailProvider !== 'n8n') return true;
-      
-      try {
-          await fetch(settings.google.gmailValue, {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'sync_all', userId, email })
-          });
-      } catch(e) {} // On ignore les erreurs N8N pour l'instant
-      return true;
+      return !!(await this.callN8nGoogleWebhook('sync_all', { userId, email }));
   }
   
   async disconnectAccount(userId: string): Promise<void> {

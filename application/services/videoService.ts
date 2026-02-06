@@ -1,18 +1,39 @@
+
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// Type alias pour compatibilité avec le code existant
+type GoogleGenAI = GoogleGenerativeAI;
 import { db } from './mockDatabase';
 import { n8nAgentService } from '../lib/n8nAgentService';
 import { VideoGenerationParams, VideoJob } from '../types';
-import { geminiService } from './geminiService';
 
 export class VideoService {
     async createJob(userId: string, params: VideoGenerationParams): Promise<VideoJob> {
+        // RÉCUPÉRATION DE LA CLÉ DEPUIS LA CONFIG CENTRALISÉE ADMIN
         const settings = db.getSystemSettings();
-        const isDev = settings.appMode === 'developer';
+        let apiKey = process.env.API_KEY;
+        let useAdminKey = false;
+
+        if (settings.contentCreation?.provider === 'gemini' && settings.contentCreation?.value) {
+            apiKey = settings.contentCreation.value;
+            useAdminKey = true;
+        }
+
+        // Si aucune clé admin n'est fournie, on utilise le sélecteur utilisateur
+        if (!useAdminKey) {
+            if (!(await (window as any).aistudio.hasSelectedApiKey())) {
+                await (window as any).aistudio.openSelectKey();
+            }
+        }
+
+        // Model: veo-3.1-fast-generate-preview | Last verified: 2026-01-01
+        const modelName = 'veo-3.1-fast-generate-preview';
 
         const job: VideoJob = {
             id: `vjob_${Date.now()}`,
             userId,
-            provider: isDev ? 'pollinations-ai' : 'n8n-workflow',
-            modelId: isDev ? 'pollinations-video' : 'n8n-veo',
+            provider: 'google-veo',
+            modelId: modelName,
             status: 'QUEUED',
             params,
             progress: 0,
@@ -20,92 +41,74 @@ export class VideoService {
         };
 
         db.createVideoJob(job);
-        this.processVideo(job, isDev);
-
+        this.processVideo(job, modelName, apiKey); // Pass the resolved key and model
+        
         return job;
     }
 
-    private async processVideo(job: VideoJob, isDev: boolean) {
+    private async processVideo(job: VideoJob, modelName: string, apiKey?: string) {
         try {
-            db.updateVideoJob(job.id, { status: 'RUNNING', progress: 20 });
-
-            let videoUrl: string;
-
-            if (isDev) {
-                // MODE DÉVELOPPEUR: Simuler avec une image (pas de vrai service vidéo gratuit)
-                // En production, utiliser Runway, Pika, ou un service n8n
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Simuler le traitement
-                db.updateVideoJob(job.id, { progress: 50 });
-
-                // Utiliser Pollinations pour générer une "preview" (image)
-                videoUrl = await geminiService.generateVideo(job.params.prompt, job.params.duration);
-
-                db.updateVideoJob(job.id, { progress: 80 });
-            } else {
-                // MODE PRODUCTION: Utiliser n8n webhook
-                const settings = db.getSystemSettings();
-                const webhookUrl = settings.webhooks?.videos?.url;
-
-                if (!webhookUrl) {
-                    throw new Error("Webhook vidéos non configuré. Allez dans Admin > Infrastructure.");
-                }
-
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'generate_video',
-                        userId: job.userId,
-                        jobId: job.id,
-                        params: job.params
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Erreur n8n: ${response.status}`);
-                }
-
-                const result = await response.json();
-                videoUrl = result.videoUrl || result.url || result.publicUrl;
-
-                if (!videoUrl) {
-                    throw new Error("URL vidéo non retournée par n8n");
-                }
-            }
-
-            // Sauvegarde de l'asset
-            db.updateVideoJob(job.id, { status: 'COMPLETED', progress: 100 });
-            db.createVideoAsset({
-                id: `va_${Date.now()}`,
-                jobId: job.id,
-                userId: job.userId,
-                publicUrl: videoUrl,
-                duration: parseInt(job.params.duration) || 5,
-                width: 1280,
-                height: 720,
-                fps: 24,
-                mimeType: 'video/mp4',
-                promptCopy: job.params.prompt,
-                isFavorite: false,
-                isArchived: false,
-                createdAt: new Date().toISOString()
+            // Use passed key or env var fallback (Note: if user used window.aistudio, process.env.API_KEY is injected by the platform)
+            const ai = new GoogleGenAI({ apiKey: apiKey || process.env.API_KEY });
+            
+            let operation = await ai.models.generateVideos({
+              model: modelName,
+              prompt: job.params.prompt,
+              config: {
+                numberOfVideos: 1,
+                resolution: job.params.resolution as any,
+                aspectRatio: job.params.aspectRatio as any
+              }
             });
 
-            // Notification n8n optionnelle
-            try {
+            db.updateVideoJob(job.id, { status: 'RUNNING', progress: 20 });
+
+            while (!operation.done) {
+              await new Promise(resolve => setTimeout(resolve, 10000));
+              operation = await ai.operations.getVideosOperation({ operation: operation });
+              db.updateVideoJob(job.id, { progress: Math.min(95, (job.progress || 20) + 5) });
+            }
+
+            const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
+            // Utiliser la même clé pour télécharger
+            const downloadKey = apiKey || process.env.API_KEY;
+            const videoResponse = await fetch(`${downloadLink}&key=${downloadKey}`);
+            const videoBlob = await videoResponse.blob();
+            
+            // Conversion en base64 pour envoi à n8n (simplification pour le stockage)
+            const reader = new FileReader();
+            reader.readAsDataURL(videoBlob);
+            reader.onloadend = async () => {
+                const base64Video = reader.result as string;
+                
+                // Sauvegarde via n8n
                 await n8nAgentService.saveAsset(job.userId, {
                     type: 'video',
-                    publicUrl: videoUrl,
+                    publicUrl: base64Video,
                     prompt: job.params.prompt,
                     jobId: job.id,
                     createdAt: new Date().toISOString()
                 });
-            } catch (e) {
-                console.log("[VideoService] Sauvegarde n8n optionnelle échouée (normal en dev)");
-            }
+
+                db.updateVideoJob(job.id, { status: 'COMPLETED', progress: 100 });
+                db.createVideoAsset({
+                    id: `va_${Date.now()}`,
+                    type: 'video',
+                    jobId: job.id,
+                    userId: job.userId,
+                    publicUrl: base64Video,
+                    duration: 5,
+                    width: 1280,
+                    height: 720,
+                    fps: 24,
+                    mimeType: 'video/mp4',
+                    prompt: job.params.prompt, // Used prompt instead of promptCopy
+                    isFavorite: false,
+                    createdAt: new Date().toISOString()
+                });
+            };
 
         } catch (error) {
-            console.error("[VideoService] Erreur génération:", error);
             db.updateVideoJob(job.id, { status: 'FAILED', errorMessage: (error as Error).message });
         }
     }

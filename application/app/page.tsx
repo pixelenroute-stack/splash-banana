@@ -2,15 +2,12 @@
 
 import dynamic from 'next/dynamic';
 
-// Import dynamique pour éviter les problèmes SSR avec Three.js et les APIs browser
+// Import dynamique pour éviter les problèmes SSR avec les composants qui utilisent window/document
 const App = dynamic(() => import('../App'), {
   ssr: false,
   loading: () => (
-    <div className="h-screen w-screen bg-background flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-slate-400 text-sm">Chargement de Splash Banana...</p>
-      </div>
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
     </div>
   ),
 });

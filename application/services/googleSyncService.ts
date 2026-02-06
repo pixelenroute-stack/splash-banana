@@ -44,16 +44,23 @@ export class GoogleSyncService {
                 if (!parsed.credentials) {
                     parsed.credentials = { email: '', password: '' };
                 }
+                // Migration : Si les intervalles sont trop courts (< 60s), on force à 1h pour éviter le spam API
+                if (parsed.intervals && parsed.intervals.gmail < 60) {
+                    parsed.intervals.gmail = 3600;
+                    parsed.intervals.calendar = 3600;
+                    parsed.intervals.drive = 3600;
+                }
                 return parsed;
             }
         } catch (e) {}
         
+        // Configuration par défaut : 1 HEURE (3600 secondes)
         return {
             enabled: true,
             intervals: {
-                gmail: 30,
-                calendar: 60,
-                drive: 120
+                gmail: 3600,
+                calendar: 3600,
+                drive: 3600
             },
             credentials: {
                 email: '',
@@ -74,6 +81,7 @@ export class GoogleSyncService {
 
         localStorage.setItem('google_sync_config', JSON.stringify(this.config));
         
+        // Redémarrage propre
         this.stopPolling();
         if (this.config.enabled) {
             this.startPolling(this.userId);
@@ -103,6 +111,10 @@ export class GoogleSyncService {
     }
 
     public async startPolling(userId: string) {
+        // IMPORTANT : Toujours nettoyer les intervalles existants avant d'en créer de nouveaux
+        // Cela empêche l'accumulation de boucles (le bug "requêtes en boucle")
+        this.stopPolling();
+
         this.userId = userId;
         if (!this.config.enabled) return;
 
@@ -114,14 +126,41 @@ export class GoogleSyncService {
             return;
         }
 
+        console.log(`[GoogleSync] Démarrage du polling (Gmail: ${this.config.intervals.gmail}s, Calendar: ${this.config.intervals.calendar}s, Drive: ${this.config.intervals.drive}s)`);
+
         this.intervals.set('gmail', setInterval(() => this.checkGmail(), this.config.intervals.gmail * 1000));
         this.intervals.set('calendar', setInterval(() => this.checkCalendar(), this.config.intervals.calendar * 1000));
         this.intervals.set('drive', setInterval(() => this.checkDrive(), this.config.intervals.drive * 1000));
     }
 
     public stopPolling() {
-        this.intervals.forEach(interval => clearInterval(interval));
+        // Nettoyage complet
+        this.intervals.forEach((intervalId) => clearInterval(intervalId));
         this.intervals.clear();
+        console.log("[GoogleSync] Polling arrêté.");
+    }
+
+    /**
+     * Déclenche une synchronisation immédiate et réinitialise les timers
+     * (Appelé par le bouton "Actualiser")
+     */
+    public async triggerManualSync() {
+        console.log("[GoogleSync] Synchronisation manuelle déclenchée.");
+        
+        // 1. Arrêter les timers automatiques
+        this.stopPolling();
+
+        // 2. Exécuter les vérifications immédiatement
+        await Promise.allSettled([
+            this.checkGmail(),
+            this.checkCalendar(),
+            this.checkDrive()
+        ]);
+
+        // 3. Redémarrer les timers (repartir pour 1h)
+        if (this.config.enabled) {
+            this.startPolling(this.userId);
+        }
     }
 
     private async checkGmail() {
@@ -192,11 +231,13 @@ export class GoogleSyncService {
         const interval = this.intervals.get(service);
         if (interval) clearInterval(interval);
         
+        console.warn(`[GoogleSync] Rate limit atteint pour ${service}, pause de 5min.`);
         setTimeout(() => {
             if (this.config.enabled) {
-                if (service === 'gmail') this.intervals.set('gmail', setInterval(() => this.checkGmail(), this.config.intervals.gmail * 1000));
+                // Redémarrage prudent
+                if (service === 'gmail') this.intervals.set('gmail', setInterval(() => this.checkGmail(), 3600 * 1000));
             }
-        }, 60000);
+        }, 300000);
     }
 }
 

@@ -1,13 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { googleService } from '../../services/googleService';
-import { MediaAsset, MediaFilterParams, DriveFile } from '../../types';
+import { supabaseService } from '../../services/supabaseService';
+import { MediaAsset, MediaFilterParams } from '../../types';
 import { AssetCard } from './AssetCard';
 import { PreviewModal } from './PreviewModal';
-import { Search, Image as ImageIcon, Video, Grid, Filter, Loader2, RefreshCw, FileText, UploadCloud, Folder } from 'lucide-react';
-
-// ID du dossier Google Drive spécifique pour la bibliothèque
-const LIBRARY_FOLDER_ID = '1PjCsaOfNkcKE2qZFR0NQnKOdJ7RVdDX9';
+import { Search, Image as ImageIcon, Video, Filter, Loader2, RefreshCw, FileText, UploadCloud, Folder, Cloud } from 'lucide-react';
+import { useNotification } from '../../context/NotificationContext';
 
 export const MediaLibrary: React.FC = () => {
     const [assets, setAssets] = useState<MediaAsset[]>([]);
@@ -15,6 +13,7 @@ export const MediaLibrary: React.FC = () => {
     const [filters, setFilters] = useState<MediaFilterParams>({ type: 'all', search: '', page: 1, pageSize: 50 });
     const [previewAsset, setPreviewAsset] = useState<MediaAsset | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const { notify } = useNotification();
 
     const CURRENT_USER_ID = "user_1"; // Mock Session
 
@@ -22,36 +21,15 @@ export const MediaLibrary: React.FC = () => {
         loadAssets();
     }, []);
 
-    // Conversion des fichiers Drive en MediaAsset pour l'affichage
-    const mapDriveFileToAsset = (file: DriveFile): MediaAsset => {
-        let type: 'image' | 'video' | 'file' = 'file';
-        if (file.mimeType.startsWith('image/')) type = 'image';
-        else if (file.mimeType.startsWith('video/')) type = 'video';
-
-        return {
-            id: file.id,
-            type: type,
-            publicUrl: file.webViewLink || '', // Utilise le lien Drive (Viewer)
-            downloadUrl: file.webContentLink, // Utilise le lien de téléchargement direct
-            prompt: file.name, // Le nom du fichier sert de titre/prompt
-            createdAt: file.createdTime,
-            width: 0, 
-            height: 0,
-            mimeType: file.mimeType
-        };
-    };
-
     const loadAssets = async () => {
         setLoading(true);
         try {
-            // 1. Récupération depuis le dossier Drive spécifique
-            const driveFiles = await googleService.listDriveFiles(CURRENT_USER_ID, LIBRARY_FOLDER_ID);
-            
-            // 2. Mapping
-            const mappedAssets = driveFiles.map(mapDriveFileToAsset);
-            setAssets(mappedAssets);
+            // Récupération depuis Supabase (DB + Storage Link)
+            const remoteAssets = await supabaseService.getMediaAssets();
+            setAssets(remoteAssets);
         } catch (e) {
-            console.error("Failed to load library from Drive", e);
+            console.error("Failed to load library", e);
+            notify("Erreur de chargement de la bibliothèque.", "error");
         } finally {
             setLoading(false);
         }
@@ -68,27 +46,31 @@ export const MediaLibrary: React.FC = () => {
     };
 
     const handleDownload = (asset: MediaAsset) => {
-        // Utilise le lien de téléchargement direct si disponible, sinon le lien web
+        // Utilise le lien public Supabase ou le blob mock
         const url = asset.downloadUrl || asset.publicUrl;
         if (url) {
-            window.open(url, '_blank');
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = "_blank";
+            // Tentative de nom de fichier propre
+            link.download = asset.prompt ? `${asset.prompt.substring(0, 20)}.${asset.type === 'image' ? 'png' : asset.type === 'video' ? 'mp4' : 'bin'}` : 'download';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         } else {
-            alert("Lien de téléchargement non disponible pour ce fichier.");
+            notify("Lien de téléchargement non disponible.", "error");
         }
     };
 
     const handleDelete = async (asset: MediaAsset) => {
-        if (!window.confirm("Voulez-vous vraiment supprimer ce fichier du Drive ? (Action irréversible)")) return;
+        if (!window.confirm("Supprimer ce fichier de la bibliothèque ?")) return;
         
         try {
-            // Utilise l'API Drive pour trash le fichier
-            // Note: googleService.createDriveFile mocks this in dev, 
-            // but in a real app we would add a delete method to googleService.
-            // For now, let's simulate optimistic delete locally.
+            await supabaseService.deleteMediaAsset(asset.id);
             setAssets(prev => prev.filter(a => a.id !== asset.id));
-            alert("Fichier supprimé (Simulation - API Delete non implémentée dans googleService pour l'instant)");
+            notify("Fichier supprimé.", "success");
         } catch (e) {
-            alert("Erreur lors de la suppression");
+            notify("Erreur lors de la suppression.", "error");
         }
     };
 
@@ -97,11 +79,18 @@ export const MediaLibrary: React.FC = () => {
         if (!file) return;
 
         setIsUploading(true);
+        notify("Upload vers Supabase Storage en cours...", "loading");
         try {
-            await googleService.uploadFile(CURRENT_USER_ID, file, LIBRARY_FOLDER_ID);
+            // Détection type simple
+            let type: 'image' | 'video' | 'file' = 'file';
+            if (file.type.startsWith('image/')) type = 'image';
+            else if (file.type.startsWith('video/')) type = 'video';
+
+            await supabaseService.uploadFile(CURRENT_USER_ID, file, file.name, file.type, type);
+            notify("Fichier ajouté à la bibliothèque.", "success");
             await loadAssets(); // Recharger après upload
         } catch (err) {
-            alert("Erreur d'upload vers Drive: " + (err as Error).message);
+            notify(`Erreur d'upload: ${(err as Error).message}`, "error");
         } finally {
             setIsUploading(false);
         }
@@ -113,7 +102,7 @@ export const MediaLibrary: React.FC = () => {
         if (filters.type !== 'all' && asset.type !== filters.type) return false;
         
         // Filter by Search
-        if (filters.search) {
+        if (filters.search && asset.prompt) {
             return asset.prompt.toLowerCase().includes(filters.search.toLowerCase());
         }
         return true;
@@ -126,10 +115,10 @@ export const MediaLibrary: React.FC = () => {
             <header className="p-6 border-b border-slate-800 bg-surface/50 backdrop-blur flex flex-col md:flex-row md:items-center justify-between gap-4 z-10">
                 <div>
                     <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                        <Folder className="text-primary" /> Bibliothèque Drive
+                        <Folder className="text-primary" /> Bibliothèque Média
                     </h1>
                     <p className="text-slate-400 text-sm flex items-center gap-1">
-                        Connecté à <span className="text-xs font-mono bg-slate-800 px-1 rounded text-slate-300">Drive / Splash-Assets</span>
+                        Stockage Cloud <span className="text-xs font-mono bg-green-500/10 text-green-400 px-2 rounded border border-green-500/20 flex items-center gap-1"><Cloud size={10}/> Supabase</span>
                     </p>
                 </div>
 
@@ -171,11 +160,12 @@ export const MediaLibrary: React.FC = () => {
                     </div>
                     
                     <div className="flex gap-2">
-                        <label className="p-2 bg-primary hover:bg-blue-600 text-white rounded-lg cursor-pointer shadow-lg transition-all flex items-center justify-center min-w-[40px]">
-                            {isUploading ? <Loader2 size={18} className="animate-spin"/> : <UploadCloud size={18} />}
+                        <label className="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg cursor-pointer shadow-lg transition-all flex items-center gap-2 text-sm font-bold active:scale-95">
+                            {isUploading ? <Loader2 size={16} className="animate-spin"/> : <UploadCloud size={16} />}
+                            Importer
                             <input type="file" className="hidden" onChange={handleFileUpload} />
                         </label>
-                        <button onClick={loadAssets} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors" title="Actualiser Drive">
+                        <button onClick={loadAssets} className="p-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors" title="Actualiser">
                             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
                         </button>
                     </div>
@@ -186,12 +176,12 @@ export const MediaLibrary: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-800">
                 {loading && assets.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-slate-500 gap-3">
-                        <Loader2 className="animate-spin" /> Synchronisation avec Google Drive...
+                        <Loader2 className="animate-spin" /> Synchronisation Supabase...
                     </div>
                 ) : filteredAssets.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-4">
                         <Filter size={48} className="opacity-20" />
-                        <p>Aucun fichier trouvé dans le dossier Splash-Assets.</p>
+                        <p>Aucun fichier trouvé dans la bibliothèque.</p>
                         <button onClick={() => setFilters({ type: 'all', search: '', page: 1, pageSize: 50 })} className="text-primary hover:underline text-sm">
                             Réinitialiser les filtres
                         </button>

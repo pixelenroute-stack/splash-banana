@@ -56,7 +56,6 @@ export const NAV_ITEMS = [
   { id: 'library', label: 'Bibliothèque', icon: Grid, category: 'creator' as CategoryType },
 
   // SECTION: MANAGEMENT
-  { id: 'workspace', label: 'Google Workspace', icon: Globe, category: 'management' as CategoryType },
   { id: 'prospection', label: 'Prospection', icon: Target, category: 'management' as CategoryType }, 
   { id: 'clients', label: 'Clients (CRM)', icon: Users, category: 'management' as CategoryType },
   { id: 'projects', label: 'Projets (Production)', icon: FolderKanban, category: 'management' as CategoryType },

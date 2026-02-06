@@ -1,25 +1,19 @@
-/**
- * Configuration PM2 pour Hostinger
- * Ce fichier configure le gestionnaire de processus PM2
- */
 module.exports = {
   apps: [
     {
       name: 'splash-banana',
-      script: 'server.js',
+      script: './server.js',
       instances: 1,
-      autorestart: true,
-      watch: false,
-      max_memory_restart: '500M',
+      exec_mode: 'cluster',
       env: {
-        NODE_ENV: 'production',
+        NODE_ENV: 'development',
         PORT: 3000,
       },
       env_production: {
         NODE_ENV: 'production',
         PORT: 3000,
       },
-      // Logs
+      max_memory_restart: '512M',
       error_file: './logs/err.log',
       out_file: './logs/out.log',
       log_file: './logs/combined.log',

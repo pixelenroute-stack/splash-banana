@@ -1,18 +1,22 @@
+
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// Type alias pour compatibilité avec le code existant
+type GoogleGenAI = GoogleGenerativeAI;
 import { db } from './mockDatabase';
 import { n8nAgentService } from '../lib/n8nAgentService';
 import { ImageGenerationParams, ImageJob } from '../types';
-import { geminiService } from './geminiService';
 
 export class ImageService {
     async createJob(userId: string, type: ImageJob['type'], params: ImageGenerationParams): Promise<ImageJob> {
-        const settings = db.getSystemSettings();
-        const isDev = settings.appMode === 'developer';
+        // Model: gemini-2.5-flash-image | Last verified: 2026-01-01
+        const modelName = 'gemini-2.5-flash-image';
 
         const job: ImageJob = {
             id: `job_${Date.now()}`,
             userId,
-            provider: isDev ? 'pollinations-ai' : 'n8n-workflow',
-            modelId: isDev ? 'pollinations-v1' : 'n8n-flux',
+            provider: 'google-gemini',
+            modelId: modelName,
             type,
             status: 'PROCESSING',
             params,
@@ -21,82 +25,69 @@ export class ImageService {
         };
 
         db.createImageJob(job);
-
-        // Traitement asynchrone
+        
         (async () => {
             try {
-                let imageUrl: string;
+                // RÉCUPÉRATION DE LA CLÉ DEPUIS LA CONFIG CENTRALISÉE ADMIN
+                const settings = db.getSystemSettings();
+                let apiKey = process.env.API_KEY;
 
-                if (isDev) {
-                    // MODE DÉVELOPPEUR: Utiliser Pollinations.ai (gratuit, pas de clé API requise)
-                    imageUrl = await geminiService.generateImage(params.prompt, params.aspectRatio);
-                } else {
-                    // MODE PRODUCTION: Utiliser n8n webhook
-                    const webhookUrl = settings.webhooks?.images?.url;
-                    if (!webhookUrl) {
-                        throw new Error("Webhook images non configuré. Allez dans Admin > Infrastructure.");
-                    }
-
-                    const response = await fetch(webhookUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'generate_image',
-                            userId,
-                            jobId: job.id,
-                            params
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Erreur n8n: ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    imageUrl = result.imageUrl || result.url || result.publicUrl;
-
-                    if (!imageUrl) {
-                        throw new Error("URL d'image non retournée par n8n");
-                    }
+                if (settings.contentCreation?.provider === 'gemini' && settings.contentCreation?.value) {
+                    apiKey = settings.contentCreation.value;
                 }
 
-                // Sauvegarde de l'asset
+                const ai = new GoogleGenAI({ apiKey });
+                
+                // Model validation check handled by implicit knowledge or shared service if needed
+                // Here we use the updated constant directly.
+                
+                const response = await ai.models.generateContent({
+                  model: modelName,
+                  contents: { parts: [{ text: params.prompt }] },
+                  config: { imageConfig: { aspectRatio: params.aspectRatio } }
+                });
+
+                let base64Data = '';
+                for (const part of response.candidates[0].content.parts) {
+                  if (part.inlineData) {
+                    base64Data = part.inlineData.data;
+                    break;
+                  }
+                }
+
+                if (!base64Data) throw new Error("Aucune image générée par le modèle.");
+
+                const imageUrl = `data:image/png;base64,${base64Data}`;
+
+                // Sauvegarde via n8n pour la persistance cloud
+                await n8nAgentService.saveAsset(userId, {
+                    type: 'image',
+                    publicUrl: imageUrl,
+                    prompt: params.prompt,
+                    jobId: job.id,
+                    createdAt: new Date().toISOString()
+                });
+
                 db.updateImageJob(job.id, { status: 'COMPLETED' });
                 db.createImageAsset({
                     id: `ia_${Date.now()}`,
+                    type: 'image',
                     jobId: job.id,
                     userId,
-                    storagePath: isDev ? 'pollinations' : 'n8n_storage',
                     publicUrl: imageUrl,
                     width: 1024,
                     height: 1024,
                     mimeType: 'image/png',
-                    promptCopy: params.prompt,
+                    prompt: params.prompt, 
                     isFavorite: false,
-                    isArchived: false,
                     createdAt: new Date().toISOString()
                 });
 
-                // Notification n8n optionnelle
-                try {
-                    await n8nAgentService.saveAsset(userId, {
-                        type: 'image',
-                        publicUrl: imageUrl,
-                        prompt: params.prompt,
-                        jobId: job.id,
-                        createdAt: new Date().toISOString()
-                    });
-                } catch (e) {
-                    // Ignorer les erreurs de sauvegarde n8n en mode dev
-                    console.log("[ImageService] Sauvegarde n8n optionnelle échouée (normal en dev)");
-                }
-
             } catch (e) {
-                console.error("[ImageService] Erreur génération:", e);
                 db.updateImageJob(job.id, { status: 'FAILED', errorMessage: (e as Error).message });
             }
         })();
-
+        
         return job;
     }
 

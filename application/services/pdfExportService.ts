@@ -3,7 +3,7 @@ import { jsPDF } from "jspdf";
 
 export interface TutorialForPDF {
   title: string;
-  software: 'Premiere Pro' | 'After Effects';
+  software: 'Premiere Pro' | 'After Effects' | 'Photoshop' | 'Illustrator' | 'Blender';
   difficulty: 'Débutant' | 'Intermédiaire' | 'Avancé' | 'Expert';
   estimatedTime: number; // minutes
   instructions: Array<{

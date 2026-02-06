@@ -3,87 +3,169 @@ import React, { useState, useEffect } from 'react';
 import { newsService } from '../services/newsService';
 import { NewsArticle, NewsCategory, WeatherData } from '../types';
 import { 
-    CloudRain, Sun, Cloud, Wind, RefreshCw, Loader2, 
+    CloudRain, Sun, Cloud, Wind, 
     Newspaper, Film, Zap, Scale, Video, MapPin, 
-    Search, ExternalLink, Calendar, Zap as ZapIcon 
+    ExternalLink, LayoutGrid, Maximize2, Loader2, RefreshCw
 } from 'lucide-react';
-import { db } from '../services/mockDatabase';
 
-const CATEGORIES: { id: NewsCategory | 'all', label: string, icon: any }[] = [
-    { id: 'all', label: 'À la une', icon: Newspaper },
-    { id: 'politics', label: 'Politique & Législation', icon: Scale },
-    { id: 'tech', label: 'Technologie & IA', icon: Zap },
-    { id: 'editing', label: 'Montage Vidéo', icon: Video },
-    { id: 'motion', label: 'Motion Design', icon: Film },
+// Configuration des fenêtres de catégorie (Bento Grid)
+const CATEGORY_CONFIG: { id: NewsCategory, label: string, icon: any, color: string, source: string, span?: string }[] = [
+    { id: 'headline', label: 'À la une', icon: Newspaper, color: 'text-blue-400', source: 'Google Actualités', span: 'col-span-1 md:col-span-2' },
+    { id: 'politics', label: 'Politique & Législation', icon: Scale, color: 'text-rose-400', source: 'Google Actualités' },
+    { id: 'tech', label: 'Technologie & IA', icon: Zap, color: 'text-amber-400', source: 'NewsAPI' },
+    { id: 'editing', label: 'Montage Vidéo', icon: Video, color: 'text-emerald-400', source: 'Perplexity' },
+    { id: 'motion', label: 'Motion Design', icon: Film, color: 'text-purple-400', source: 'GNews' },
 ];
 
 export const NewsDashboard: React.FC = () => {
-    const [activeCategory, setActiveCategory] = useState<NewsCategory | 'all'>('all');
-    const [news, setNews] = useState<NewsArticle[]>([]);
+    const [viewMode, setViewMode] = useState<'grid' | 'focus'>('grid');
+    const [focusedCategory, setFocusedCategory] = useState<NewsCategory | null>(null);
+    
+    // Data Stores
+    const [newsMap, setNewsMap] = useState<Record<NewsCategory, NewsArticle[]>>({
+        headline: [],
+        politics: [],
+        tech: [],
+        editing: [],
+        motion: [],
+        general: []
+    });
+    
     const [weather, setWeather] = useState<WeatherData | null>(null);
     const [city, setCity] = useState('Paris');
-    const [loadingNews, setLoadingNews] = useState(false);
-    const [loadingWeather, setLoadingWeather] = useState(false);
-    const [simulating, setSimulating] = useState(false);
+    const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
 
-    const settings = db.getSystemSettings();
-    const isDev = settings.appMode === 'developer';
-
-    useEffect(() => {
-        loadData();
-    }, [activeCategory]);
-
+    // Initial Load
     useEffect(() => {
         handleWeatherUpdate();
+        loadAllCategories();
     }, []);
 
-    const loadData = async () => {
-        setLoadingNews(true);
+    const loadAllCategories = () => {
+        CATEGORY_CONFIG.forEach(cat => loadCategoryNews(cat.id));
+    };
+
+    const loadCategoryNews = async (category: NewsCategory) => {
+        setLoadingMap(prev => ({ ...prev, [category]: true }));
         try {
-            const data = await newsService.getNews(activeCategory);
-            setNews(data);
+            const articles = await newsService.getNews(category);
+            setNewsMap(prev => ({ ...prev, [category]: articles }));
         } finally {
-            setLoadingNews(false);
+            setLoadingMap(prev => ({ ...prev, [category]: false }));
         }
     };
 
     const handleWeatherUpdate = async () => {
         if (!city) return;
-        setLoadingWeather(true);
+        setLoadingMap(prev => ({ ...prev, weather: true }));
         try {
             const data = await newsService.fetchWeather(city);
             setWeather(data);
         } finally {
-            setLoadingWeather(false);
-        }
-    };
-
-    const handleSimulate = async () => {
-        if (simulating) return;
-        setSimulating(true);
-        setLoadingNews(true);
-        
-        try {
-            // Si "All", on simule une catégorie au hasard pour la démo
-            const targetCat = activeCategory === 'all' ? 'tech' : activeCategory;
-            const newArticles = await newsService.simulateLiveNews(targetCat);
-            setNews(newArticles);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setSimulating(false);
-            setLoadingNews(false);
+            setLoadingMap(prev => ({ ...prev, weather: false }));
         }
     };
 
     const getWeatherIcon = (condition: string) => {
         switch (condition) {
-            case 'Sunny': return <Sun className="text-yellow-400" size={32} />;
-            case 'Rain': return <CloudRain className="text-blue-400" size={32} />;
-            case 'Cloudy': return <Cloud className="text-slate-400" size={32} />;
-            case 'Storm': return <Wind className="text-purple-400" size={32} />;
-            default: return <Sun className="text-yellow-400" size={32} />;
+            case 'Sunny': return <Sun className="text-yellow-400" size={40} />;
+            case 'Rain': return <CloudRain className="text-blue-400" size={40} />;
+            case 'Cloudy': return <Cloud className="text-slate-400" size={40} />;
+            case 'Storm': return <Wind className="text-purple-400" size={40} />;
+            default: return <Sun className="text-yellow-400" size={40} />;
         }
+    };
+
+    // --- COMPONENT: NEWS WINDOW (CARD) ---
+    const NewsWindow = ({ categoryId, label, icon: Icon, color, source, expanded = false, span = '' }: any) => {
+        const articles = newsMap[categoryId as NewsCategory] || [];
+        const isLoading = loadingMap[categoryId];
+
+        return (
+            <div className={`bg-surface border border-slate-700 rounded-2xl overflow-hidden shadow-xl flex flex-col transition-all duration-300 hover:border-slate-600
+                ${expanded ? 'col-span-full row-span-2 h-full min-h-[600px]' : `${span} h-[320px]`}`}>
+                
+                {/* Window Header */}
+                <div className="p-4 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2 bg-slate-900 rounded-lg ${color}`}>
+                            <Icon size={18} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-white text-sm">{label}</h3>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                                    <span className={`w-1.5 h-1.5 rounded-full ${isLoading ? 'bg-amber-500 animate-pulse' : 'bg-green-500'}`}></span>
+                                    {source}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => loadCategoryNews(categoryId)} 
+                            className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 transition-colors"
+                            title="Actualiser"
+                        >
+                            <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''}/>
+                        </button>
+                        <button 
+                            onClick={() => {
+                                if (expanded) {
+                                    setViewMode('grid');
+                                    setFocusedCategory(null);
+                                } else {
+                                    setViewMode('focus');
+                                    setFocusedCategory(categoryId);
+                                }
+                            }}
+                            className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 transition-colors"
+                            title={expanded ? "Réduire" : "Agrandir"}
+                        >
+                            {expanded ? <LayoutGrid size={14}/> : <Maximize2 size={14}/>}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Window Content */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+                    {isLoading && articles.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-2">
+                            <Loader2 className="animate-spin text-primary" size={24}/>
+                            <p className="text-xs">Synchronisation API...</p>
+                        </div>
+                    ) : articles.length === 0 ? (
+                        <div className="h-full flex items-center justify-center text-slate-500 text-xs italic">
+                            Aucune actualité récente trouvée.
+                        </div>
+                    ) : (
+                        articles.map((article) => (
+                            <div key={article.id} className="group flex gap-4 p-3 rounded-xl hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-700/50 cursor-pointer">
+                                {article.imageUrl && (
+                                    <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0 border border-slate-700">
+                                        <img src={article.imageUrl} alt="" className="w-full h-full object-cover transition-transform group-hover:scale-110"/>
+                                    </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-bold text-white leading-tight mb-1 line-clamp-2 group-hover:text-primary transition-colors">
+                                        {article.title}
+                                    </h4>
+                                    <p className="text-xs text-slate-400 line-clamp-2 mb-2">
+                                        {article.summary}
+                                    </p>
+                                    <div className="flex justify-between items-center text-[10px] text-slate-500">
+                                        <span>{new Date(article.date).toLocaleDateString()}</span>
+                                        <span className="flex items-center gap-1 group-hover:text-white transition-colors">
+                                            Lire <ExternalLink size={10}/>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -94,169 +176,91 @@ export const NewsDashboard: React.FC = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-white flex items-center gap-2">
                         <Newspaper className="text-primary" /> Actualités & Veille
-                        {isDev && (
-                            <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700 font-mono flex items-center gap-1">
-                                <ZapIcon size={10}/> DEV MODE
-                            </span>
-                        )}
                     </h1>
-                    <p className="text-slate-400 text-sm">Tendances, météo et veille stratégique.</p>
+                    <p className="text-slate-400 text-sm">Dashboard de surveillance multi-sources.</p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    {/* WEATHER WIDGET (Compact Header Version) */}
-                    {weather && (
-                        <div className="hidden md:flex items-center gap-4 bg-slate-900/50 p-2 pr-4 rounded-xl border border-slate-700/50">
-                            <div className="bg-slate-800 p-2 rounded-lg">
-                                {getWeatherIcon(weather.condition)}
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-lg font-bold text-white">{weather.currentTemp}°C</span>
-                                    <span className="text-xs text-slate-400">{weather.city}</span>
-                                </div>
-                                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{weather.condition}</div>
-                            </div>
-                        </div>
-                    )}
-
-                    {isDev && (
-                        <button 
-                            onClick={handleSimulate}
-                            disabled={simulating}
-                            className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:scale-105 active:scale-95 disabled:opacity-50 shadow-lg shadow-amber-900/20"
-                        >
-                            {simulating ? <Loader2 size={16} className="animate-spin"/> : <RefreshCw size={16}/>}
-                            {simulating ? 'Génération IA...' : 'Simuler Flux Live'}
-                        </button>
-                    )}
+                {/* GLOBAL ACTIONS */}
+                <div className="flex gap-3">
+                    <button 
+                        onClick={loadAllCategories}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-bold transition-all border border-slate-700"
+                    >
+                        <RefreshCw size={16}/> Tout actualiser
+                    </button>
                 </div>
             </header>
 
-            <div className="flex-1 flex overflow-hidden">
-                
-                {/* LEFT: MAIN NEWS FEED */}
-                <div className="flex-1 overflow-y-auto p-8 scrollbar-thin">
+            <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+                <div className="max-w-[1600px] mx-auto space-y-6">
                     
-                    {/* Categories Tabs */}
-                    <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-                        {CATEGORIES.map(cat => (
-                            <button
-                                key={cat.id}
-                                onClick={() => setActiveCategory(cat.id)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap border
-                                    ${activeCategory === cat.id 
-                                        ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' 
-                                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-600 hover:text-white'}`}
-                            >
-                                <cat.icon size={16}/>
-                                {cat.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* News Grid */}
-                    {loadingNews ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4 text-slate-500">
-                            <Loader2 size={40} className="animate-spin text-primary"/>
-                            <p className="animate-pulse">Récupération des dernières tendances...</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {news.map(article => (
-                                <div key={article.id} className="group bg-surface border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-600 transition-all shadow-lg hover:shadow-2xl flex flex-col h-full">
-                                    <div className="h-48 overflow-hidden relative">
-                                        <img 
-                                            src={article.imageUrl} 
-                                            alt={article.title} 
-                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                        />
-                                        <div className="absolute top-3 left-3">
-                                            <span className="bg-black/60 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded uppercase border border-white/10">
-                                                {article.category}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="p-5 flex-1 flex flex-col">
-                                        <div className="flex items-center justify-between mb-3 text-xs text-slate-500">
-                                            <span className="flex items-center gap-1 font-bold text-primary"><Newspaper size={12}/> {article.source}</span>
-                                            <span>{new Date(article.date).toLocaleDateString()}</span>
-                                        </div>
-                                        <h3 className="text-lg font-bold text-white mb-2 leading-tight group-hover:text-blue-400 transition-colors">{article.title}</h3>
-                                        <p className="text-sm text-slate-400 line-clamp-3 mb-4 flex-1">{article.summary}</p>
-                                        
-                                        <div className="pt-4 border-t border-slate-800 flex justify-end">
-                                            <button className="text-xs font-bold text-white flex items-center gap-1 hover:underline">
-                                                Lire la suite <ExternalLink size={12}/>
-                                            </button>
-                                        </div>
-                                    </div>
+                    {/* TOP: WEATHER WIDGET (OpenWeather via Workflow) */}
+                    <div className="bg-gradient-to-r from-blue-900/40 to-slate-900 border border-slate-700 rounded-2xl p-6 flex items-center justify-between shadow-lg relative overflow-hidden">
+                        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-blue-500/5 to-transparent pointer-events-none"/>
+                        
+                        <div className="flex items-center gap-6 relative z-10">
+                            <div className="p-3 bg-slate-800/50 rounded-2xl border border-slate-700 shadow-inner">
+                                {weather ? getWeatherIcon(weather.condition) : <Sun className="text-slate-600" size={40}/>}
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                                    {weather ? Math.round(weather.currentTemp) : '--'}°C
+                                    <span className="text-sm font-normal text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
+                                        {weather?.condition || 'Météo'}
+                                    </span>
+                                </h2>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <MapPin size={14} className="text-primary"/>
+                                    <input 
+                                        value={city}
+                                        onChange={(e) => setCity(e.target.value)}
+                                        onBlur={handleWeatherUpdate}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleWeatherUpdate()}
+                                        className="bg-transparent border-b border-dashed border-slate-600 text-slate-300 text-sm focus:outline-none focus:border-primary focus:text-white w-24"
+                                    />
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* RIGHT: SIDEBAR (WEATHER + WIDGETS) */}
-                <div className="w-80 border-l border-slate-800 bg-surface/30 p-6 overflow-y-auto hidden lg:block">
-                    
-                    {/* WEATHER FULL WIDGET */}
-                    <div className="bg-gradient-to-b from-blue-900/40 to-slate-900 border border-blue-500/20 rounded-2xl p-5 mb-8">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                <Cloud className="text-blue-400" size={16}/> Météo Locale
-                            </h3>
-                            <div className="relative group">
-                                <MapPin size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"/>
-                                <input 
-                                    type="text" 
-                                    value={city}
-                                    onChange={(e) => setCity(e.target.value)}
-                                    onBlur={handleWeatherUpdate}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleWeatherUpdate()}
-                                    className="w-28 bg-black/40 border border-white/10 rounded-lg py-1 pl-6 pr-2 text-xs text-white focus:outline-none focus:border-blue-500 transition-all"
-                                />
                             </div>
                         </div>
 
-                        {loadingWeather ? (
-                            <div className="py-8 flex justify-center"><Loader2 className="animate-spin text-blue-400"/></div>
-                        ) : weather ? (
-                            <>
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="text-4xl font-bold text-white">{weather.currentTemp}°</div>
-                                    <div className="text-right">
-                                        <div className="text-blue-200 font-medium">{weather.condition}</div>
-                                        <div className="text-[10px] text-blue-300/60">H: {weather.humidity}% • W: {weather.windSpeed}km/h</div>
-                                    </div>
+                        {weather && (
+                            <div className="flex gap-8 text-right relative z-10">
+                                <div>
+                                    <div className="text-[10px] text-slate-500 uppercase font-bold">Humidité</div>
+                                    <div className="text-lg font-mono text-blue-300">{weather.humidity}%</div>
                                 </div>
-
-                                <div className="space-y-3">
-                                    {weather.forecast.map((day, i) => (
-                                        <div key={i} className="flex items-center justify-between text-xs p-2 bg-black/20 rounded-lg hover:bg-black/40 transition-colors">
-                                            <span className="text-slate-300 w-16 font-medium">{day.day}</span>
-                                            {day.icon === 'Sunny' ? <Sun size={14} className="text-yellow-400"/> : <Cloud size={14} className="text-slate-400"/>}
-                                            <span className="text-white font-bold">{day.temp}°</span>
-                                        </div>
-                                    ))}
+                                <div>
+                                    <div className="text-[10px] text-slate-500 uppercase font-bold">Vent</div>
+                                    <div className="text-lg font-mono text-slate-300">{weather.windSpeed} km/h</div>
                                 </div>
-                            </>
-                        ) : null}
+                            </div>
+                        )}
+                        
+                        {loadingMap.weather && (
+                            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-20">
+                                <Loader2 className="animate-spin text-white"/>
+                            </div>
+                        )}
                     </div>
 
-                    {/* MARKET/TRENDS WIDGET (Mock) */}
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-                        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                            <Zap className="text-amber-400" size={16}/> Trending Topics
-                        </h3>
-                        <div className="space-y-3">
-                            {['#AIArt', '#DavinciResolve19', '#FreelanceLife', '#MotionTrends'].map((tag, i) => (
-                                <div key={i} className="flex items-center justify-between group cursor-pointer">
-                                    <span className="text-xs text-slate-400 group-hover:text-primary transition-colors">{tag}</span>
-                                    <span className="text-[10px] text-slate-600 bg-slate-800 px-1.5 py-0.5 rounded">+{(Math.random()*20).toFixed(1)}%</span>
-                                </div>
-                            ))}
-                        </div>
+                    {/* MAIN GRID: CATEGORY WINDOWS */}
+                    <div className={`grid gap-6 transition-all duration-500 ${viewMode === 'focus' ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-2'}`}>
+                        {CATEGORY_CONFIG.map((cat) => {
+                            // If focus mode, only show the focused one
+                            if (viewMode === 'focus' && focusedCategory !== cat.id) return null;
+                            
+                            return (
+                                <NewsWindow
+                                    key={cat.id}
+                                    categoryId={cat.id}
+                                    label={cat.label}
+                                    icon={cat.icon}
+                                    color={cat.color}
+                                    source={cat.source}
+                                    span={cat.span || ''}
+                                    expanded={viewMode === 'focus'}
+                                />
+                            );
+                        })}
                     </div>
 
                 </div>

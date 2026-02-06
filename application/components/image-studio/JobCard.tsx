@@ -2,13 +2,15 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ImageJob, ImageAsset } from '../../types';
 import { db } from '../../services/mockDatabase';
-import { n8nAgentService } from '../../lib/n8nAgentService';
 import { supabaseService } from '../../services/supabaseService';
-import { Loader2, Download, ExternalLink, Maximize2, MoreHorizontal, Database, Check, X } from 'lucide-react';
+import { Loader2, Download, MoreHorizontal, HardDrive, Check, CloudUpload } from 'lucide-react';
+import { useNotification } from '../../context/NotificationContext';
 
 interface JobCardProps {
     job: ImageJob;
 }
+
+const CURRENT_USER_ID = "user_1";
 
 export const JobCard: React.FC<JobCardProps> = ({ job }) => {
     const [assets, setAssets] = useState<ImageAsset[]>([]);
@@ -17,6 +19,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
     const [savingId, setSavingId] = useState<string | null>(null);
     const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
     const menuRef = useRef<HTMLDivElement>(null);
+    const { notify } = useNotification();
 
     // Fetch assets when job completes
     useEffect(() => {
@@ -57,37 +60,27 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
         link.click();
         document.body.removeChild(link);
         setOpenMenuId(null);
+        notify("Téléchargement lancé.", "info");
     };
 
     const handleSaveToLibrary = async (asset: ImageAsset) => {
         setSavingId(asset.id);
+        notify("Sauvegarde vers Supabase Storage...", "loading");
         try {
-            // 1. Sauvegarde via n8n (Orchestrateur)
-            await n8nAgentService.saveAsset(job.userId, {
-                type: 'image',
-                publicUrl: asset.publicUrl,
-                prompt: asset.promptCopy,
-                jobId: job.id,
-                width: asset.width,
-                height: asset.height,
-                createdAt: new Date().toISOString()
-            });
-
-            // 2. Indexation Supabase
-            await supabaseService.saveMediaAsset({
-                type: 'image',
-                publicUrl: asset.publicUrl,
-                prompt: asset.promptCopy,
-                jobId: job.id,
-                width: asset.width,
-                height: asset.height
-            });
+            // 1. Conversion Base64 -> Blob
+            const response = await fetch(asset.publicUrl);
+            const blob = await response.blob();
+            const filename = `Image_${job.id}_${asset.id}.png`;
+            
+            // 2. Upload via Supabase Service
+            await supabaseService.uploadFile(CURRENT_USER_ID, blob, filename, 'image/png', 'image');
 
             setSavedIds(prev => new Set(prev).add(asset.id));
             setOpenMenuId(null);
+            notify("Image sauvegardée dans la Bibliothèque.", "success");
         } catch (error) {
             console.error("Erreur de sauvegarde en bibliothèque", error);
-            alert("Erreur lors de la sauvegarde dans la bibliothèque.");
+            notify("Erreur lors de la sauvegarde Supabase.", "error");
         } finally {
             setSavingId(null);
         }
@@ -150,7 +143,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
                                 {openMenuId === asset.id && (
                                     <div 
                                         ref={menuRef}
-                                        className="absolute top-10 right-0 w-56 bg-surface/95 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl py-2 z-30 animate-in fade-in zoom-in-95 duration-200"
+                                        className="absolute top-10 right-0 w-64 bg-surface/95 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl py-2 z-30 animate-in fade-in zoom-in-95 duration-200"
                                     >
                                         <button 
                                             onClick={() => handleDownload(asset)}
@@ -169,19 +162,26 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
                                             ) : savedIds.has(asset.id) ? (
                                                 <Check size={16} className="text-green-500" />
                                             ) : (
-                                                <Database size={16} className="text-slate-500" />
+                                                <CloudUpload size={16} className="text-slate-500" />
                                             )}
-                                            {savedIds.has(asset.id) ? 'Dans la bibliothèque' : 'Stocker dans la bibliothèque'}
+                                            {savedIds.has(asset.id) ? 'Sauvegardé' : 'Envoyer dans la Bibliothèque'}
                                         </button>
                                     </div>
                                 )}
                             </div>
+                            
+                            {/* Quick Actions overlay */}
                             <div className="flex justify-center gap-3">
                                 <button onClick={() => handleDownload(asset)} className="p-2 bg-white/10 backdrop-blur text-white rounded-full hover:bg-primary transition-colors border border-white/20" title="Télécharger">
                                     <Download size={18} />
                                 </button>
-                                <button className="p-2 bg-white/10 backdrop-blur text-white rounded-full hover:bg-primary transition-colors border border-white/20" title="Plein écran">
-                                    <Maximize2 size={18} />
+                                <button 
+                                    onClick={() => handleSaveToLibrary(asset)} 
+                                    disabled={savedIds.has(asset.id)}
+                                    className={`p-2 bg-white/10 backdrop-blur text-white rounded-full hover:bg-green-600 transition-colors border border-white/20 ${savedIds.has(asset.id) ? 'opacity-50 cursor-default' : ''}`} 
+                                    title="Sauvegarder"
+                                >
+                                    {savedIds.has(asset.id) ? <Check size={18}/> : <CloudUpload size={18} />}
                                 </button>
                             </div>
                         </div>

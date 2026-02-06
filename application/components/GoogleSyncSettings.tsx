@@ -13,14 +13,12 @@ export const GoogleSyncSettings: React.FC = () => {
     const settings = db.getSystemSettings();
     const USER_ID = "user_1";
     
-    // Utilisation du nouveau hook
     const { isConnected, loading: authLoading, email, connect, disconnect } = useGoogleAuth(USER_ID);
 
-    // Check URL params for success/error (after redirect)
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         if (params.get('google_auth') === 'success') {
-            window.history.replaceState({}, '', window.location.pathname); // Clean URL
+            window.history.replaceState({}, '', window.location.pathname);
         }
     }, []);
 
@@ -51,7 +49,11 @@ export const GoogleSyncSettings: React.FC = () => {
                 </div>
 
                 <div className={`space-y-4 transition-opacity ${config.enabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Fréquences de mise à jour (sec)</h4>
+                    <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Fréquences de mise à jour (secondes)</h4>
+                        <span className="text-[10px] text-slate-500 italic">Recommandé : 3600s (1h)</span>
+                    </div>
+                    
                     <div className="grid grid-cols-3 gap-4">
                         {['gmail', 'calendar', 'drive'].map((service) => (
                             <div key={service}>
@@ -60,10 +62,10 @@ export const GoogleSyncSettings: React.FC = () => {
                                 </label>
                                 <input 
                                     type="number" 
-                                    min="15" 
+                                    min="60" 
                                     value={(config.intervals as any)[service]}
                                     onChange={(e) => setConfig({...config, intervals: {...config.intervals, [service]: parseInt(e.target.value)}})}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm focus:border-blue-500 outline-none"
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm focus:border-blue-500 outline-none font-mono"
                                 />
                             </div>
                         ))}

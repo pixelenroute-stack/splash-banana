@@ -1,62 +1,28 @@
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Mode standalone pour le déploiement (optimise la taille du bundle)
+  // Le mode standalone crée un dossier optimisé pour la production (réduit la taille de l'upload)
   output: 'standalone',
-
-  // Désactive l'optimisation d'image (économise mémoire + pas besoin de sharp)
+  
+  // Désactive l'optimisation d'image par défaut de Next.js
+  // (Recommandé sur Hostinger Shared pour éviter les erreurs si 'sharp' n'est pas installé)
   images: {
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
-
-  // Ignore les erreurs TypeScript/ESLint lors du build
+  
+  // Permet d'ignorer les erreurs de build TypeScript/ESLint pour garantir que le build se termine
+  // (À désactiver si vous voulez un contrôle strict)
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
-  },
-
-  // Optimisations pour environnements à mémoire limitée
-  swcMinify: true,
-
-  // Désactive la génération de source maps en production
-  productionBrowserSourceMaps: false,
-
-  // Désactive le powered by header
-  poweredByHeader: false,
-
-  // Désactive la compression (sera gérée par le serveur)
-  compress: false,
-
-  // Configuration webpack simplifiée
-  webpack: (config, { isServer }) => {
-    // Fix pour certaines dépendances côté serveur
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      };
-    }
-
-    // Optimisation mémoire
-    config.optimization = {
-      ...config.optimization,
-      minimize: true,
-    };
-
-    return config;
-  },
-
-  // Expérimental: réduire le bundle
-  experimental: {
-    optimizePackageImports: [
-      'lucide-react',
-      '@radix-ui/react-icons',
-      'recharts',
-      'date-fns',
-    ],
   },
 };
 

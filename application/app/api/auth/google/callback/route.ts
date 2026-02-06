@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { db } from '../../../../../services/mockDatabase';
 import { encrypt } from '../../../../../lib/encryption';
@@ -7,11 +8,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const error = searchParams.get('error');
-  const userId = searchParams.get('state');
-  const origin = new URL(request.url).origin;
+  const userId = searchParams.get('state'); // On récupère le userId passé au début
 
   if (error) {
-    return NextResponse.redirect(new URL(`/#workspace?google_error=${error}`, origin));
+    return NextResponse.redirect(new URL(`/settings?google_error=${error}`, request.url));
   }
 
   if (!code || !userId) {
@@ -19,16 +19,14 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Configuration depuis les variables d'environnement
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${origin}/api/auth/google/callback`;
+    const settings = db.getSystemSettings();
+    const { clientId, clientSecret, redirectUri } = settings.google;
 
     if (!clientId || !clientSecret) {
-      throw new Error("Configuration OAuth serveur manquante. Définissez GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET.");
+        throw new Error("Configuration OAuth serveur manquante.");
     }
 
-    // 1. Échange du code contre les tokens
+    // 1. Echange du code contre tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -36,7 +34,7 @@ export async function GET(request: Request) {
         code,
         client_id: clientId,
         client_secret: clientSecret,
-        redirect_uri: redirectUri,
+        redirect_uri: redirectUri || `${new URL(request.url).origin}/api/auth/google/callback`, // Fallback robuste
         grant_type: 'authorization_code'
       })
     });
@@ -44,48 +42,50 @@ export async function GET(request: Request) {
     const tokens = await tokenResponse.json();
 
     if (tokens.error) {
-      throw new Error(`Google Token Error: ${tokens.error_description || tokens.error}`);
+        throw new Error(`Google Token Error: ${tokens.error_description}`);
     }
 
     // 2. Récupération infos utilisateur
     const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: { Authorization: `Bearer ${tokens.access_token}` }
+        headers: { Authorization: `Bearer ${tokens.access_token}` }
     });
     const userData = await userRes.json();
 
-    // 3. Chiffrement et stockage
+    // 3. Chiffrement et Stockage
+    // Note: Dans une vraie architecture, on stockerait ça dans Supabase/Postgres.
+    // Ici on met à jour la "db" mockée qui est partagée en mémoire ou synchronisée.
+    // Pour que le client (navigateur) récupère ces infos, on va rediriger avec un paramètre de succès,
+    // et le client rechargera son état via l'API /status.
+    
     const account: GoogleAccount = {
-      userId,
-      googleUserId: userData.id,
-      email: userData.email,
-      accessTokenEncrypted: encrypt(tokens.access_token),
-      refreshTokenEncrypted: tokens.refresh_token ? encrypt(tokens.refresh_token) : '',
-      tokenExpiryDate: Date.now() + (tokens.expires_in * 1000),
-      scopes: tokens.scope ? tokens.scope.split(' ') : [],
-      lastSyncedAt: new Date().toISOString(),
-      status: 'connected'
+        userId,
+        googleUserId: userData.id,
+        email: userData.email,
+        // CHIFFREMENT AES-256-GCM
+        accessTokenEncrypted: encrypt(tokens.access_token),
+        refreshTokenEncrypted: tokens.refresh_token ? encrypt(tokens.refresh_token) : '', // Peut être vide si déjà connecté sans prompt=consent
+        tokenExpiryDate: Date.now() + (tokens.expires_in * 1000),
+        scopes: tokens.scope ? tokens.scope.split(' ') : [],
+        lastSyncedAt: new Date().toISOString(),
+        status: 'connected'
     };
 
-    // Conserver l'ancien refresh token si pas de nouveau
+    // Si on n'a pas eu de refresh token (reconnexion simple), on essaie de garder l'ancien s'il existe
     if (!account.refreshTokenEncrypted) {
-      const oldAccount = db.getGoogleAccount(userId);
-      if (oldAccount && oldAccount.refreshTokenEncrypted) {
-        account.refreshTokenEncrypted = oldAccount.refreshTokenEncrypted;
-      }
+        const oldAccount = db.getGoogleAccount(userId);
+        if (oldAccount && oldAccount.refreshTokenEncrypted) {
+            account.refreshTokenEncrypted = oldAccount.refreshTokenEncrypted;
+        }
     }
 
-    // Sauvegarde côté serveur (pour les API routes qui peuvent y accéder)
+    // Sauvegarde "Serveur" (Ici simulée sur l'instance db partagée)
     db.saveGoogleAccount(userId, account);
 
-    // Encoder les données du compte pour que le client puisse les sauvegarder dans localStorage
-    // On passe les données encodées en base64 pour que le client puisse les persister
-    const accountData = Buffer.from(JSON.stringify(account)).toString('base64');
-
-    // Redirection vers Google Workspace avec les données du compte
-    return NextResponse.redirect(new URL(`/#workspace?google_auth=success&account_data=${encodeURIComponent(accountData)}`, origin));
+    // Redirection vers l'app avec succès
+    return NextResponse.redirect(new URL('/settings?google_auth=success', request.url));
 
   } catch (err: any) {
     console.error("Auth Callback Error:", err);
-    return NextResponse.redirect(new URL(`/#workspace?google_error=${encodeURIComponent(err.message)}`, origin));
+    return NextResponse.redirect(new URL(`/settings?google_error=${encodeURIComponent(err.message)}`, request.url));
   }
 }

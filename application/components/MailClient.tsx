@@ -4,7 +4,11 @@ import { googleService } from '../services/googleService';
 import { EmailMessage } from '../types';
 import { Mail, Send, Trash2, Archive, Star, Edit3, Reply, Loader2, X, RefreshCw, AlertTriangle } from 'lucide-react';
 
-export const MailClient: React.FC = () => {
+interface MailClientProps {
+    refreshTrigger?: number;
+}
+
+export const MailClient: React.FC<MailClientProps> = ({ refreshTrigger = 0 }) => {
   const [emails, setEmails] = useState<EmailMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -22,29 +26,34 @@ export const MailClient: React.FC = () => {
 
   const loadEmails = async () => {
     setLoading(true);
+    setSyncError(null);
     try {
+        // Cet appel déclenche le webhook N8N "list_messages" et attend la réponse JSON
         const msgs = await googleService.listMessages(CURRENT_USER_ID, selectedLabel);
         setEmails(msgs);
         setSelectedEmail(null);
-    } catch (e) {
+    } catch (e: any) {
         console.warn("MailClient load error", e);
+        setSyncError("Erreur lors de la récupération des emails via le workflow.");
     } finally {
         setLoading(false);
     }
   };
 
+  // Recharge quand le label change OU quand le parent (Workspace) envoie un signal de refresh
   useEffect(() => {
     loadEmails();
-  }, [selectedLabel]);
+  }, [selectedLabel, refreshTrigger]);
 
   const handleSync = async () => {
       setIsSyncing(true);
       setSyncError(null);
       try {
           const status = await googleService.getAccountStatus(CURRENT_USER_ID);
-          // Utilise l'email des settings ou de l'OAuth
           if (status.connected && status.email) {
+              // Force une synchro N8N explicite
               await googleService.triggerN8NSync(CURRENT_USER_ID, status.email);
+              // Puis recharge la liste
               await loadEmails();
           } else {
               setSyncError("Aucun compte configuré (Paramètres > Sync Auto ou Connexion).");
@@ -115,14 +124,17 @@ export const MailClient: React.FC = () => {
       <div className={`${selectedEmail || isComposing ? 'hidden lg:block' : 'block'} w-full lg:w-96 flex-shrink-0 border-r border-slate-700 bg-background flex flex-col`}>
          <div className="p-4 border-b border-slate-700 flex justify-between items-center">
              <h2 className="font-bold text-white text-lg">{selectedLabel === 'INBOX' ? 'Réception' : selectedLabel}</h2>
-             <button 
-                onClick={handleSync}
-                disabled={isSyncing}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors"
-                title="Synchroniser (N8N)"
-             >
-                 <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
-             </button>
+             <div className="flex gap-2">
+                 {loading && <span className="text-xs text-slate-500 animate-pulse flex items-center">Chargement...</span>}
+                 <button 
+                    onClick={handleSync}
+                    disabled={isSyncing}
+                    className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors"
+                    title="Synchroniser (N8N)"
+                 >
+                     <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
+                 </button>
+             </div>
          </div>
          
          {/* Message d'erreur de sync */}
@@ -135,7 +147,7 @@ export const MailClient: React.FC = () => {
          )}
 
          <div className="flex-1 overflow-y-auto">
-             {loading ? <div className="p-8 text-center text-slate-500"><Loader2 className="animate-spin mx-auto mb-2"/>Chargement...</div> : (
+             {loading ? <div className="p-8 text-center text-slate-500"><Loader2 className="animate-spin mx-auto mb-2"/>Récupération des emails...</div> : (
                  emails.length === 0 ? <div className="p-8 text-center text-slate-500 text-sm">Aucun message</div> :
                  emails.map(email => (
                      <div 

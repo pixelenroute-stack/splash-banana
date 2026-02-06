@@ -2,9 +2,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { googleService } from '../services/googleService';
 import { CalendarEvent } from '../types';
-import { ChevronLeft, ChevronRight, Clock, MapPin, Plus, Calendar as CalIcon, ChevronDown, CheckSquare, CalendarRange, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, MapPin, Plus, Calendar as CalIcon, ChevronDown, CheckSquare, CalendarRange, RefreshCw, Loader2 } from 'lucide-react';
 
-export const CalendarClient: React.FC = () => {
+interface CalendarClientProps {
+    refreshTrigger?: number;
+}
+
+export const CalendarClient: React.FC<CalendarClientProps> = ({ refreshTrigger = 0 }) => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -23,16 +27,20 @@ export const CalendarClient: React.FC = () => {
   const loadEvents = async () => {
     setLoading(true);
     try {
-        const evts = await googleService.listEvents(CURRENT_USER_ID, new Date(), new Date());
+        // Déclenche le webhook N8N "list_events" et attend les données
+        // Charger les événements du mois en cours (1er jour → dernier jour +7j de marge)
+        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const endOfRange = new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0);
+        const evts = await googleService.listEvents(CURRENT_USER_ID, startOfMonth, endOfRange);
         setEvents(evts);
     } catch (e) {
-        console.error(e);
+        console.error("Erreur chargement calendrier", e);
     } finally {
         setLoading(false);
     }
   };
 
-  useEffect(() => { loadEvents(); }, []);
+  useEffect(() => { loadEvents(); }, [refreshTrigger, currentDate]);
 
   const handleSync = async () => {
       setIsSyncing(true);
@@ -167,6 +175,7 @@ export const CalendarClient: React.FC = () => {
                      <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1 text-xs font-bold text-white hover:bg-slate-700 rounded">Auj.</button>
                      <button onClick={() => changeMonth(1)} className="p-1 hover:bg-slate-700 rounded text-slate-300"><ChevronRight size={20}/></button>
                  </div>
+                 {loading && <span className="flex items-center text-xs text-slate-500 gap-1"><Loader2 size={12} className="animate-spin"/> Chargement...</span>}
              </div>
              
              {/* ACTIONS (CREATE + SYNC) */}

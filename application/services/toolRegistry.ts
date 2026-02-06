@@ -29,41 +29,40 @@ const formatReportToTxt = (report: any): string => {
     const lines = [];
     lines.push("================================================");
     lines.push("   RAPPORT DE DIAGNOSTIC - SPLASH BANANA");
-    lines.push(`   Généré le : ${new Date(report.timestamp).toLocaleString()}`);
+    lines.push(`   Généré le : ${new Date(report.metadata.timestamp).toLocaleString()}`);
     lines.push("================================================");
     lines.push("");
     
     lines.push("[1] ARCHITECTURE & ENVIRONNEMENT");
     lines.push("------------------------------------------------");
     lines.push(`Frontend: ${report.architecture.frontend}`);
-    lines.push(`Backend: ${report.architecture.backend_simulation}`);
-    lines.push(`Stockage: ${report.architecture.integrations.supabase}`);
-    lines.push(`Google Auth: ${report.architecture.integrations.google}`);
+    lines.push(`Backend: ${report.architecture.backend_strategy}`);
+    lines.push(`Stockage: ${report.architecture.integrations.storage}`);
+    lines.push(`CRM: ${report.architecture.integrations.crm}`);
     lines.push(`IA Provider: ${report.architecture.integrations.ai_provider}`);
     lines.push("");
 
     lines.push("[2] MÉTRIQUES DE LA BASE DE DONNÉES");
     lines.push("------------------------------------------------");
-    lines.push(`Clients enregistrés: ${report.database_metrics.clients_count}`);
-    lines.push(`Factures en attente: ${report.database_metrics.invoices_pending}`);
-    lines.push(`Utilisation Tokens IA: ${report.database_metrics.ai_usage}`);
+    lines.push(`Clients enregistrés: ${report.metrics.database.clients}`);
+    lines.push(`Factures en attente: ${report.metrics.database.invoices_pending}`);
+    lines.push(`Utilisation Tokens IA: ${report.metrics.api_usage.tokens_consumed}`);
     lines.push("");
 
     lines.push("[3] VÉRIFICATION DE LA CONNECTIVITÉ");
     lines.push("------------------------------------------------");
-    report.connectivity_check.forEach((check: any) => {
+    report.status.health_checks.forEach((check: any) => {
         const statusIcon = check.status === 'success' ? '[OK]' : check.status === 'error' ? '[ERREUR]' : '[WARN]';
         lines.push(`${statusIcon} Service: ${check.service}`);
-        lines.push(`     Message: ${check.message}`);
-        if(check.details) lines.push(`     Détails: ${check.details}`);
+        lines.push(`     Message: ${check.details}`);
         lines.push("");
     });
 
-    if (report.critical_alerts && report.critical_alerts.length > 0) {
+    if (report.status.critical_issues && report.status.critical_issues.length > 0) {
         lines.push("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         lines.push("   ALERTES CRITIQUES DÉTECTÉES");
         lines.push("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        report.critical_alerts.forEach((alert: string) => lines.push(`- ${alert}`));
+        report.status.critical_issues.forEach((alert: string) => lines.push(`- ${alert}`));
     } else {
         lines.push(">> Aucune alerte critique détectée.");
     }
@@ -120,7 +119,7 @@ export const toolRegistry: Record<string, ToolDefinition> = {
             return {
                 status: 'completed',
                 file_downloaded: filename,
-                summary: `Diagnostic terminé. ${reportJson.connectivity_check.length} services vérifiés. ${reportJson.critical_alerts.length} alertes critiques.`
+                summary: `Diagnostic terminé. ${reportJson.status.health_checks.length} services vérifiés. ${reportJson.status.critical_issues.length} alertes critiques.`
             };
         }
     },

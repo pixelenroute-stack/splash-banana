@@ -1,53 +1,53 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Configuration via variables d'environnement (Next.js)
+// Variables d'environnement pour Supabase (côté client)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 /**
  * Client Supabase singleton
- * Utilise les variables d'environnement pour la configuration
+ * Initialisé uniquement si les variables d'environnement sont présentes
  */
 let supabaseInstance: SupabaseClient | null = null;
 
 export const getSupabaseClient = (): SupabaseClient | null => {
-  if (typeof window === 'undefined') {
-    // Côté serveur, créer une nouvelle instance si configuré
-    if (supabaseUrl && supabaseAnonKey) {
-      return createClient(supabaseUrl, supabaseAnonKey);
-    }
-    return null;
+  if (supabaseInstance) {
+    return supabaseInstance;
   }
 
-  // Côté client, utiliser le singleton
-  if (!supabaseInstance && supabaseUrl && supabaseAnonKey) {
-    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+  if (supabaseUrl && supabaseAnonKey) {
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      }
+    });
+    return supabaseInstance;
   }
 
-  return supabaseInstance;
+  return null;
 };
 
-// Export pour compatibilité avec le code existant
-export const supabase = (supabaseUrl && supabaseAnonKey)
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+// Export du client pour compatibilité avec le code existant
+export const supabase = getSupabaseClient();
 
 /**
- * Vérifie si Supabase est configuré via les variables d'environnement
+ * Vérifie si Supabase est configuré et prêt
  */
 export const isSupabaseConfigured = (): boolean => {
   return !!(supabaseUrl && supabaseAnonKey);
 };
 
 /**
- * Test de connexion approfondi à Supabase
+ * Test de connexion Supabase
  */
 export const testSupabaseConnection = async (): Promise<{
   ok: boolean;
+  latency?: number;
   error?: string;
   mode: string;
-  latency?: number;
-  status?: string | number;
+  status?: string;
 }> => {
   const client = getSupabaseClient();
 
@@ -62,23 +62,34 @@ export const testSupabaseConnection = async (): Promise<{
     return {
       ok: false,
       error: "Client Supabase non initialisé.",
-      mode: 'Mock/Offline'
+      mode: 'Erreur'
     };
   }
 
-  const start = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  const start = performance.now();
 
   try {
-    // Test de connexion simple
-    const { data, error, status } = await client.from('clients').select('id').limit(1);
-    const end = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    // Test avec une requête simple sur la table system_settings
+    const { data, error } = await client
+      .from('system_settings')
+      .select('id')
+      .limit(1);
 
-    // 42P01 = table non définie - on peut se connecter mais la table manque
-    // C'est un "succès" pour le test de connectivité
-    if (error && error.code !== '42P01') {
+    const end = performance.now();
+
+    if (error) {
+      // 42P01 = table inexistante - c'est OK pour le test de connectivité
+      if (error.code === '42P01') {
+        return {
+          ok: true,
+          latency: Math.round(end - start),
+          mode: 'Cloud (Connecté)',
+          status: 'Tables non initialisées'
+        };
+      }
+
       return {
         ok: false,
-        status,
         error: error.message,
         mode: 'Cloud (Erreur)'
       };
@@ -93,16 +104,8 @@ export const testSupabaseConnection = async (): Promise<{
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Erreur réseau Supabase ou URL invalide.",
+      error: err instanceof Error ? err.message : "Erreur réseau Supabase",
       mode: 'Erreur Réseau'
     };
   }
-};
-
-/**
- * Récupère l'URL publique de Supabase pour les uploads
- */
-export const getSupabasePublicUrl = (bucket: string, path: string): string | null => {
-  if (!supabaseUrl) return null;
-  return `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
 };

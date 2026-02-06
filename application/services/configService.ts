@@ -2,6 +2,7 @@
 import { db } from './mockDatabase';
 import { SystemSettings, ConfigVersion } from '../types';
 import { encrypt, decrypt } from '../lib/encryption';
+import { n8nAgentService } from '../lib/n8nAgentService';
 
 class ConfigService {
   /**
@@ -62,7 +63,7 @@ class ConfigService {
   }
   
   /**
-   * Test de connectivité webhook
+   * Test de connectivité webhook avec logging dans le WorkflowMonitor
    */
   async testWebhook(
     module: keyof SystemSettings['webhooks'],
@@ -80,17 +81,16 @@ class ConfigService {
     }
 
     const startTime = Date.now();
+    const testPayload = {
+        action: 'HEALTH_CHECK',
+        payload: { test: true, source: 'AdminConsole' },
+        userId,
+        timestamp: new Date().toISOString()
+    };
     
     try {
-      const testPayload = {
-        action: 'HEALTH_CHECK',
-        payload: { test: true },
-        userId,
-        timestamp: Date.now()
-      };
-      
       const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), 5000);
+      const id = setTimeout(() => controller.abort(), 10000); // 10s timeout pour test
 
       const response = await fetch(webhook.url, {
         method: 'POST',
@@ -104,13 +104,31 @@ class ConfigService {
       
       clearTimeout(id);
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
       const latency = Date.now() - startTime;
       
-      // Mise à jour du statut
+      // Tentative de lecture de la réponse réelle pour l'afficher dans le moniteur
+      let responseData: any = {};
+      const responseText = await response.text();
+      try {
+          responseData = JSON.parse(responseText);
+      } catch (e) {
+          responseData = { raw: responseText };
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${responseText.substring(0, 100)}`);
+      }
+      
+      // LOG SUCCÈS DANS WORKFLOW MONITOR
+      n8nAgentService.logExecution(
+          module as string,
+          testPayload,
+          responseData,
+          'success',
+          latency
+      );
+
+      // Mise à jour du statut dans les settings
       const newWebhooks = { ...config.webhooks };
       newWebhooks[module] = {
           ...webhook,
@@ -125,6 +143,15 @@ class ConfigService {
       return { success: true, latency };
       
     } catch (error: any) {
+      // LOG ERREUR DANS WORKFLOW MONITOR
+      n8nAgentService.logExecution(
+          module as string,
+          testPayload,
+          { error: error.message },
+          'error',
+          Date.now() - startTime
+      );
+
       const newWebhooks = { ...config.webhooks };
       newWebhooks[module] = {
           ...webhook,

@@ -25,9 +25,11 @@ class NewsService {
 
     async fetchWeather(city: string): Promise<WeatherData> {
         try {
+            // Le workflow N8N doit être configuré pour utiliser OpenWeather
             const prompt = `Quelle est la météo actuelle exacte à ${city} ? 
+            Utilise OpenWeather via le workflow.
             Réponds en JSON strict : { "currentTemp": 20, "condition": "Sunny", "humidity": 50, "windSpeed": 10 }. 
-            Données réalistes.`;
+            `;
             
             const response = await apiRouter.routeRequest({
                 type: 'chat_simple', 
@@ -62,12 +64,43 @@ class NewsService {
         }
     }
 
+    /**
+     * Récupère les actualités en fonction de la catégorie via le workflow N8N
+     * Le workflow orchestre Google News, NewsAPI, GNews, et Perplexity
+     */
     async getNews(category: 'all' | NewsCategory): Promise<NewsArticle[]> {
         try {
-            const prompt = `
-                Trouve 4 actualités RÉCENTES (moins de 48h) sur : "${category === 'all' ? 'Tech, IA, Vidéo' : category}".
-                JSON STRICT : [{"title": "...", "summary": "...", "source": "...", "date": "YYYY-MM-DD"}]
-            `;
+            let prompt = "";
+            let sourceHint = "Google News, NewsAPI, GNews";
+
+            // Définition des prompts spécifiques pour orienter le workflow vers les APIs configurées
+            switch (category) {
+                case 'headline':
+                    prompt = `Récupère 3 gros titres "À la une" (France/Monde). Source: Google Actualités.`;
+                    sourceHint = "Google Actualités";
+                    break;
+                case 'politics':
+                    prompt = `Récupère 3 actualités RÉCENTES sur : "Politique, Législation, Lois Numériques". Source: Google Actualités.`;
+                    sourceHint = "Google Actualités";
+                    break;
+                case 'tech':
+                    prompt = `Récupère 3 actualités RÉCENTES sur : "Intelligence Artificielle, Tech, Startups". Source: NewsAPI (TechCrunch, Wired).`;
+                    sourceHint = "NewsAPI";
+                    break;
+                case 'editing':
+                    prompt = `Récupère 3 actualités, tutos ou tendances sur : "Montage Vidéo, Premiere Pro, DaVinci Resolve". Source: Perplexity Search (Recherche Web en direct).`;
+                    sourceHint = "Perplexity";
+                    break;
+                case 'motion':
+                    prompt = `Récupère 3 actualités ou tendances sur : "Motion Design, After Effects, 3D". Source: GNews.`;
+                    sourceHint = "GNews";
+                    break;
+                default: // 'all' ou 'general'
+                    prompt = `Récupère un mix de 4 actualités majeures Tech & Création. Sources variées.`;
+                    break;
+            }
+
+            prompt += `\nFormat JSON STRICT : [{"title": "...", "summary": "...", "source": "${sourceHint}", "date": "YYYY-MM-DD"}]`;
 
             const response = await apiRouter.routeRequest({
                 type: 'news_generation',
@@ -84,34 +117,30 @@ class NewsService {
             if (!Array.isArray(data)) throw new Error("Format invalide (pas un tableau)");
 
             return data.map((item: any, idx: number) => ({
-                id: `news_${Date.now()}_${idx}`,
+                id: `news_${category}_${Date.now()}_${idx}`,
                 title: item.title || "Titre inconnu",
                 summary: item.summary || "Pas de résumé",
-                category: category === 'all' ? 'tech' : category,
-                source: item.source || "Web",
+                category: category === 'all' ? 'general' : category,
+                source: item.source || sourceHint,
                 date: item.date || new Date().toISOString(),
-                imageUrl: `https://image.pollinations.ai/prompt/news%20${encodeURIComponent(item.title || 'tech')}?width=800&height=600&nologo=true`
+                imageUrl: `https://image.pollinations.ai/prompt/news%20${encodeURIComponent(item.title || category)}?width=800&height=600&nologo=true`
             }));
 
         } catch (e) {
-            console.error("Erreur News:", e);
-            // Fallback propre
+            console.error(`Erreur News (${category}):`, e);
+            // Fallback propre pour éviter l'écran vide
             return [
                 {
-                    id: 'mock_news_1',
-                    title: 'L\'IA générative transforme Hollywood (Simulation)',
-                    summary: 'Impossible de récupérer les news réelles pour le moment. Vérifiez la clé API Perplexity.',
-                    category: 'tech',
+                    id: `mock_news_${category}`,
+                    title: `Actualité ${category} (Mode Simulation)`,
+                    summary: 'Le flux d\'actualités en temps réel est temporairement indisponible. Vérifiez la connexion au workflow N8N.',
+                    category: category === 'all' ? 'general' : category,
                     source: 'Système',
                     date: new Date().toISOString(),
-                    imageUrl: 'https://image.pollinations.ai/prompt/error%20robot?width=800&height=600'
+                    imageUrl: `https://image.pollinations.ai/prompt/abstract%20${category}?width=800&height=600`
                 }
             ];
         }
-    }
-
-    async simulateLiveNews(category: NewsCategory): Promise<NewsArticle[]> {
-        return this.getNews(category);
     }
 }
 

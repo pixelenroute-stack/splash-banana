@@ -1,16 +1,12 @@
-/**
- * Custom Next.js Server
- * Utilisé pour le déploiement sur des hébergeurs comme Hostinger
- * En développement, utilisez 'npm run dev' à la place
- */
 
 const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = process.env.HOSTNAME || 'localhost';
-const port = parseInt(process.env.PORT || '3000', 10);
+const hostname = 'localhost';
+// Hostinger fournit le port via process.env.PORT. Fallback sur 3000.
+const port = process.env.PORT || 3000;
 
 // Initialisation de l'app Next.js
 const app = next({ dev, hostname, port });
@@ -20,45 +16,22 @@ app.prepare().then(() => {
   createServer(async (req, res) => {
     try {
       const parsedUrl = parse(req.url, true);
+      const { pathname, query } = parsedUrl;
 
-      // Headers de sécurité basiques
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('X-Frame-Options', 'DENY');
-
-      // Gestion des routes via Next.js
+      // Gestion des routes
       await handle(req, res, parsedUrl);
-
+      
     } catch (err) {
       console.error('Error occurred handling', req.url, err);
       res.statusCode = 500;
-      res.setHeader('Content-Type', 'text/plain');
-      res.end('Internal Server Error');
+      res.end('internal server error');
     }
   })
     .once('error', (err) => {
-      console.error('Server error:', err);
+      console.error(err);
       process.exit(1);
     })
-    .listen(port, hostname, () => {
-      console.log(`
-╔════════════════════════════════════════════╗
-║  Splash Banana - Production Vidéo IA       ║
-╠════════════════════════════════════════════╣
-║  Server ready on:                          ║
-║  → http://${hostname}:${port}                      ║
-║  Mode: ${dev ? 'Development' : 'Production'}                          ║
-╚════════════════════════════════════════════╝
-      `);
+    .listen(port, () => {
+      console.log(`> Ready on http://${hostname}:${port}`);
     });
-});
-
-// Gestion propre de l'arrêt du serveur
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
-  process.exit(0);
 });

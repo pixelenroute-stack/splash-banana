@@ -13,21 +13,19 @@ import { ClientList } from './components/ClientList';
 import { ProjectList } from './components/ProjectList';
 import { Billing } from './components/Billing';
 import { Settings } from './components/Settings';
-import { GoogleWorkspace } from './components/google/GoogleWorkspace';
 import { AdminConsole } from './components/AdminConsole';
 import { InviteAcceptFlow } from './components/InviteAcceptFlow';
 import { BrandLogo } from './components/BrandLogo';
 import { StargateBackground } from './components/backgrounds/StargateBackground';
 import { NotificationProvider } from './context/NotificationContext'; 
 import { ProspectionHub } from './components/prospection/ProspectionHub'; 
-import { DevToolbar } from './components/DevToolbar'; 
 
 import { authService } from './services/authService';
 import { db } from './services/mockDatabase';
 import { autoSyncService } from './services/autoSyncService';
 import { backupService } from './services/backupService';
 import { User, UserRole } from './types';
-import { Loader2, ArrowRight, Shield, Lock, AlertTriangle } from 'lucide-react';
+import { Loader2, ArrowRight, Shield, Lock, AlertTriangle, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
 
 const App: React.FC = () => {
   // MODIFICATION : Initialisation à null pour forcer le Login
@@ -37,16 +35,18 @@ const App: React.FC = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
+  // Login State
+  const [authMode, setAuthMode] = useState<'login' | 'forgot_password'>('login');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPass, setLoginPass] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   const [isPublicInviteMode, setIsPublicInviteMode] = useState(false);
 
-  // Récupération des settings pour le mode App
+  // Récupération des settings
   const settings = db.getSystemSettings();
-  const isDevMode = settings.appMode === 'developer';
 
   // --- THEME INJECTION ---
   useEffect(() => {
@@ -109,18 +109,6 @@ const App: React.FC = () => {
     return () => window.removeEventListener('agency-settings-updated', handleSettingsUpdate);
   }, []);
 
-  // Gestion du changement de mode (Developer <-> Production) sans rechargement de page
-  useEffect(() => {
-    const handleModeChange = (event: CustomEvent<{ mode: string }>) => {
-      console.log('[App] Mode changed to:', event.detail.mode);
-      // Force le rafraîchissement des composants sans perdre la session utilisateur
-      setRefreshKey(prev => prev + 1);
-    };
-
-    window.addEventListener('app-mode-changed', handleModeChange as EventListener);
-    return () => window.removeEventListener('app-mode-changed', handleModeChange as EventListener);
-  }, []);
-
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
@@ -164,18 +152,34 @@ const App: React.FC = () => {
       }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!loginEmail) {
+          setLoginError("Veuillez saisir votre adresse email.");
+          return;
+      }
+      setIsLoggingIn(true);
+      setLoginError(null);
+      
+      // Simulation d'envoi de mail
+      setTimeout(() => {
+          setIsLoggingIn(false);
+          setResetSuccess(true);
+      }, 1500);
+  };
+
   const handleLogout = async () => {
       await authService.logout();
       setUser(null);
-      setLoginPass('');
-      setLoginEmail('');
+      setLoginPass(''); 
+      // On garde l'email pour le confort utilisateur (suggestion)
   };
 
   const handleSwitchAccount = async (targetEmail?: string) => {
       await authService.logout();
       setUser(null);
       setLoginPass('');
-      setLoginEmail(targetEmail || ''); 
+      if (targetEmail) setLoginEmail(targetEmail);
   };
 
   const canAccessView = (viewId: string) => {
@@ -217,30 +221,125 @@ const App: React.FC = () => {
                   <div className="flex justify-center mb-6">
                       <BrandLogo size="lg" />
                   </div>
-                  <h1 className="text-2xl font-bold text-white text-center mb-1">
-                      {settings.branding.welcomeMessage || "Bon retour"}
-                  </h1>
-                  <p className="text-slate-400 text-center mb-8 text-sm">
-                      {settings.branding.welcomeSubtitle || "Connectez-vous à votre espace."}
-                  </p>
-                  <form onSubmit={handleLogin} className="space-y-4">
-                      <input 
-                        type="email" required value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        className="w-full bg-slate-900/80 border border-slate-700 rounded-lg px-4 py-3 text-white outline-none focus:border-primary transition-colors"
-                        placeholder="Email"
-                      />
-                      <input 
-                        type="password" required value={loginPass}
-                        onChange={(e) => setLoginPass(e.target.value)}
-                        className="w-full bg-slate-900/80 border border-slate-700 rounded-lg px-4 py-3 text-white outline-none focus:border-primary transition-colors"
-                        placeholder="Mot de passe"
-                      />
-                      {loginError && <p className="text-red-400 text-xs text-center">{loginError}</p>}
-                      <button type="submit" className="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
-                          {isLoggingIn ? <Loader2 size={18} className="animate-spin" /> : <>Se connecter <ArrowRight size={18}/></>}
-                      </button>
-                  </form>
+                  
+                  {authMode === 'login' ? (
+                      <>
+                          <h1 className="text-2xl font-bold text-white text-center mb-1">
+                              {settings.branding.welcomeMessage || "Bon retour"}
+                          </h1>
+                          <p className="text-slate-400 text-center mb-8 text-sm">
+                              {settings.branding.welcomeSubtitle || "Connectez-vous à votre espace."}
+                          </p>
+                          <form onSubmit={handleLogin} className="space-y-4">
+                              <div className="space-y-1">
+                                <label className="text-[10px] uppercase font-bold text-slate-500 ml-1" htmlFor="email">Email</label>
+                                <input 
+                                    id="email"
+                                    name="email"
+                                    type="email" 
+                                    required 
+                                    autoComplete="username email" // Active l'autocomplétion du navigateur
+                                    value={loginEmail}
+                                    onChange={(e) => setLoginEmail(e.target.value)}
+                                    className="w-full bg-slate-900/80 border border-slate-700 rounded-lg px-4 py-3 text-white outline-none focus:border-primary transition-colors"
+                                    placeholder="pixelenroute@gmail.com"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex justify-between items-center ml-1">
+                                    <label className="text-[10px] uppercase font-bold text-slate-500" htmlFor="password">Mot de passe</label>
+                                    <button 
+                                        type="button"
+                                        onClick={() => { setAuthMode('forgot_password'); setLoginError(null); }}
+                                        className="text-[10px] text-primary hover:underline font-bold"
+                                    >
+                                        Mot de passe oublié ?
+                                    </button>
+                                </div>
+                                <input 
+                                    id="password"
+                                    name="password"
+                                    type="password" 
+                                    required 
+                                    autoComplete="current-password" // Active la sauvegarde du mot de passe
+                                    value={loginPass}
+                                    onChange={(e) => setLoginPass(e.target.value)}
+                                    className="w-full bg-slate-900/80 border border-slate-700 rounded-lg px-4 py-3 text-white outline-none focus:border-primary transition-colors"
+                                    placeholder="••••••••"
+                                />
+                              </div>
+                              
+                              {loginError && <p className="text-red-400 text-xs text-center bg-red-500/10 py-2 rounded-lg border border-red-500/20">{loginError}</p>}
+                              
+                              <button type="submit" className="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
+                                  {isLoggingIn ? <Loader2 size={18} className="animate-spin" /> : <>Se connecter <ArrowRight size={18}/></>}
+                              </button>
+                          </form>
+                      </>
+                  ) : (
+                      // VIEW: FORGOT PASSWORD
+                      <>
+                          <button 
+                            onClick={() => { setAuthMode('login'); setResetSuccess(false); setLoginError(null); }}
+                            className="absolute top-6 left-6 text-slate-400 hover:text-white transition-colors"
+                          >
+                              <ArrowLeft size={20}/>
+                          </button>
+                          
+                          <h1 className="text-2xl font-bold text-white text-center mb-1">
+                              Récupération
+                          </h1>
+                          <p className="text-slate-400 text-center mb-8 text-sm px-2">
+                              Entrez votre email pour recevoir un lien de réinitialisation.
+                          </p>
+
+                          {!resetSuccess ? (
+                              <form onSubmit={handleResetPassword} className="space-y-6">
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] uppercase font-bold text-slate-500 ml-1" htmlFor="reset-email">Email associé au compte</label>
+                                    <div className="relative">
+                                        <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"/>
+                                        <input 
+                                            id="reset-email"
+                                            name="email"
+                                            type="email" 
+                                            required 
+                                            autoComplete="email"
+                                            value={loginEmail}
+                                            onChange={(e) => setLoginEmail(e.target.value)}
+                                            className="w-full bg-slate-900/80 border border-slate-700 rounded-lg pl-10 pr-4 py-3 text-white outline-none focus:border-primary transition-colors"
+                                            placeholder="exemple@agence.com"
+                                        />
+                                    </div>
+                                  </div>
+
+                                  {loginError && <p className="text-red-400 text-xs text-center">{loginError}</p>}
+
+                                  <button type="submit" disabled={isLoggingIn} className="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all disabled:opacity-70">
+                                      {isLoggingIn ? <Loader2 size={18} className="animate-spin" /> : 'Envoyer le lien'}
+                                  </button>
+                              </form>
+                          ) : (
+                              <div className="text-center space-y-4 animate-in fade-in zoom-in">
+                                  <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto">
+                                      <CheckCircle2 size={32}/>
+                                  </div>
+                                  <div>
+                                      <h3 className="text-white font-bold">Email envoyé !</h3>
+                                      <p className="text-xs text-slate-400 mt-2">
+                                          Si un compte existe pour <strong>{loginEmail}</strong>, vous recevrez les instructions dans quelques instants.
+                                      </p>
+                                  </div>
+                                  <button 
+                                    onClick={() => { setAuthMode('login'); setResetSuccess(false); }}
+                                    className="text-primary text-sm font-bold hover:underline"
+                                  >
+                                      Retour à la connexion
+                                  </button>
+                              </div>
+                          )}
+                      </>
+                  )}
               </div>
           </div>
       );
@@ -261,7 +360,6 @@ const App: React.FC = () => {
       case 'dashboard': return <Dashboard />;
       case 'chat': return <ChatInterface />;
       case 'news': return <NewsDashboard />; 
-      case 'workspace': return <GoogleWorkspace />; 
       case 'prospection': return <ProspectionHub />; 
       case 'clients': return <ClientList />;
       case 'projects': return <ProjectList />;
@@ -279,12 +377,8 @@ const App: React.FC = () => {
 
   return (
     <NotificationProvider>
-        {/* APP CONTAINER : Gère le Background selon le mode */}
-        <div className={`flex h-screen overflow-hidden text-slate-100 ${isDevMode ? 'bg-dev-gradient' : 'bg-background'}`}>
-            
-            {/* OVERLAY LÉGER POUR LE MODE DEV (20% Opacity + Blur pour garder la couleur visible) */}
-            {isDevMode && <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] pointer-events-none z-0" />}
-
+        {/* APP CONTAINER */}
+        <div className={`flex h-screen overflow-hidden text-slate-100 bg-background`} key={refreshKey}>
             <div className="flex w-full h-full relative z-10">
                 <Sidebar 
                     currentView={currentView} 
@@ -300,7 +394,6 @@ const App: React.FC = () => {
                         </div>
                     )}
                     {renderContent()}
-                    <DevToolbar /> 
                 </main>
             </div>
         </div>

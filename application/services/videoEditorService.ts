@@ -52,7 +52,9 @@ export class VideoEditorService {
             throw new Error(result.error || "Erreur lors de la génération du moodboard via N8N");
         }
 
-        return result.data as MoodboardData;
+        // n8n returns {success, data} wrapper - extract inner data
+        const webhookData = result.data;
+        return (webhookData?.data ?? webhookData) as MoodboardData;
     }
 
     /**
@@ -73,7 +75,9 @@ export class VideoEditorService {
             throw new Error(result.error || "Erreur lors de l'analyse du rush");
         }
 
-        return result.data; // RushAnalysisItem[]
+        // n8n returns {success, data} wrapper - extract inner data
+        const webhookData = result.data;
+        return (webhookData?.data ?? webhookData); // RushAnalysisItem[]
     }
 
     /**
@@ -92,7 +96,9 @@ export class VideoEditorService {
             throw new Error(result.error || "Erreur lors de la génération des scripts");
         }
 
-        return result.data; // ScriptWithScore[]
+        // n8n returns {success, data} wrapper - extract inner data
+        const webhookData = result.data;
+        return (webhookData?.data ?? webhookData); // ScriptWithScore[]
     }
 
     /**
@@ -113,8 +119,10 @@ export class VideoEditorService {
             throw new Error(result.error || "Erreur lors de la génération du tutoriel");
         }
 
-        // Le workflow doit retourner un tableau de tutoriels
-        const data = Array.isArray(result.data) ? result.data : [result.data];
+        // n8n returns {success, data} wrapper - extract inner data
+        const webhookData = result.data;
+        const actualData = webhookData?.data ?? webhookData;
+        const data = Array.isArray(actualData) ? actualData : [actualData];
         return data as AdvancedTechnique[];
     }
 

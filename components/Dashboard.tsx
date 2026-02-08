@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/mockDatabase';
 import { googleService } from '../services/googleService';
+import { notionService } from '../services/notionRepository';
+import { billingService } from '../services/billingService';
 import { DashboardStats, EmailMessage, CalendarEvent, AuditLog } from '../types';
 import { 
     Users, Clock as ClockIcon, Zap, Loader2, LayoutTemplate, RefreshCw, 
@@ -65,9 +67,30 @@ export const Dashboard: React.FC = () => {
 
   const loadData = async () => {
     setIsLoading(true);
-    setStats(db.getStats());
+
+    // Base stats from local DB
+    const baseStats = db.getStats();
     setRecentActivity(db.getRecentActivity(5));
-    
+
+    // Enrich with real data sources
+    try {
+      const [clientsResult, invoicesResult] = await Promise.all([
+        notionService.syncClients().catch(() => ({ data: [] })),
+        billingService.getInvoices().catch(() => []),
+      ]);
+
+      const totalClients = clientsResult.data.length || baseStats.totalClients;
+      const pendingInvoices = invoicesResult.filter(i => ['draft', 'sent', 'overdue'].includes(i.status)).length || baseStats.pendingInvoices;
+
+      setStats({
+        ...baseStats,
+        totalClients,
+        pendingInvoices,
+      });
+    } catch {
+      setStats(baseStats);
+    }
+
     try {
         const statusRes = await googleService.getAccountStatus(CURRENT_USER_ID);
         setConnStatus(statusRes.status);

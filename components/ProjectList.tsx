@@ -25,24 +25,33 @@ export const ProjectList: React.FC = () => {
     loadProjects();
   }, []);
 
-  const loadProjects = () => {
-    setProjects(db.getProjects());
+  const loadProjects = async () => {
+    setLoading(true);
+    try {
+      notionService.loadConfig();
+      const result = await notionService.syncProjects();
+      if (result.data.length > 0) {
+        setProjects(result.data);
+      } else {
+        // Fallback to local
+        setProjects(db.getProjects());
+      }
+    } catch {
+      setProjects(db.getProjects());
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSyncNotion = async () => {
     setIsSyncing(true);
     try {
+      notionService.clearCache();
+      notionService.loadConfig();
       const result = await notionService.syncProjects();
-      // On fusionne avec la DB locale
-      for (const p of result.data) {
-          const existing = db.getProjects().find(local => local.notionPageId === p.notionPageId);
-          if (!existing) {
-              db.createProject(p);
-          } else {
-              db.updateProject(existing.id, p);
-          }
+      if (result.data.length > 0) {
+        setProjects(result.data);
       }
-      loadProjects();
     } finally {
       setIsSyncing(false);
     }
@@ -55,19 +64,23 @@ export const ProjectList: React.FC = () => {
     setLoading(true);
     try {
       const client = clients.find(c => c.id === editingProject.clientId);
-      const data = { ...editingProject, clientName: client?.name };
+      const data: Partial<Project> = {
+        ...editingProject,
+        clientName: client?.name,
+      };
 
-      if (editingProject.id) {
-        db.updateProject(editingProject.id, data);
-      } else {
-        const saved = db.createProject(data);
-        // Exportation tâche de fond
-        notionService.upsertProjectToNotion(saved).then(res => {
-          if (res.notionPageId) db.updateProject(saved.id, { notionPageId: res.notionPageId });
-          loadProjects();
-        });
+      // Write directly to Notion
+      const result = await notionService.upsertProjectToNotion(data);
+      if (result.success) {
+        // Also save locally as backup
+        if (editingProject.id) {
+          db.updateProject(editingProject.id, { ...data, notionPageId: result.notionPageId });
+        } else {
+          db.createProject({ ...data, notionPageId: result.notionPageId, createdAt: new Date().toISOString() });
+        }
       }
-      loadProjects();
+
+      await loadProjects();
       setShowModal(false);
       setEditingProject(null);
     } finally {

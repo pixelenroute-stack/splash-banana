@@ -38,15 +38,40 @@ const DEFAULT_SETTINGS: SystemSettings = {
     anthropicKey: '',
     deepseekKey: ''
   },
+  // Notion Integration (CRM + Projects)
+  notion: {
+    apiKey: '',
+    crmDatabaseId: '6bd8c6a6a31342a09500ecff1a7516ca',
+    projectsDatabaseId: '1f75ed7c2be880ada164f53f1773826c',
+    crmDatabaseUrl: 'https://www.notion.so/6bd8c6a6a31342a09500ecff1a7516ca',
+    projectsDatabaseUrl: 'https://www.notion.so/1f75ed7c2be880ada164f53f1773826c',
+  },
+  // Qonto Banking Integration
+  qonto: {
+    login: '',
+    secretKey: '',
+    iban: '',
+  },
+  // Contract Generation
+  contracts: {
+    googleDocsTemplateId: '1yQSTeadQYfAVbveocp2qIrgqFPems3BCSjpU1YQJsec',
+    outputDriveFolderId: '',
+  },
   webhooks: {
-      chat: { ...DEFAULT_WEBHOOK, enabled: true },
-      images: { ...DEFAULT_WEBHOOK, enabled: true },
-      videos: { ...DEFAULT_WEBHOOK, enabled: true },
-      clients: { ...DEFAULT_WEBHOOK, enabled: true },
-      invoices: { ...DEFAULT_WEBHOOK, enabled: true },
-      news: { ...DEFAULT_WEBHOOK, enabled: true },
+      unified_workspace: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/unified-workspace' },
+      unified_action: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/pixel-unified' },
+      chat: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/assistant-multi-agent' },
+      images: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/image-gen' },
+      videos: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/video-studio' },
+      video_editor: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/video-studio' },
+      clients: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/crm-clients' },
+      invoices: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/invoice-generator' },
+      contracts: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/pixel-unified' },
+      email_sender: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/pixel-unified' },
+      news: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/news-agent' },
       prospection: { ...DEFAULT_WEBHOOK, enabled: true },
-      projects: { ...DEFAULT_WEBHOOK, enabled: true }
+      projects: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/projects-manager' },
+      google_workspace: { ...DEFAULT_WEBHOOK, enabled: true, url: 'https://n8n.srv1027050.hstgr.cloud/webhook/google-workspace-sync' },
   },
   chat: { provider: 'n8n', value: '' },
   contentCreation: { provider: 'gemini', value: '' },

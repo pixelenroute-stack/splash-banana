@@ -167,6 +167,51 @@ class N8NAgentService {
       const res = await this.fetchN8nWorkflow('file_handling', { action: 'upload', asset });
       return res.success;
   }
+
+  /**
+   * Send an action to a specific n8n webhook by key from settings.webhooks
+   */
+  async sendAction(webhookKey: string, payload: any, options: { timeout?: number } = {}): Promise<N8NResult> {
+    const { timeout = 30000 } = options;
+    const settings = db.getSystemSettings();
+    const webhookConfig = settings.webhooks[webhookKey as keyof typeof settings.webhooks];
+
+    if (!webhookConfig?.url || !webhookConfig?.enabled) {
+      this.addLog('warn', `sendAction: webhook "${webhookKey}" not configured or disabled`, webhookKey);
+      return { success: false, data: null, error: `Webhook "${webhookKey}" not configured` };
+    }
+
+    const startTime = Date.now();
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(webhookConfig.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: webhookKey,
+          data: payload,
+          timestamp: new Date().toISOString()
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(id);
+
+      if (!response.ok) throw new Error(`n8n webhook error: ${response.status}`);
+
+      const resultData = await response.json();
+      const finalData = Array.isArray(resultData) ? resultData[0] : resultData;
+
+      this.addLog('info', `sendAction success: ${webhookKey}/${payload.action}`, webhookKey);
+      return { success: true, data: finalData, executionTime: Date.now() - startTime };
+
+    } catch (err: any) {
+      this.addLog('error', `sendAction failed: ${webhookKey} - ${err.message}`, webhookKey);
+      return { success: false, data: null, error: err.message, executionTime: Date.now() - startTime };
+    }
+  }
 }
 
 export const n8nAgentService = new N8NAgentService();

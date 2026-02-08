@@ -170,9 +170,15 @@ class ConfigService {
     if (config.google) {
         encrypted.google.clientSecret = encrypt(config.google.clientSecret);
     }
+    if (config.notion?.apiKey) {
+        encrypted.notion.apiKey = encrypt(config.notion.apiKey);
+    }
+    if (config.qonto?.secretKey) {
+        encrypted.qonto.secretKey = encrypt(config.qonto.secretKey);
+    }
     return encrypted;
   }
-  
+
   private decryptConfig(config: SystemSettings): SystemSettings {
     const decrypted = JSON.parse(JSON.stringify(config));
     if (config.aiConfig) {
@@ -184,6 +190,12 @@ class ConfigService {
     }
     if (config.google) {
         decrypted.google.clientSecret = decrypt(config.google.clientSecret);
+    }
+    if (config.notion?.apiKey) {
+        decrypted.notion.apiKey = decrypt(config.notion.apiKey);
+    }
+    if (config.qonto?.secretKey) {
+        decrypted.qonto.secretKey = decrypt(config.qonto.secretKey);
     }
     return decrypted;
   }

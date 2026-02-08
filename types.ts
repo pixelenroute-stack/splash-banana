@@ -231,16 +231,22 @@ export interface SystemSettings {
     deepseekKey: string;   // DeepSeek
   };
   
-  // NEW: Granular Webhook Configuration
+  // Granular Webhook Configuration
   webhooks: {
+    unified_workspace?: WebhookConfig;
+    unified_action?: WebhookConfig;
     chat: WebhookConfig;
     images: WebhookConfig;
     videos: WebhookConfig;
+    video_editor?: WebhookConfig;
     clients: WebhookConfig;
     invoices: WebhookConfig;
+    contracts?: WebhookConfig;
+    email_sender?: WebhookConfig;
     news?: WebhookConfig;
     prospection?: WebhookConfig;
     projects?: WebhookConfig;
+    google_workspace?: WebhookConfig;
   };
 
   // Legacy fields (kept for backward compat until full migration)
@@ -322,6 +328,29 @@ export interface SystemSettings {
   auth: {
     invitePageUrl: string;
   };
+  // Notion Integration (CRM + Projects)
+  notion: {
+    apiKey: string;
+    crmDatabaseId: string;
+    projectsDatabaseId: string;
+    crmDatabaseUrl?: string;
+    projectsDatabaseUrl?: string;
+    status?: IntegrationStatusMeta;
+  };
+  // Qonto Banking Integration (Invoices & Quotes)
+  qonto: {
+    login: string;
+    secretKey: string;
+    iban?: string;
+    status?: IntegrationStatusMeta;
+  };
+  // Contract Generation (Google Docs Template)
+  contracts: {
+    googleDocsTemplateId: string;
+    outputDriveFolderId?: string;
+  };
+
+  // Legacy fields (kept for backward compat)
   notionTokenEncrypted?: string;
   notionDatabaseId?: string;
   notionStatus?: IntegrationStatusMeta;
@@ -422,8 +451,12 @@ export interface Template {
 export interface Contract {
   id: string;
   clientId: string;
-  templateId: string;
-  contentSnapshot: string;
+  templateId?: string;
+  googleDocId?: string;
+  googleDocUrl?: string;
+  pdfUrl?: string;
+  contentSnapshot?: string;
+  variables?: Record<string, string>;
   status: ContractStatus;
   created_at: string;
   clients?: { name: string };
@@ -439,11 +472,17 @@ export interface Invoice {
   id: string;
   number: string;
   clientId: string;
+  qontoInvoiceId?: string;
   amountHT: number;
-  status: string;
-  items: any[];
+  amountTTC?: number;
+  tvaRate?: number;
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  items: { description: string; quantity?: number; unitPrice?: number; price: number }[];
+  dueDate?: string;
+  paidAt?: string;
+  pdfUrl?: string;
   created_at: string;
-  clients?: { name: string };
+  clients?: { name: string; email?: string };
 }
 
 export interface IntegrationStatusMeta {

@@ -922,6 +922,72 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({ onDirtyChange }) => 
                       </div>
                   </div>
 
+                  {/* NOTION INTEGRATION */}
+                  <div className="bg-surface border border-slate-700 rounded-2xl p-6 shadow-lg animate-in fade-in">
+                      <h3 className="font-bold text-white flex items-center gap-2 mb-2">
+                          <Database size={18} className="text-purple-400"/> Notion Integration
+                      </h3>
+                      <p className="text-xs text-slate-500 mb-6">CRM Clients & Gestion de Projets via Notion API</p>
+                      <div className="space-y-4">
+                          <ConfigInput label="Notion API Key (Internal Integration)" value={settings.notion?.apiKey} onChange={(v: string) => updateSetting('notion.apiKey', v)} type="password" placeholder="ntn_..." />
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <ConfigInput label="CRM Database ID" value={settings.notion?.crmDatabaseId} onChange={(v: string) => updateSetting('notion.crmDatabaseId', v)} placeholder="6bd8c6a6..." />
+                              <ConfigInput label="Projects Database ID" value={settings.notion?.projectsDatabaseId} onChange={(v: string) => updateSetting('notion.projectsDatabaseId', v)} placeholder="1f75ed7c..." />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <ConfigInput label="CRM Database URL (optionnel)" value={settings.notion?.crmDatabaseUrl} onChange={(v: string) => updateSetting('notion.crmDatabaseUrl', v)} placeholder="https://www.notion.so/..." />
+                              <ConfigInput label="Projects Database URL (optionnel)" value={settings.notion?.projectsDatabaseUrl} onChange={(v: string) => updateSetting('notion.projectsDatabaseUrl', v)} placeholder="https://www.notion.so/..." />
+                          </div>
+                          {settings.notion?.apiKey && (
+                              <div className="flex items-center gap-2 text-xs mt-2">
+                                  <CheckCircle size={14} className="text-green-400"/>
+                                  <span className="text-green-400 font-medium">API Key configurée</span>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+
+                  {/* QONTO INTEGRATION */}
+                  <div className="bg-surface border border-slate-700 rounded-2xl p-6 shadow-lg animate-in fade-in">
+                      <h3 className="font-bold text-white flex items-center gap-2 mb-2">
+                          <DollarSign size={18} className="text-green-400"/> Qonto Integration
+                      </h3>
+                      <p className="text-xs text-slate-500 mb-6">Facturation & Devis via API bancaire Qonto</p>
+                      <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <ConfigInput label="Qonto Login (Organization slug)" value={settings.qonto?.login} onChange={(v: string) => updateSetting('qonto.login', v)} placeholder="my-company-xxx" />
+                              <ConfigInput label="Qonto Secret Key" value={settings.qonto?.secretKey} onChange={(v: string) => updateSetting('qonto.secretKey', v)} type="password" placeholder="sk_..." />
+                          </div>
+                          <ConfigInput label="IBAN (optionnel)" value={settings.qonto?.iban} onChange={(v: string) => updateSetting('qonto.iban', v)} placeholder="FR76 ..." />
+                          {settings.qonto?.login && settings.qonto?.secretKey && (
+                              <div className="flex items-center gap-2 text-xs mt-2">
+                                  <CheckCircle size={14} className="text-green-400"/>
+                                  <span className="text-green-400 font-medium">Credentials Qonto configurées</span>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+
+                  {/* CONTRACTS CONFIG */}
+                  <div className="bg-surface border border-slate-700 rounded-2xl p-6 shadow-lg animate-in fade-in">
+                      <h3 className="font-bold text-white flex items-center gap-2 mb-2">
+                          <FileSignature size={18} className="text-blue-400"/> Contrats (Google Docs)
+                      </h3>
+                      <p className="text-xs text-slate-500 mb-6">Génération de contrats depuis un template Google Docs</p>
+                      <div className="space-y-4">
+                          <ConfigInput label="Google Docs Template ID" value={settings.contracts?.googleDocsTemplateId} onChange={(v: string) => updateSetting('contracts.googleDocsTemplateId', v)} placeholder="1yQSTeadQYfAV..." />
+                          <ConfigInput label="Dossier Google Drive de sortie (ID)" value={settings.contracts?.outputDriveFolderId} onChange={(v: string) => updateSetting('contracts.outputDriveFolderId', v)} placeholder="1aBcDeFgHiJkLm..." />
+                          {settings.contracts?.googleDocsTemplateId && (
+                              <div className="flex items-center gap-2 text-xs mt-2">
+                                  <Link size={14} className="text-blue-400"/>
+                                  <a href={`https://docs.google.com/document/d/${settings.contracts.googleDocsTemplateId}/edit`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-medium">
+                                      Ouvrir le template Google Docs
+                                  </a>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+
                   {/* WEBHOOKS CONFIG (PROD) */}
                   {settings.appMode === 'production' && (
                       <div className="bg-surface border border-slate-700 rounded-2xl p-6 shadow-lg animate-in fade-in">

@@ -1,8 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { supabaseService } from '../services/supabaseService';
-import { sheetsService } from '../services/sheetsRepository'; // Still used for manual sync/read
-import { syncOrchestrator } from '../services/syncOrchestrator';
+import { notionService } from '../services/notionRepository';
 import { db } from '../services/mockDatabase';
 import { NotionClient } from '../types';
 import { 
@@ -24,7 +22,6 @@ import {
   CheckCircle2, 
   CloudUpload,
   Cloud,
-  FileSpreadsheet,
   ArrowRight
 } from 'lucide-react';
 import { ClientDetail } from './ClientDetail';
@@ -61,10 +58,14 @@ export const ClientList: React.FC = () => {
   const loadClients = async () => {
     setLoading(true);
     try {
-        const data = await supabaseService.getClients();
-        setClients(data);
+        notionService.loadConfig();
+        const result = await notionService.syncClients();
+        setClients(result.data);
     } catch (e) {
         console.error(e);
+        // Fallback to local
+        const local = db.getClients();
+        setClients(local);
     } finally {
         setLoading(false);
     }
@@ -76,30 +77,30 @@ export const ClientList: React.FC = () => {
 
   const handleSync = async () => {
     setLoading(true);
-    setSyncStatus({ msg: 'Lecture du Google Sheet...', type: null });
-    
+    setSyncStatus({ msg: 'Synchronisation Notion CRM...', type: null });
+
     try {
-        const syncResult = await sheetsService.fetchClients();
-        
-        if (syncResult.success) {
-            // Sauvegarde locale des données Sheet
-            for (const c of syncResult.data) {
-                await supabaseService.saveClient(c);
-            }
-            await loadClients();
-            setSyncStatus({ 
-                msg: `Synchronisation Sheets : ${syncResult.data.length} clients récupérés.`, 
-                type: 'success' 
+        notionService.clearCache();
+        notionService.loadConfig();
+        const result = await notionService.syncClients();
+
+        if (result.data.length > 0) {
+            setClients(result.data);
+            setSyncStatus({
+                msg: `Notion CRM : ${result.data.length} clients synchronisés.`,
+                type: 'success'
             });
         } else {
-            setSyncStatus({ 
-                msg: syncResult.message || "Erreur de synchronisation Sheet.", 
-                type: 'error' 
+            setSyncStatus({
+                msg: notionService.getStatus().configured
+                  ? "Aucun client trouvé dans la base Notion CRM."
+                  : "Notion non configuré. Ajoutez votre API Key dans Admin Console > Infrastructure.",
+                type: notionService.getStatus().configured ? 'warning' : 'error'
             });
         }
         setTimeout(() => setSyncStatus({ msg: '', type: null }), 6000);
     } catch (e) {
-        setSyncStatus({ msg: "Impossible de contacter Google Sheets. Vérifiez la connexion.", type: 'error' });
+        setSyncStatus({ msg: "Impossible de contacter Notion. Vérifiez la clé API.", type: 'error' });
     } finally {
         setLoading(false);
     }
@@ -113,16 +114,15 @@ export const ClientList: React.FC = () => {
       setOrchestrationStep('Validation...');
       
       try {
-          setOrchestrationStep('Supabase & Sheets Sync...');
-          // Orchestrator handles DB -> Sheet -> Notion flow
-          const result = await syncOrchestrator.createClientWorkflow(newClient);
-          
+          setOrchestrationStep('Création dans Notion CRM...');
+          const result = await notionService.upsertClientToNotion(newClient);
+
           if (result.success) {
               setOrchestrationStep('Succès !');
-              notify("Client créé et synchronisé sur tous les systèmes (App, Sheet, Notion).", 'success');
-              
-              await loadClients(); 
-              
+              notify("Client créé dans Notion CRM.", 'success');
+
+              await loadClients();
+
               setTimeout(() => {
                   setShowCreateModal(false);
                   setIsCreating(false);
@@ -131,13 +131,13 @@ export const ClientList: React.FC = () => {
               }, 800);
           } else {
               setOrchestrationStep('Erreur');
-              notify(`Échec de la création: ${result.error?.message}`, 'error');
+              notify("Échec de la création dans Notion.", 'error');
               setIsCreating(false);
           }
 
       } catch (err) {
           console.error("Creation flow error", err);
-          notify("Erreur inattendue lors du workflow.", 'error');
+          notify("Erreur inattendue lors de la création.", 'error');
           setIsCreating(false);
           setOrchestrationStep('');
       }
@@ -145,7 +145,10 @@ export const ClientList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Archiver ce client ?")) return;
-    await supabaseService.archiveClient(id);
+    const client = clients.find(c => c.id === id);
+    if (client?.notionPageId) {
+      await notionService.archiveClient(client.notionPageId);
+    }
     loadClients();
   };
 
@@ -161,11 +164,11 @@ export const ClientList: React.FC = () => {
         <div>
            <h1 className="text-3xl font-bold text-white mb-1 flex items-center gap-3">
                Clients
-               <span className="text-[10px] bg-green-500/10 text-green-400 px-2 py-1 rounded-full border border-green-500/20 flex items-center gap-1 font-bold uppercase tracking-widest">
-                   <Cloud size={12}/> {settings.storage.mode === 'supabase' ? 'Supabase Cloud' : 'Local Storage'}
+               <span className="text-[10px] bg-purple-500/10 text-purple-400 px-2 py-1 rounded-full border border-purple-500/20 flex items-center gap-1 font-bold uppercase tracking-widest">
+                   <Cloud size={12}/> {notionService.getStatus().configured ? 'Notion CRM' : 'Local'}
                </span>
            </h1>
-           <p className="text-slate-400 text-sm">Gestion des contacts et synchronisation Google Sheets</p>
+           <p className="text-slate-400 text-sm">Gestion des contacts CRM via Notion</p>
         </div>
         <div className="flex gap-3">
           <button 
@@ -175,7 +178,7 @@ export const ClientList: React.FC = () => {
                 ${loading ? 'bg-slate-800 border-slate-700 text-slate-500' : 'bg-surface border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 shadow-lg'}`}
           >
             {loading ? <SpinnerIcon size={16} className="animate-spin" /> : <SyncIcon size={16} className="group-hover:rotate-180 transition-transform duration-500" />}
-            {loading ? 'Lecture...' : 'Sync Sheets'}
+            {loading ? 'Synchronisation...' : 'Sync Notion'}
           </button>
           <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-blue-600 text-white rounded-xl font-bold shadow-xl shadow-primary/20 transition-all active:scale-95">
             <PlusIcon size={18} /> Nouveau contact
@@ -221,30 +224,30 @@ export const ClientList: React.FC = () => {
         ) : (
          filtered.map(client => (
           <div key={client.id} className="bg-surface border border-slate-800 p-6 rounded-[28px] flex items-center justify-between group hover:border-slate-600 hover:bg-slate-800/20 transition-all shadow-xl relative overflow-hidden">
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${client.lead_status === 'Signé' ? 'bg-green-500' : client.lead_status === 'Perdu' ? 'bg-red-500' : 'bg-amber-500'}`}></div>
-            
+            <div className={`absolute left-0 top-0 bottom-0 w-1 ${client.leadStatus === 'Signé' ? 'bg-green-500' : client.leadStatus === 'Perdu' ? 'bg-red-500' : 'bg-amber-500'}`}></div>
+
             <div className="flex-1 cursor-pointer" onClick={() => setSelectedClientId(client.id)}>
               <div className="flex items-center gap-3 mb-2">
                 <h3 className="font-bold text-lg text-white group-hover:text-primary transition-colors">{client.name}</h3>
                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded border tracking-wider uppercase
-                    ${client.lead_status === 'Signé' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 
-                      client.lead_status === 'Perdu' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 
+                    ${client.leadStatus === 'Signé' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                      client.leadStatus === 'Perdu' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
                       'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
-                    {client.lead_status || 'LEAD'}
+                    {client.leadStatus || 'LEAD'}
                 </span>
-                {client.spreadsheet_row && (
-                  <span className="flex items-center gap-1 text-[8px] font-bold text-green-500/60 uppercase tracking-tighter">
-                     <FileSpreadsheet size={10}/> Sheets Ligne {client.spreadsheet_row}
-                  </span>
+                {client.notionUrl && (
+                  <a href={client.notionUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[8px] font-bold text-purple-400/60 hover:text-purple-300 uppercase tracking-tighter">
+                     Notion
+                  </a>
                 )}
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <p className="text-slate-400 text-xs flex items-center gap-2 truncate">
-                      <Building2 size={13} className="text-slate-600"/> {client.company_name || 'Indépendant'} 
+                      <Building2 size={13} className="text-slate-600"/> {client.companyName || 'Indépendant'}
                   </p>
                   <p className="text-slate-400 text-xs flex items-center gap-2 truncate">
-                      <Tag size={13} className="text-slate-600"/> {client.service_type || '—'}
+                      <Tag size={13} className="text-slate-600"/> {client.serviceType || '—'}
                   </p>
                   <p className="text-slate-400 text-xs flex items-center gap-2 truncate">
                       <Mail size={13} className="text-slate-600"/> {client.email || '—'}
@@ -254,7 +257,7 @@ export const ClientList: React.FC = () => {
 
             <div className="flex items-center gap-4">
                <div className="hidden lg:flex flex-col items-end text-[10px] text-slate-600 font-mono">
-                   <span>LAST SYNC: {new Date(client.last_synced_at || Date.now()).toLocaleDateString()}</span>
+                   <span>LAST SYNC: {new Date(client.lastSyncedAt || Date.now()).toLocaleDateString()}</span>
                </div>
                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                    <button onClick={(e) => { e.stopPropagation(); setSelectedClientId(client.id); }} className="p-3 bg-slate-800 hover:bg-primary hover:text-white text-slate-400 rounded-2xl transition-all shadow-lg">

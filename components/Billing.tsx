@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { supabaseService } from '../services/supabaseService';
+import { billingService } from '../services/billingService';
 import { db } from '../services/mockDatabase';
 import { Invoice, Contract } from '../types';
 import { 
@@ -23,15 +23,14 @@ export const Billing: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-        const invData = await supabaseService.getInvoices();
-        const contData = await supabaseService.getContracts();
-        
+        const invData = await billingService.getInvoices();
+        const contData = await billingService.getContracts();
+
         setInvoices(invData);
         setContracts(contData);
 
-        // Calcul des stats
-        const revenue = invData.filter((i: any) => i.status === 'paid').reduce((acc: number, curr: any) => acc + curr.amount_ht, 0);
-        const pending = invData.filter((i: any) => i.status === 'sent' || i.status === 'draft' || i.status === 'overdue').reduce((acc: number, curr: any) => acc + curr.amount_ht, 0);
+        const revenue = invData.filter((i: any) => i.status === 'paid').reduce((acc: number, curr: any) => acc + (curr.amountHT || 0), 0);
+        const pending = invData.filter((i: any) => ['sent', 'draft', 'overdue'].includes(i.status)).reduce((acc: number, curr: any) => acc + (curr.amountHT || 0), 0);
         const signed = contData.filter((c: any) => c.status === 'SIGNED').length;
 
         setStats({ totalRevenue: revenue, pendingAmount: pending, signedContracts: signed });
@@ -64,12 +63,12 @@ export const Billing: React.FC = () => {
   };
 
   const updateInvoiceStatus = async (id: string, newStatus: string) => {
-      await supabaseService.updateInvoice(id, { status: newStatus });
+      db.updateInvoice(id, { status: newStatus });
       loadData();
   };
 
   const updateContractStatus = async (id: string, newStatus: any) => {
-      await supabaseService.updateContract(id, { status: newStatus });
+      db.updateContract(id, { status: newStatus });
       loadData();
   };
 
@@ -195,7 +194,7 @@ export const Billing: React.FC = () => {
                         <td className="px-6 py-4 font-mono text-xs text-slate-400">{inv.number}</td>
                         <td className="px-6 py-4 font-medium text-white">{inv.clients?.name || 'Client Inconnu'}</td>
                         <td className="px-6 py-4 text-xs text-slate-500">{new Date(inv.created_at).toLocaleDateString()}</td>
-                        <td className="px-6 py-4 font-bold text-white text-right font-mono">{inv.amount_ht.toLocaleString()} €</td>
+                        <td className="px-6 py-4 font-bold text-white text-right font-mono">{(inv.amountHT || 0).toLocaleString()} €</td>
                         <td className="px-6 py-4 flex justify-center">{getStatusBadge(inv.status)}</td>
                         <td className="px-6 py-4 text-right">
                             <div className="flex justify-end gap-2">

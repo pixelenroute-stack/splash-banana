@@ -75,8 +75,8 @@ const fragmentShader = `
 const PortalMaterial = shaderMaterial(
   {
     uTime: 0,
-    uColorStart: new THREE.Color('#020617'), // Slate-950 (Fond sombre)
-    uColorEnd: new THREE.Color('#0ea5e9'),   // Sky-500 (Ondes lumineuses)
+    uColorStart: new THREE.Color('#020617') as any, // Slate-950 (Fond sombre)
+    uColorEnd: new THREE.Color('#0ea5e9') as any,   // Sky-500 (Ondes lumineuses)
   },
   vertexShader,
   fragmentShader

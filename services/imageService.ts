@@ -1,5 +1,5 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI as GoogleGenAI } from "@google/generative-ai";
 import { db } from './mockDatabase';
 import { supabaseService } from './supabaseService'; // Changed from n8nAgentService
 import { ImageGenerationParams, ImageJob } from '../types';

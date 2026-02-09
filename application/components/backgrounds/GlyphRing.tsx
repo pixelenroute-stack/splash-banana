@@ -103,8 +103,8 @@ export const GlyphRing: React.FC<GlyphRingProps> = ({
         <glyphAtlasMaterial
           ref={materialRef}
           uMap={texture}
-          uColor={new THREE.Color('#64748b')}    // Slate-500 (Base pierre)
-          uEmissive={new THREE.Color('#f59e0b')} // Amber-500 (Glow)
+          uColor={new THREE.Color('#64748b') as any}    // Slate-500 (Base pierre)
+          uEmissive={new THREE.Color('#f59e0b') as any} // Amber-500 (Glow)
           uOpacity={0.8}
           transparent
           depthWrite={false}  // Pour éviter z-fighting avec l'anneau

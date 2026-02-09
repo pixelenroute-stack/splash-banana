@@ -23,7 +23,7 @@ export const VideoJobItem: React.FC<VideoJobItemProps> = ({ job }) => {
     useEffect(() => {
         if (job.status === 'COMPLETED') {
             const allAssets = db.getVideoAssets(job.userId);
-            setAsset(allAssets.find(a => a.jobId === job.id));
+            setAsset(allAssets.find(a => a.jobId === job.id && a.type === 'video') as VideoAsset);
         }
     }, [job.status, job.id, job.userId]);
 

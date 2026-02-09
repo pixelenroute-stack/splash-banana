@@ -25,7 +25,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
     useEffect(() => {
         if (job.status === 'COMPLETED') {
             const allAssets = db.getImageAssets(job.userId);
-            setAssets(allAssets.filter(a => a.jobId === job.id));
+            setAssets(allAssets.filter(a => a.jobId === job.id && a.type === 'image') as ImageAsset[]);
         }
     }, [job.status, job.id, job.userId]);
 
@@ -121,10 +121,10 @@ export const JobCard: React.FC<JobCardProps> = ({ job }) => {
             <div className={`grid gap-4 ${assets.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 {assets.map((asset) => (
                     <div key={asset.id} className="group relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xl transition-all hover:border-slate-600">
-                        <img 
-                            src={asset.publicUrl} 
-                            alt={asset.promptCopy} 
-                            className="w-full h-auto object-cover max-h-[500px]" 
+                        <img
+                            src={asset.publicUrl}
+                            alt={asset.prompt || 'Generated image'}
+                            className="w-full h-auto object-cover max-h-[500px]"
                             loading="lazy"
                         />
                         

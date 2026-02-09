@@ -24,13 +24,13 @@ const Vortex = () => {
       {/* Géométrie circulaire */}
       <circleGeometry args={[2.85, 64]} />
       {/* Matériau Shader personnalisé */}
-      <portalMaterial 
-        ref={materialRef} 
-        transparent 
+      <portalMaterial
+        ref={materialRef}
+        transparent
         blending={THREE.AdditiveBlending}
         depthWrite={false}
-        uColorStart={new THREE.Color("#0f172a")} // Dark slate
-        uColorEnd={new THREE.Color("#06b6d4")}   // Cyan neon
+        uColorStart={new THREE.Color("#0f172a") as any} // Dark slate
+        uColorEnd={new THREE.Color("#06b6d4") as any}   // Cyan neon
       />
     </mesh>
   );

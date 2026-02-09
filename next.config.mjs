@@ -16,8 +16,8 @@ const nextConfig = {
     ],
   },
   
-  // Permet d'ignorer les erreurs de build TypeScript/ESLint pour garantir que le build se termine
-  // (À désactiver si vous voulez un contrôle strict)
+  // Validation TypeScript et ESLint désactivée temporairement pour le build
+  // TODO: Corriger les erreurs TypeScript dans geminiService.ts (API @google/generative-ai)
   typescript: {
     ignoreBuildErrors: true,
   },

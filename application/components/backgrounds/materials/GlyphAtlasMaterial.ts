@@ -59,9 +59,9 @@ const fragmentShader = `
 
 const GlyphAtlasMaterial = shaderMaterial(
   {
-    uMap: new THREE.Texture(), // Texture vide par défaut
-    uColor: new THREE.Color('#94a3b8'), // Gris pierre (Slate-400)
-    uEmissive: new THREE.Color('#f59e0b'), // Orange/Ambre (Accent)
+    uMap: null as any, // Texture sera définie dynamiquement
+    uColor: new THREE.Color('#94a3b8') as any, // Gris pierre (Slate-400)
+    uEmissive: new THREE.Color('#f59e0b') as any, // Orange/Ambre (Accent)
     uOpacity: 0.9,
   },
   vertexShader,

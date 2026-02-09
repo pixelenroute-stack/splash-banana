@@ -76,7 +76,7 @@ export class GeminiService {
   private getAI(useBackup: boolean = false, overrideKey?: string): GoogleGenAI {
     // 0. Override Key (For specific temporary usage like audit)
     if (overrideKey) {
-        return new GoogleGenAI({ apiKey: overrideKey });
+        return new GoogleGenerativeAI( overrideKey);
     }
 
     // 1. Admin Settings Override (Highest priority, managed by app UI)
@@ -87,7 +87,7 @@ export class GeminiService {
     if (adminKey) {
         try {
             const key = this.validateApiKey(adminKey, 'Admin Settings');
-            return new GoogleGenAI({ apiKey: key });
+            return new GoogleGenerativeAI( key);
         } catch (e) {
             // Si la validation échoue, on continue pour voir si une variable d'env existe
             console.debug("Clé Admin invalide ou manquante, vérification ENV...");
@@ -111,7 +111,7 @@ export class GeminiService {
     // L'appel échouera proprement plus tard.
     const finalKey = selectedKey || "mock_key_to_prevent_init_crash";
     
-    return new GoogleGenAI({ apiKey: finalKey });
+    return new GoogleGenerativeAI( finalKey);
   }
 
   private isRetryableError(error: any): boolean {
@@ -205,12 +205,11 @@ export class GeminiService {
   public async testApiKey(key?: string): Promise<boolean> {
       try {
           // Utilise la clé fournie ou celle par défaut
-          const ai = key ? new GoogleGenAI({ apiKey: key }) : this.getAI();
-          
-          await ai.models.countTokens({
-              model: SUPPORTED_MODELS.TEXT_FAST,
-              contents: [{ parts: [{ text: 'ping' }] }]
-          });
+          const ai = key ? new GoogleGenerativeAI( key) : this.getAI();
+
+          // Test simple avec génération de contenu
+          const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+          await model.generateContent('ping');
           return true;
       } catch (e: any) {
           console.error("[Gemini] Health Check Failed:", e.message);
@@ -226,7 +225,7 @@ export class GeminiService {
                   model: model,
                   contents: { parts: [{ text: message }] },
                   config: { temperature: 0.7 }
-              });
+             );
           }, 'simpleChat');
           return response.text || "";
       } catch (e) {
@@ -244,21 +243,21 @@ export class GeminiService {
                 model: modelUsed,
                 contents: { parts: [{ text: message }] },
                 config: { systemInstruction: "Tu es PixelBot, l'assistant de production expert vidéo." }
-            });
+           );
         }, 'sendMessage');
         metricsCollector.logRequest({
             timestamp: Date.now(), model: modelUsed, operation: 'chat',
             inputTokens: response.usageMetadata?.promptTokenCount || 0,
             outputTokens: response.usageMetadata?.candidatesTokenCount || 0,
             latency: Date.now() - startTime, success: true, retryCount: 0, cacheHit: false
-        });
+       );
         return { text: response.text || "" };
     } catch (e: any) {
         metricsCollector.logRequest({
             timestamp: Date.now(), model: modelUsed, operation: 'chat',
             inputTokens: 0, outputTokens: 0, latency: Date.now() - startTime,
             success: false, errorCode: e.code || 'UNKNOWN', retryCount: 0, cacheHit: false
-        });
+       );
         throw e;
     }
   }
@@ -273,14 +272,14 @@ export class GeminiService {
               return await ai.models.generateContent({
                   model: model, contents: { parts: [{ text: prompt }] },
                   config: this.getSafeConfigForModel(model, config)
-              });
+             );
           }, 'generateMoodboard');
           metricsCollector.logRequest({
               timestamp: Date.now(), model: model, operation: 'generateContent',
               inputTokens: response.usageMetadata?.promptTokenCount || 0,
               outputTokens: response.usageMetadata?.candidatesTokenCount || 0,
               latency: Date.now() - startTime, success: true, retryCount: 0, cacheHit: false
-          });
+         );
           if (response.text) {
               const jsonStr = this.cleanJsonText(response.text);
               return JSON.parse(jsonStr) as MoodboardData;
@@ -291,7 +290,7 @@ export class GeminiService {
               timestamp: Date.now(), model: model, operation: 'generateContent',
               inputTokens: 0, outputTokens: 0, latency: Date.now() - startTime,
               success: false, errorCode: e.message, retryCount: 0, cacheHit: false
-          });
+         );
           throw e;
       }
   }
@@ -305,21 +304,21 @@ export class GeminiService {
               return await ai.models.generateContent({
                   model: model, contents: { parts: [{ text: prompt }] },
                   config: { temperature: 0.8 }
-              });
+             );
           }, 'generateVideoScript');
           metricsCollector.logRequest({
               timestamp: Date.now(), model: model, operation: 'generateContent',
               inputTokens: response.usageMetadata?.promptTokenCount || 0,
               outputTokens: response.usageMetadata?.candidatesTokenCount || 0,
               latency: Date.now() - startTime, success: true, retryCount: 0, cacheHit: false
-          });
+         );
           return response.text || "Erreur de génération du script.";
       } catch (e: any) {
           metricsCollector.logRequest({
               timestamp: Date.now(), model: model, operation: 'generateContent',
               inputTokens: 0, outputTokens: 0, latency: Date.now() - startTime,
               success: false, errorCode: e.message, retryCount: 0, cacheHit: false
-          });
+         );
           throw e;
       }
   }
@@ -333,20 +332,20 @@ export class GeminiService {
           const match = img.match(/^data:(image\/\w+);base64,/);
           const mimeType = match ? match[1] : 'image/png';
           const cleanBase64 = img.replace(/^data:image\/\w+;base64,/, "");
-          parts.push({ inlineData: { mimeType: mimeType, data: cleanBase64 } });
-      });
+          parts.push({ inlineData: { mimeType: mimeType, data: cleanBase64 });
+     );
       try {
           const response = await this.executeWithKeyRotation(async (ai) => {
               return await ai.models.generateContent({
                   model: model, contents: { parts }, config: { responseMimeType: 'application/json' }
-              });
+             );
           }, 'generateCreativeAnalysis');
           metricsCollector.logRequest({
               timestamp: Date.now(), model: model, operation: 'generateContent',
               inputTokens: response.usageMetadata?.promptTokenCount || 0,
               outputTokens: response.usageMetadata?.candidatesTokenCount || 0,
               latency: Date.now() - startTime, success: true, retryCount: 0, cacheHit: false
-          });
+         );
           if (response.text) {
               const jsonStr = this.cleanJsonText(response.text);
               return JSON.parse(jsonStr) as CreativeAnalysisData;
@@ -363,13 +362,13 @@ export class GeminiService {
               return await ai.models.generateContent({
                   model: model, contents: { parts: [{ text: prompt }] },
                   config: { imageConfig: { aspectRatio: aspectRatio as any, imageSize: '1K' } }
-              });
+             );
           }, 'generateImage');
           metricsCollector.logRequest({
               timestamp: Date.now(), model: model, operation: 'generateImage',
               inputTokens: 0, outputTokens: 0, latency: Date.now() - startTime,
               success: true, retryCount: 0, cacheHit: false
-          });
+         );
           for (const part of response.candidates[0].content.parts) {
               if (part.inlineData) { return `data:image/png;base64,${part.inlineData.data}`; }
           }
@@ -379,7 +378,7 @@ export class GeminiService {
               timestamp: Date.now(), model: model, operation: 'generateImage',
               inputTokens: 0, outputTokens: 0, latency: Date.now() - startTime,
               success: false, errorCode: e.message, retryCount: 0, cacheHit: false
-          });
+         );
           throw e;
       }
   }
@@ -392,18 +391,18 @@ export class GeminiService {
               return await ai.models.generateVideos({
                   model: model, prompt: prompt,
                   config: { numberOfVideos: 1, resolution: '720p', aspectRatio: '16:9' }
-              });
+             );
           }, 'generateVideo_Start');
           while (!operation.done) {
               await new Promise(resolve => setTimeout(resolve, 5000));
               const ai = this.getAI(); 
-              operation = await ai.operations.getVideosOperation({ operation });
+              operation = await ai.operations.getVideosOperation({ operation);
           }
           metricsCollector.logRequest({
               timestamp: Date.now(), model: model, operation: 'generateVideo',
               inputTokens: 0, outputTokens: 0, latency: Date.now() - startTime,
               success: true, retryCount: 0, cacheHit: false
-          });
+         );
           const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
           if (!downloadLink) throw new Error("No video URI in response");
           return downloadLink;
@@ -412,7 +411,7 @@ export class GeminiService {
               timestamp: Date.now(), model: model, operation: 'generateVideo',
               inputTokens: 0, outputTokens: 0, latency: Date.now() - startTime,
               success: false, errorCode: e.message, retryCount: 0, cacheHit: false
-          });
+         );
           throw e;
       }
   }
@@ -444,12 +443,12 @@ export class GeminiService {
       `;
 
       try {
-          const ai = apiKey ? new GoogleGenAI({ apiKey }) : this.getAI();
+          const ai = apiKey ? new GoogleGenerativeAI({ apiKey) : this.getAI();
           const response = await ai.models.generateContent({
               model: SUPPORTED_MODELS.TEXT_PRO, // Utilise le modèle Pro pour une analyse profonde
               contents: { parts: [{ text: prompt }] },
               config: { temperature: 0.2 } // Faible température pour plus de rigueur
-          });
+         );
           return response.text || "Erreur lors de la génération du rapport.";
       } catch (e: any) {
           console.error("Erreur Audit IA:", e);

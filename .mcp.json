@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "n8n-mcp": {
+      "command": "npx",
+      "args": ["n8n-mcp"],
+      "env": {
+        "MCP_MODE": "stdio",
+        "LOG_LEVEL": "error",
+        "DISABLE_CONSOLE_OUTPUT": "true",
+        "N8N_API_URL": "https://n8n.srv1027050.hstgr.cloud",
+        "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyZGFjN2Y4Mi0xZWE2LTQ5ZGUtYmY2MS0wZGZhOWY5NjM5NWYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzY5NzgxNzE0fQ.TqXC7X6bN78-gtvrQGFmG-Zoh-wuLBUS1T8gMirhszU"
+      }
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_303d8359790b6bca91d733b58b0f99bbae2bb09c",
+        "--project-ref",
+        "urhxjbytaqzyvqiltwfa"
+      ]
+    }
+  }
+}

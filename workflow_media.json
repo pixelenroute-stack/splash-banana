@@ -1,0 +1,290 @@
+[
+  {
+    "parameters": {
+      "toolDescription": "Générer une vidéo IA à partir d'un prompt textuel via VEO3. Le prompt DOIT être en anglais avec terminologie cinématographique. Paramètres: prompt, model (veo3 pour qualité, veo3_fast pour rapide), aspect_ratio (16:9, 9:16, 1:1), negative_prompt.",
+      "method": "POST",
+      "url": "https://api.kie.ai/api/v1/veo/generate",
+      "authentication": "genericCredentialType",
+      "genericAuthType": "httpHeaderAuth",
+      "sendHeaders": true,
+      "parametersHeaders": {
+        "values": [
+          {
+            "name": "Authorization"
+          },
+          {
+            "name": "Content-Type"
+          }
+        ]
+      },
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "={\"prompt\": \"{prompt}\", \"model\": \"{model}\", \"aspect_ratio\": \"{aspect_ratio}\", \"negative_prompt\": \"{negative_prompt}\", \"enableTranslation\": false, \"generationType\": \"TEXT_2_VIDEO\"}",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "prompt",
+            "description": "Prompt vidéo en ANGLAIS avec terminologie cinématographique détaillée",
+            "type": "string"
+          },
+          {
+            "name": "model",
+            "description": "Modèle: veo3 (haute qualité) ou veo3_fast (rapide)",
+            "type": "string"
+          },
+          {
+            "name": "aspect_ratio",
+            "description": "Ratio: 16:9 (paysage), 9:16 (portrait), 1:1 (carré)",
+            "type": "string"
+          },
+          {
+            "name": "negative_prompt",
+            "description": "Ce qu'on ne veut PAS voir dans la vidéo",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-veo3-text2video",
+    "name": "🎬 VEO3: Text-to-Video",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      400,
+      1600
+    ]
+  },
+  {
+    "parameters": {
+      "toolDescription": "Animer une image en vidéo via VEO3. Transformer une image statique en vidéo animée. Paramètres: prompt (description animation en anglais), image_url, model, aspect_ratio.",
+      "method": "POST",
+      "url": "https://api.kie.ai/api/v1/veo/generate",
+      "authentication": "genericCredentialType",
+      "genericAuthType": "httpHeaderAuth",
+      "sendHeaders": true,
+      "parametersHeaders": {
+        "values": [
+          {
+            "name": "Authorization"
+          },
+          {
+            "name": "Content-Type"
+          }
+        ]
+      },
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "={\"prompt\": \"{prompt}\", \"imageUrls\": [\"{image_url}\"], \"model\": \"{model}\", \"aspect_ratio\": \"{aspect_ratio}\", \"generationType\": \"FIRST_AND_LAST_FRAMES_2_VIDEO\"}",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "prompt",
+            "description": "Description de l'animation souhaitée en anglais cinématographique",
+            "type": "string"
+          },
+          {
+            "name": "image_url",
+            "description": "URL de l'image source à animer",
+            "type": "string"
+          },
+          {
+            "name": "model",
+            "description": "Modèle: veo3 (haute qualité) ou veo3_fast (rapide)",
+            "type": "string"
+          },
+          {
+            "name": "aspect_ratio",
+            "description": "Ratio: 16:9 (paysage), 9:16 (portrait), 1:1 (carré)",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-veo3-img2video",
+    "name": "🖼️➡️🎬 VEO3: Image-to-Video",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      640,
+      1600
+    ]
+  },
+  {
+    "parameters": {
+      "toolDescription": "Vérifier le statut d'une tâche de génération vidéo VEO3. Utiliser après avoir lancé une génération. Paramètre: task_id (ID de la tâche VEO3).",
+      "url": "=https://api.kie.ai/api/v1/veo/detail?taskId={task_id}",
+      "authentication": "genericCredentialType",
+      "genericAuthType": "httpHeaderAuth",
+      "sendHeaders": true,
+      "parametersHeaders": {
+        "values": [
+          {
+            "name": "Authorization"
+          }
+        ]
+      },
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "task_id",
+            "description": "ID de la tâche VEO3 retourné lors de la génération",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-veo3-status",
+    "name": "🔄 VEO3: Check Status",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      880,
+      1600
+    ]
+  },
+  {
+    "parameters": {
+      "toolDescription": "Prolonger/étendre une vidéo VEO3 existante. Paramètres: task_id (ID de la vidéo originale), prompt (description de la suite en anglais).",
+      "method": "POST",
+      "url": "https://api.kie.ai/api/v1/veo/extend",
+      "authentication": "genericCredentialType",
+      "genericAuthType": "httpHeaderAuth",
+      "sendHeaders": true,
+      "parametersHeaders": {
+        "values": [
+          {
+            "name": "Authorization"
+          },
+          {
+            "name": "Content-Type"
+          }
+        ]
+      },
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "={\"taskId\": \"{task_id}\", \"prompt\": \"{prompt}\"}",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "task_id",
+            "description": "ID de la vidéo VEO3 originale à prolonger",
+            "type": "string"
+          },
+          {
+            "name": "prompt",
+            "description": "Description de la suite souhaitée en anglais",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-veo3-extend",
+    "name": "⏩ VEO3: Extend Video",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      1120,
+      1600
+    ]
+  },
+  {
+    "parameters": {
+      "toolDescription": "Générer une image IA avec BananaPro (Nano Banana Pro). Le prompt DOIT être en anglais. Paramètres: prompt, resolution (1K, 2K, 4K), aspect_ratio (1:1, 16:9, 9:16, 4:5, 21:9).",
+      "method": "POST",
+      "url": "https://gateway.bananapro.site/api/v1/images/generate",
+      "authentication": "genericCredentialType",
+      "genericAuthType": "httpHeaderAuth",
+      "sendHeaders": true,
+      "parametersHeaders": {
+        "values": [
+          {
+            "name": "Authorization"
+          },
+          {
+            "name": "Content-Type"
+          }
+        ]
+      },
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "={\"model\": \"nano-banana-pro\", \"prompt\": \"{prompt}\", \"resolution\": \"{resolution}\", \"aspect_ratio\": \"{aspect_ratio}\"}",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "prompt",
+            "description": "Prompt de génération d'image en ANGLAIS détaillé",
+            "type": "string"
+          },
+          {
+            "name": "resolution",
+            "description": "Résolution: 1K, 2K ou 4K",
+            "type": "string"
+          },
+          {
+            "name": "aspect_ratio",
+            "description": "Ratio: 1:1, 16:9, 9:16, 4:5 ou 21:9",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-bananapro-generate",
+    "name": "🖼️ BananaPro: Générer Image",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      400,
+      1808
+    ]
+  },
+  {
+    "parameters": {
+      "toolDescription": "Modifier une image existante avec BananaPro. Paramètres: prompt (instructions en anglais), resolution, image_url (URL de l'image à modifier).",
+      "method": "POST",
+      "url": "https://gateway.bananapro.site/api/v1/images/generate",
+      "authentication": "genericCredentialType",
+      "genericAuthType": "httpHeaderAuth",
+      "sendHeaders": true,
+      "parametersHeaders": {
+        "values": [
+          {
+            "name": "Authorization"
+          },
+          {
+            "name": "Content-Type"
+          }
+        ]
+      },
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "={\"model\": \"nano-banana-pro\", \"prompt\": \"{prompt}\", \"resolution\": \"{resolution}\", \"image_url\": \"{image_url}\"}",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "prompt",
+            "description": "Instructions de modification en ANGLAIS",
+            "type": "string"
+          },
+          {
+            "name": "resolution",
+            "description": "Résolution: 1K, 2K ou 4K",
+            "type": "string"
+          },
+          {
+            "name": "image_url",
+            "description": "URL de l'image à modifier",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-bananapro-edit",
+    "name": "✏️ BananaPro: Modifier Image",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      640,
+      1808
+    ]
+  }
+]

@@ -1,0 +1,1467 @@
+{
+  "name": "Demo Agent Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -32,
+        32
+      ],
+      "id": "4fcd1784-a7a8-4fff-8644-15caece47554",
+      "name": "When chat message received",
+      "webhookId": "33d4e5dc-b88a-496e-96a3-3c0a1c564414"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Message Received').item.json.message.chat.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        384,
+        -144
+      ],
+      "id": "65fb474e-0c60-4b6e-af43-0d196509698a",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Utilise cet outil pour envoyer un email.\n\n# Règles\n- Rédige le contenu de l'email en HTML pour une belle mise en forme",
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', `Ne reseigne qu'une adresse email valide`, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', `Le sujet de l'email`, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', `Le contenu de l'email. Rédige le en HTML.`, 'string') }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Julien"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        400
+      ],
+      "id": "e3073238-73c9-44e5-bcc7-abbd231408b9",
+      "name": "Send Email",
+      "webhookId": "fe37f703-72c0-46af-ab96-2a28d372678a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "R2ls1E9UtTCEn1Bg",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Cet outil te permet de récupérer un ou plusieurs emails en fonction de la demande utilisateur",
+        "operation": "getAll",
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}",
+        "filters": {
+          "q": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Search', `La query Gmail a effectuer pour trouver l'email`, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -352,
+        528
+      ],
+      "id": "8847c513-3615-43f8-83ed-c2e53d0e2d24",
+      "name": "Get Email",
+      "webhookId": "7400d158-1530-4a03-8d55-b2b79b0c0ac9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "R2ls1E9UtTCEn1Bg",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Utilise cet outil pour créer un brouillon. ",
+        "resource": "draft",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', `Sujet de l'email`, 'string') }}",
+        "emailType": "html",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', `Contenu de l'email`, 'string') }}",
+        "options": {
+          "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To_Email', `Destinataire de l'email`, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        528
+      ],
+      "id": "3f744cfa-1f3b-4d22-b873-633fe6f5efd8",
+      "name": "Create Draft",
+      "webhookId": "c2e5d1d0-b878-49e4-a784-d1f859ec4274",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "R2ls1E9UtTCEn1Bg",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-sonnet-4",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        272,
+        -144
+      ],
+      "id": "5ead69c1-ad53-4080-bcb6-a8b2d4ed1bc1",
+      "name": "LLM",
+      "credentials": {
+        "openRouterApi": {
+          "id": "AOwJm8OtDKtW4ZAN",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4.1",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        400
+      ],
+      "id": "e5058970-d6ca-4b2b-8c36-7bc405a972ae",
+      "name": "LLM1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "AOwJm8OtDKtW4ZAN",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4.1",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        400
+      ],
+      "id": "76872ef6-26be-4336-8c9b-92a425f250d3",
+      "name": "LLM2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "AOwJm8OtDKtW4ZAN",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Cet outil permet de créer un évènement\n\n# Règle\n- Verifier avec l'outil \"Check Availability\" si l'utilisateur st bien disponible avant",
+        "calendar": {
+          "__rl": true,
+          "value": "sansonjuju@gmail.com",
+          "mode": "list",
+          "cachedResultName": "Julio 🦥"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', `date/heure du début de l'évènement`, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', `date/heure de fin de l'évènement`, 'string') }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('attendees0_Attendees', `Emails des personnes participant à l'évènement.\nRajoute toujours l'owner de l'évènement qui est julien@example.com`, 'string') }}"
+          ],
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', `Description de l'évènement et ajout d'infos pertinentes pour les participants`, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', `Sujet de l'évènement`, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        400
+      ],
+      "id": "ebc1ba4a-6fee-4937-8e8c-127b59b80bc7",
+      "name": "Create Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Hp9EE7WXxrSfm9qZ",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Avant de soumettre la réponse à l'utilisateur,\nutilise cet outil afin de vérifier que la demande utilisateur a bien été respectée et que chacun des steps ont une cohérence et permettent d'arriver au bon résultat final."
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        496,
+        -144
+      ],
+      "id": "ae5c23c7-ead8-411d-8d1c-6f9b8825d9ce",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Utilise cet outil pour modifier un évènement.\n\n# Règle \n- Utilise l'outil \"Get Events\" pour récupérer l'ID de l'évènement à update\n- Si c'est la date/heure de l'évènement qui doit être modifiée, vérifier la disponibilité de l'user avec l'outil \"Check Availability\" avant.",
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "sansonjuju@gmail.com",
+          "mode": "list",
+          "cachedResultName": "Julio 🦥"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', `ID de l'évènement`, 'string') }}",
+        "updateFields": {
+          "attendeesUi": {
+            "values": {
+              "attendees": [
+                "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('attendees0_Attendees', `Ajouter ici des participants si demandé`, 'string') }}"
+              ]
+            }
+          },
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', `Description de l'évènement`, 'string') }}",
+          "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', `Date/Heure de fin de l'évènement`, 'string') }}",
+          "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', `Date/Heure de début de l'évènement`, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        32,
+        528
+      ],
+      "id": "36abce24-528e-4193-a553-99d1da7bc8e8",
+      "name": "Update Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Hp9EE7WXxrSfm9qZ",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Utilise cet outil pour retrouver un évènement et récupérer son ID",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "sansonjuju@gmail.com",
+          "mode": "list",
+          "cachedResultName": "Julio 🦥"
+        },
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}",
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', `date/heure de début de la fenêtre de recherche`, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', `date/heure de fin de la fenêtre de recherche`, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        32,
+        400
+      ],
+      "id": "9c88d8a0-5ef8-43f2-910f-e88a54cf9d64",
+      "name": "Get Events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Hp9EE7WXxrSfm9qZ",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Utilise cet outil pour supprimer un évènement.\n\n# Règle \n- Utilise l'outil \"Get Events\" pour récupérer l'ID de l'évènement à update",
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "sansonjuju@gmail.com",
+          "mode": "list",
+          "cachedResultName": "Julio 🦥"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', `ID de l'évènement`, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        528
+      ],
+      "id": "0c809b27-7ebb-4385-8f48-8557074a7337",
+      "name": "Delete Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Hp9EE7WXxrSfm9qZ",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Cet outil permet de checker la disponibilité de l'user avant de créer / modifier l'heure d'un évènement",
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "sansonjuju@gmail.com",
+          "mode": "list",
+          "cachedResultName": "Julio 🦥"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', `date/heure de début de la fenêtre de recherche`, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', `date/heure de fin de la fenêtre de recherche`, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -96,
+        528
+      ],
+      "id": "0a3c43a3-6e6a-4276-af1e-d4caa87c8379",
+      "name": "Check Availability",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Hp9EE7WXxrSfm9qZ",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4.1",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        640,
+        416
+      ],
+      "id": "9b0fbbd0-429a-4a8f-8c7d-548ca3407d4e",
+      "name": "LLM3",
+      "credentials": {
+        "openRouterApi": {
+          "id": "AOwJm8OtDKtW4ZAN",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Cet outil permet de récupérer un contact & ses informations",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appZ0zfToed10KRUb",
+          "mode": "list",
+          "cachedResultName": "Contacts",
+          "cachedResultUrl": "https://airtable.com/appZ0zfToed10KRUb"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblRYHRinfD27H05P",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appZ0zfToed10KRUb/tblRYHRinfD27H05P"
+        },
+        "filterByFormula": "=",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        736,
+        416
+      ],
+      "id": "59472bea-ad33-465f-a156-aa50272eaa52",
+      "name": "Get Contact",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "1AlhYdgLIH9ldfEy",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Cet outil permet de créer ou d'update un contact dans la base",
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appZ0zfToed10KRUb",
+          "mode": "list",
+          "cachedResultName": "Contacts",
+          "cachedResultUrl": "https://airtable.com/appZ0zfToed10KRUb"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblRYHRinfD27H05P",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appZ0zfToed10KRUb/tblRYHRinfD27H05P"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $fromAI(\"Email\", \"Email du contact\", \"string\") }}",
+            "First Name": "={{ $fromAI('First_Name', `prénom du contact`, 'string') }}",
+            "Last Name": "={{ $fromAI('Last_Name', `nom du contact`, 'string') }}",
+            "Phone": "={{ $fromAI('Phone', `téléphone du contact`) }}",
+            "Icebreaker": "={{ $fromAI('Icebreaker', `texte permettant d'aborder ce prospect. A ne renseigner que si demandé par l'owner`) }}",
+            "Company": "={{ $fromAI(\"Company\", `Entreprise du contact`) }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "First Name",
+              "displayName": "First Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Last Name",
+              "displayName": "Last Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Position",
+              "displayName": "Position",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Icebreaker",
+              "displayName": "Icebreaker",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Lead Status",
+              "displayName": "Lead Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Disqualified",
+                  "value": "Disqualified"
+                },
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Converted",
+                  "value": "Converted"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        848,
+        416
+      ],
+      "id": "6c5ef501-cef3-41fe-a48a-f9f3906df4a8",
+      "name": "Create Update Contact",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "1AlhYdgLIH9ldfEy",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "utilise cet outil pour fa&ire une recherche sur le web",
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Content-Type",
+              "valueProvider": "fieldValue",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n    \"model\": \"gpt-4o\",\n    \"tools\": [{ \"type\": \"web_search_preview\" }],\n    \"input\": \"{web_search_question}\"\n  }",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "{web_search_question}",
+              "description": "The question to search"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        560
+      ],
+      "id": "715cbde8-8974-446e-93ce-da3cae5f31d6",
+      "name": "Web Search",
+      "credentials": {
+        "openAiApi": {
+          "id": "hPPhcVMtTyQFIcPh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4.1",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        960,
+        416
+      ],
+      "id": "8d7e745a-1a51-485f-9160-87b613cbbfa6",
+      "name": "LLM4",
+      "credentials": {
+        "openRouterApi": {
+          "id": "AOwJm8OtDKtW4ZAN",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "=Utilise cet outil pour récupérer les informations Linkedin du prospect\n\n# Règles\n- utilise l'outil \"Get LinkedIn URL\" avant celui-ci pour récupérer l'URL LinkedIn du prospect. \n- Si l'URL n'est pas trouvé, ne pas utiliser cet outil",
+        "method": "POST",
+        "url": "=https://api.apify.com/v2/acts/apimaestro~linkedin-profile-detail/run-sync-get-dataset-items?token=<TOKEN>",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"username\": \"{{ $fromAI(\"LinkedinURL\",\"linkedin URL of the lead\") }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        560
+      ],
+      "id": "183a333d-83e9-43e2-a009-616d57ded48d",
+      "name": "Get LinkedIn Infos",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "n6AcTP0yCiPZ9twh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Cet Agent est un expert en gestion & envoi d'emails",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "=# Role\nTu es un agent expert en gestion, rédaction & envoi d'email. Ta mission est d'exécuter la demande que tu vas recevoir\n\n# Outils\n-**Send Email**:Cet outil te permet d'envoyer des emails\n-**Get Email**: Cet outil te permet de récupérer un ou plusieurs emails en fonction de la demande utilisateur\n-**Create Draft**:Cet outil te permet de créer un brouillon d'email\n-**Think1**: Cet outil te permet de vérifier, une fois la demande répondue, que les instructions ont bien été respecté\n\n# Règles\n- N'inclut jamais de placeholder ni de signature dans l'email si tu ne connais pas le nom de l'expéditeur.\n- Voici la date du jour : {{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        -352,
+        240
+      ],
+      "id": "ae00f70c-d6da-4a9f-9955-dd69f8e05dc4",
+      "name": "Email Agent"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Cet agent est un expert en gestion d'agenda et création de meeting",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "=# Role\nTu es un agent expert en gestion d'emploi du temps et dans la création de meetings. Ta mission est d'exécuter la demande que tu vas recevoir\n\n# Outils\n-**Check Availability**: Cet outil permet de vérifier la disponibilité de l'utilisateur\n-**Get Events**:Cet outil te permet de récupérer un ou plusieurs évènements et de récupérer leur ID\n-**Create Event**:Cet outil te permet de créer un meeting\n-**Update Event**:Cet outil te permet d'update un meeting\n-**Delete Events**: Cet outil de permet de supprimer un évènement dans l'agenda\n\n\n# Règles\n- Voici la date du jour : {{ $now }}\n- Utilise l'outil \"Check Availability\" avant de créer ou d'update l'heure d'un évènement. Si l'utilisateur n'est pas disponible lui indiquer un autre horaire"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        -48,
+        240
+      ],
+      "id": "891289c1-b21e-4c48-bca0-ddddf24b04a9",
+      "name": "Calendar Agent"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Cet agent est connecté à notre CRM Airtable et gère notre base de données de prospects",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "=# Role\nTon rôle est d'orchestrer notre base de données de contact Airtable. Ta mission est de maintenir la base en ajoutant/supprimant/modifiant des contacts ainsi que leurs informations associées\n\n# Outils\n-**Get Contact**: Cet outil permet de récupérer un contact dans la base Airtable et de récupérer ses informations\n-**Create Update Contact**: Cet outil permet de créer ou d'update les informations d'un contact\n\n\n# Règles\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        256
+      ],
+      "id": "6dccf829-88bb-46c2-b2ef-c041aa316be7",
+      "name": "CRM Agent"
+    },
+    {
+      "parameters": {
+        "toolDescription": "=Cet agent est expert dans la recherche de prospects et dans la collecte d'informations les concernant",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "=# Role\nTon rôle est d'utiliser toute sorte d'outils pour récupérer des informations sur des personnes, des prospects qui m'intéressent afin de préparer mes futurs échanges avec-eux\n\n# Outils\n-**Get LinkedIn URL**: Cet outil te permet de récupérer l'URL du profil LinkedIn de la personne\n-**Web Search**: Cet outil te permet de rechercher les informations sur le web concernant le lead demandé\n-**Get LinkedIn Infos**: Cet outil te permet de récupérer les informations LinkedIn du prospect à partir de l'URL récupéré grâce à l'outil \"Get LinkedIn URL\"\n\n\n# Règles\n- Si tu dois récupérer un profil LinkedIn, utilise \"Get LinkedIn URL\" Tool puis le \"Get LinkedIn Infos\" Tool\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        256
+      ],
+      "id": "b34a5897-7fe5-4896-b40e-6ac2d24b883f",
+      "name": "Lead Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.input }}",
+        "options": {
+          "systemMessage": "=# Role \nTu es un agent orchestrateur. Ta mission est de recevoir la demande puis de la transférer au bon sous-agent. Ta mission n'est pas de remplir la tâche mais de transférer les bonnes informations au bon sous-agent pour qu'il puisse effectuer au mieux sa mission.\n\n# Tools\n- **Email Agent**: Ce sous-agent est expert en gestion & envoi d'email\n- **Calendar Agent**: Ce sous-agent est expert dans la gestion de ton emploi du temps et dans la création de meeting\n- **CRM Agent**: Ce sous-agent est expert dans la gestion de notre base de données de contact Airtable\n-**Lead Agent**: Ce sous-agent est expert dans la recherche d'informations des personnes & prospects\n- **Think**: Cet outil te permet de vérifier, une fois que la demande utilisateur a été pourvue, que tout a été éxectué de la bonne manière\n\n# Règle\n- Si tu n'utilise pas d'outil c'est que tu n'as pas compris la demande utilisateur. Dans ce cas-là lui demander de reformuler\n- Si tu dois créer un meeting et que tu n'as pas l'email des participants, récupère les dans la base de donnée Airtable via le \"CRM Agent\"\n- Toujours utiliser le \"Calendar Agent\" après les autres agents\n- Lors de l'envoi d'un email ou la création d'un meeting, si lemail n'est pas mentionné, essayer de le récupérer a partir des informations fourni par l'user dans la base Airtable grâce au \"CRM Agent\". Sinon le demander à l'user."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        272,
+        0
+      ],
+      "id": "035c6cd6-8c46-41a3-ae23-05eaf3bbc4ba",
+      "name": "AI Orchestrator",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "toolDescription": "=Utilise cet outil pour récupérer l'URL du profil LinkedIn de la personne",
+        "url": "=https://www.googleapis.com/customsearch/v1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "cx",
+              "value": "<GOOGLE_SEARCH_ENGINE>"
+            },
+            {
+              "name": "q",
+              "value": "={{ $fromAI(\"prenom\",\"prénom de la personne\") }} {{ $fromAI(\"nom\",\"nom de famille de la personne\") }} {{ $fromAI(\"company\",\"entreprise de la personne\") }} site:linkedin.com/in "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        416
+      ],
+      "id": "79b17f81-9f42-4ddc-886f-14175b54b6c0",
+      "name": "Get LinkedIn URL",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GCKeASxnOC4ysBfa",
+          "name": "Apify"
+        },
+        "httpQueryAuth": {
+          "id": "rw2Oo7N0aChiVJmQ",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        -96
+      ],
+      "id": "3f4bddd9-d663-4746-a790-076b78c898c9",
+      "name": "Message Received",
+      "webhookId": "7624cc7a-1cc3-4e43-83dc-be8021e3f11b",
+      "credentials": {
+        "telegramApi": {
+          "id": "niyISc98Zz0aDFDJ",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}"
+      },
+      "id": "ab4ce8d1-2fbe-4b32-9cc0-07890facab88",
+      "name": "Download Voice File",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -176,
+        -272
+      ],
+      "webhookId": "c0b376b1-7b63-41b6-8063-0b3096b8333d",
+      "credentials": {
+        "telegramApi": {
+          "id": "niyISc98Zz0aDFDJ",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "976cf2c9-01b6-46cf-97b4-675a67ca57bc",
+              "name": "input",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        -160
+      ],
+      "id": "2d49555d-169a-4d8e-a165-662004986cf3",
+      "name": "Input"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe7ecc99-e1e8-4a5e-bdd6-6fce9757b234",
+              "name": "text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9811c99e-c630-483d-b097-5eecb5b6d292",
+      "name": "Text Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -32,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "id": "540065fd-9c7a-40f9-b497-a13eb4392ad6",
+      "name": "Audio Input",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        -32,
+        -272
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "hPPhcVMtTyQFIcPh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "8c844924-b2ed-48b0-935c-c66a8fd0c778",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4c81beb2-003a-47f5-b002-a5c4fb795108",
+      "name": "Voice or Text",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -288,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Message Received').item.json.message.chat.id }}",
+        "text": "={{ $json.error }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        16
+      ],
+      "id": "25e4de61-43ab-4bf8-a6cc-b94060a0412c",
+      "name": "Error Message",
+      "webhookId": "7065a160-b927-43b6-b327-feec46cc0088",
+      "credentials": {
+        "telegramApi": {
+          "id": "niyISc98Zz0aDFDJ",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Message Received').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        -128
+      ],
+      "id": "4b1e0ba9-8003-4843-9504-134d1c6f33be",
+      "name": "Response",
+      "webhookId": "4d174459-d5cc-4297-a449-369d3f10ef23",
+      "credentials": {
+        "telegramApi": {
+          "id": "niyISc98Zz0aDFDJ",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "976cf2c9-01b6-46cf-97b4-675a67ca57bc",
+              "name": "input",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        32
+      ],
+      "id": "18f094a4-5e51-4c7e-8229-25535b890f39",
+      "name": "Input Chat"
+    },
+    {
+      "parameters": {
+        "content": "## SETUP\n\nOPENAI API\nPour utiliser l'API OpenAI, vous devez ajouter des crédits à votre compte OpenAI.\npour cela rendez-vous juste ici : https://platform.openai.com/settings/organization/billing/overview pour ajouter des crédits.\n\nEnsuite pour Connecter votre compte OpenAI, allez dans “[Dashboard](https://platform.openai.com/api-keys)” puis dans “API Keys”, vous pouvez ensuite créer une nouvelle clé, lui donner le nom que vous voulez et ensuite l’ajouter directement dans le nouveau Credential OpenAI (Module “`4.1`” dans le workflow)\n\nTELEGRAM\nSet-up your Telegram Bot\n-> Télécharger Telegram : https://web.telegram.org/k/\n-> Discuter avec \"Bot Father\" et écrire : “/newbot” et lui choisir un nom. \n-> Récupérer l'access token et le copier dans un nouveau credential dans le module Telegram n8n !\n\nOPENROUTER\n-> Aller à : https://openrouter.ai/\n-> Créer un compte, aller dans Keys & créer une clé API\n\nGMAIL / CALENDAR\n-> Aller sur le module correspondant et créer un credential\n-> Se connecter avec son compte Google\n\nAIRTABLE\n-> Aller à : https://airtable.com/\n-> Créer une base de données comme dans la vidéo Youtube :\n-> Sur Airtable, aller dans Profil en haut à droite, puis dans \"Builder Hub\"\n-> Créer un nouvel Access Token, lui donner le nom que vous voulez + les accès suivants : data.records : read - data.records : write - schema.bases : read\n-> Donner accès via l'access token à la bonne base de données\n-> Rentrer l'access token dans les modules Airtable dans n8n\n\n\nGET LINKEDIN URL\n→ Aller sur la console Google Cloud \n→ Créer un projet \n→ Aller dans Api & Services puis identifiants puis  créer des identifiants\n→ Conserver sa clé API \n→ Dans la console Google Cloud toujours, tapper dans la barre de recherche “Custom Search API” puis cliquer sur “Activer”\n→ Aller dans Programmable Search Engine \n→ Ajouter un moteur de recherche \n→ Sélectionner “rechercher sur l’ensemble du web”\n→ Cliquer sur “Créer”\n→ Récupérer le code dans l’URL après “cx”\n→ Indiquer la clé API dans les credentials de l’HTTP Callout Google\n→ Indiquer le code cx dans l’encart correspondant\n\nGET LINKEDIN INFOS\nRécupérer sa clé API :\n→ Aller à : https://apify.com/\n→ Aller dans Settings puis dans API & Integrations et ensuite créer un nouveau token\n→ Coller le token dans un nouveau credential dans le module APIFY dans n8n\nL'acteur utilisé : https://console.apify.com/actors/VhxlqQXRwhW8H5hNV/input\n",
+        "height": 1056,
+        "width": 944
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        -432
+      ],
+      "id": "39a62fbc-3708-4a38-b500-1ba4a0c4b0f5",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Input Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Orchestrator",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Draft": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Orchestrator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Orchestrator",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Events": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Availability": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CRM Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contact": {
+      "ai_tool": [
+        [
+          {
+            "node": "CRM Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Update Contact": {
+      "ai_tool": [
+        [
+          {
+            "node": "CRM Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Web Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Lead Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Lead Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LinkedIn Infos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Lead Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Orchestrator",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Orchestrator",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Orchestrator",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Orchestrator",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LinkedIn URL": {
+      "ai_tool": [
+        [
+          {
+            "node": "Lead Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice File": {
+      "main": [
+        [
+          {
+            "node": "Audio Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Received": {
+      "main": [
+        [
+          {
+            "node": "Voice or Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Input": {
+      "main": [
+        [
+          {
+            "node": "Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio Input": {
+      "main": [
+        [
+          {
+            "node": "Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "AI Orchestrator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voice or Text": {
+      "main": [
+        [
+          {
+            "node": "Download Voice File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Chat": {
+      "main": [
+        [
+          {
+            "node": "AI Orchestrator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "47c83976-8a7f-45db-a627-4dfef5122d01",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2c4533c7a1e56e822a6fde3f376121580e6f7d83dda36974d922278fe743aa10"
+  },
+  "id": "YHyn4KqfSC6f8u6O",
+  "tags": [
+    {
+      "createdAt": "2025-06-06T12:15:13.667Z",
+      "updatedAt": "2025-06-09T10:04:00.117Z",
+      "id": "hZELXzdKBaDpxj3F",
+      "name": "Youtube"
+    }
+  ]
+}

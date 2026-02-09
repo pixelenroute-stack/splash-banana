@@ -1,0 +1,96 @@
+[
+  {
+    "parameters": {
+      "toolDescription": "Lister les événements du Google Calendar. Utilise ce tool quand l'utilisateur veut voir son agenda, ses rendez-vous ou événements à venir.",
+      "url": "=https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin={time_min}&timeMax={time_max}&singleEvents=true&orderBy=startTime&timeZone=Europe/Paris",
+      "authentication": "predefinedCredentialType",
+      "nodeCredentialType": "googleCalendarOAuth2Api",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "time_min",
+            "description": "Date de début au format ISO 8601 avec timezone, ex: 2025-01-15T00:00:00+01:00",
+            "type": "string"
+          },
+          {
+            "name": "time_max",
+            "description": "Date de fin au format ISO 8601 avec timezone, ex: 2025-01-22T23:59:59+01:00",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-calendar-list",
+    "name": "📅 Calendar: Lister",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      800,
+      1200
+    ],
+    "credentials": {
+      "googleCalendarOAuth2Api": {
+        "id": "m6nrlu4lrEb6T3X2",
+        "name": "Gmail account"
+      }
+    }
+  },
+  {
+    "parameters": {
+      "toolDescription": "Créer un événement dans Google Calendar. Utilise ce tool quand l'utilisateur veut ajouter un rendez-vous, événement ou réunion à son calendrier.",
+      "method": "POST",
+      "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+      "authentication": "predefinedCredentialType",
+      "nodeCredentialType": "googleCalendarOAuth2Api",
+      "sendHeaders": true,
+      "specifyHeaders": "json",
+      "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "={\"summary\":\"{event_title}\",\"description\":\"{event_description}\",\"location\":\"{event_location}\",\"start\":{\"dateTime\":\"{start_datetime}\",\"timeZone\":\"Europe/Paris\"},\"end\":{\"dateTime\":\"{end_datetime}\",\"timeZone\":\"Europe/Paris\"}}",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "event_title",
+            "description": "Titre de l'événement",
+            "type": "string"
+          },
+          {
+            "name": "event_description",
+            "description": "Description de l'événement",
+            "type": "string"
+          },
+          {
+            "name": "event_location",
+            "description": "Lieu de l'événement (optionnel)",
+            "type": "string"
+          },
+          {
+            "name": "start_datetime",
+            "description": "Date et heure de début au format ISO 8601, ex: 2025-01-15T10:00:00",
+            "type": "string"
+          },
+          {
+            "name": "end_datetime",
+            "description": "Date et heure de fin au format ISO 8601, ex: 2025-01-15T11:00:00",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-calendar-create",
+    "name": "📅 Calendar: Créer",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      1008,
+      1200
+    ],
+    "credentials": {
+      "googleCalendarOAuth2Api": {
+        "id": "m6nrlu4lrEb6T3X2",
+        "name": "Gmail account"
+      }
+    }
+  }
+]

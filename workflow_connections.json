@@ -1,0 +1,536 @@
+{
+  "Telegram Trigger": {
+    "main": [
+      [
+        {
+          "node": "Type Router",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "Type Router": {
+    "main": [
+      [
+        {
+          "node": "Get Voice File",
+          "type": "main",
+          "index": 0
+        }
+      ],
+      [
+        {
+          "node": "Get Photo File",
+          "type": "main",
+          "index": 0
+        }
+      ],
+      [
+        {
+          "node": "Format Document",
+          "type": "main",
+          "index": 0
+        }
+      ],
+      [
+        {
+          "node": "Format Video",
+          "type": "main",
+          "index": 0
+        }
+      ],
+      [
+        {
+          "node": "Format Text",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "Get Voice File": {
+    "main": [
+      [
+        {
+          "node": "Download Voice",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "Download Voice": {
+    "main": [
+      [
+        {
+          "node": "Whisper Transcribe",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "Whisper Transcribe": {
+    "main": [
+      [
+        {
+          "node": "Format Voice",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "Format Voice": {
+    "main": [
+      [
+        {
+          "node": "Merge Branches",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "Get Photo File": {
+    "main": [
+      [
+        {
+          "node": "Format Photo",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "Format Photo": {
+    "main": [
+      [
+        {
+          "node": "Merge Branches",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "Format Document": {
+    "main": [
+      [
+        {
+          "node": "Merge Branches",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "Format Video": {
+    "main": [
+      [
+        {
+          "node": "Merge Branches",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "Format Text": {
+    "main": [
+      [
+        {
+          "node": "Merge Branches",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "Merge Branches": {
+    "main": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "JARVIS Agent": {
+    "main": [
+      [
+        {
+          "node": "Telegram Response",
+          "type": "main",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "GPT-4o": {
+    "ai_languageModel": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_languageModel",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "Chat Memory": {
+    "ai_memory": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_memory",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "📇 CRM: Ajouter Contact": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "🔍 CRM: Rechercher Contact": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "📋 CRM: Lister Contacts": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "✏️ CRM: Modifier Contact": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "📊 Projet: Créer": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "🔎 Projet: Rechercher": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "✏️ Projet: Modifier": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "📋 Projet: Lister": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "📨 Gmail: Lire Emails": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "✉️ Gmail: Envoyer": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "📅 Calendar: Lister": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "📅 Calendar: Créer": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "💰 Qonto: Créer Facture": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "📄 Qonto: Lister Factures": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "🌐 Perplexity: Recherche": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "🎬 VEO3: Text-to-Video": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "🖼️➡️🎬 VEO3: Image-to-Video": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "🔄 VEO3: Check Status": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "⏩ VEO3: Extend Video": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "🖼️ BananaPro: Générer Image": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "✏️ BananaPro: Modifier Image": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "🌤️ Météo OpenWeather": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "📰 GNews: Recherche Actualités": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "🏷️ GNews: Headlines": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "🔍 Perplexity: Veille Créative": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "🎬 Tutos Premiere Pro": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "✨ Tutos After Effects": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "✍️ Rédacteur Social": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "🎨 Prompt Vignette YouTube": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "👁️ Vision Analyse": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  },
+  "📝 Scripts Viraux": {
+    "ai_tool": [
+      [
+        {
+          "node": "JARVIS Agent",
+          "type": "ai_tool",
+          "index": 0
+        }
+      ]
+    ]
+  }
+}

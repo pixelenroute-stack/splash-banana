@@ -1,0 +1,543 @@
+[
+  {
+    "parameters": {
+      "updates": [
+        "message",
+        "callback_query"
+      ],
+      "additionalFields": {
+        "download": true,
+        "imageSize": "large"
+      }
+    },
+    "id": "telegram-trigger",
+    "name": "Telegram Trigger",
+    "type": "n8n-nodes-base.telegramTrigger",
+    "typeVersion": 1.1,
+    "position": [
+      -704,
+      208
+    ],
+    "webhookId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "credentials": {
+      "telegramApi": {
+        "id": "scDdqO17ychsATg1",
+        "name": "jarvis"
+      }
+    }
+  },
+  {
+    "parameters": {
+      "rules": {
+        "values": [
+          {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict"
+              },
+              "conditions": [
+                {
+                  "id": "voice-condition",
+                  "leftValue": "={{ $json.message.voice }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "object",
+                    "operation": "exists",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "renameOutput": true,
+            "outputKey": "Voice"
+          },
+          {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict"
+              },
+              "conditions": [
+                {
+                  "id": "photo-condition",
+                  "leftValue": "={{ $json.message.photo }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "array",
+                    "operation": "exists",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "renameOutput": true,
+            "outputKey": "Photo"
+          },
+          {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict"
+              },
+              "conditions": [
+                {
+                  "id": "doc-condition",
+                  "leftValue": "={{ $json.message.document }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "object",
+                    "operation": "exists",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "renameOutput": true,
+            "outputKey": "Document"
+          },
+          {
+            "conditions": {
+              "options": {
+                "caseSensitive": true,
+                "leftValue": "",
+                "typeValidation": "strict"
+              },
+              "conditions": [
+                {
+                  "id": "video-condition",
+                  "leftValue": "={{ $json.message.video }}",
+                  "rightValue": "",
+                  "operator": {
+                    "type": "object",
+                    "operation": "exists",
+                    "singleValue": true
+                  }
+                }
+              ],
+              "combinator": "and"
+            },
+            "renameOutput": true,
+            "outputKey": "Video"
+          }
+        ]
+      },
+      "options": {
+        "fallbackOutput": "extra"
+      }
+    },
+    "id": "type-router",
+    "name": "Type Router",
+    "type": "n8n-nodes-base.switch",
+    "typeVersion": 3.2,
+    "position": [
+      -400,
+      208
+    ]
+  },
+  {
+    "parameters": {
+      "resource": "file",
+      "fileId": "={{ $json.message.voice.file_id }}",
+      "additionalFields": {}
+    },
+    "id": "get-voice-file",
+    "name": "Get Voice File",
+    "type": "n8n-nodes-base.telegram",
+    "typeVersion": 1.2,
+    "position": [
+      -96,
+      -96
+    ],
+    "webhookId": "872ffcae-9c6c-4ae9-9d4d-b869e5321c06",
+    "credentials": {
+      "telegramApi": {
+        "id": "scDdqO17ychsATg1",
+        "name": "jarvis"
+      }
+    }
+  },
+  {
+    "parameters": {
+      "url": "=https://api.telegram.org/file/bot{{ $credentials.telegramApi.accessToken }}/{{ $json.result.file_path }}",
+      "options": {
+        "response": {
+          "response": {
+            "responseFormat": "file"
+          }
+        }
+      }
+    },
+    "id": "download-voice",
+    "name": "Download Voice",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+      160,
+      -96
+    ]
+  },
+  {
+    "parameters": {
+      "method": "POST",
+      "url": "https://api.openai.com/v1/audio/transcriptions",
+      "authentication": "genericCredentialType",
+      "genericAuthType": "httpHeaderAuth",
+      "sendBody": true,
+      "contentType": "multipart-form-data",
+      "bodyParameters": {
+        "parameters": [
+          {
+            "name": "model",
+            "value": "whisper-1"
+          },
+          {
+            "parameterType": "formBinaryData",
+            "name": "file",
+            "inputDataFieldName": "data"
+          },
+          {
+            "name": "language",
+            "value": "fr"
+          }
+        ]
+      },
+      "options": {}
+    },
+    "id": "whisper-transcribe",
+    "name": "Whisper Transcribe",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+      400,
+      -96
+    ],
+    "credentials": {
+      "httpHeaderAuth": {
+        "id": "iiT0HF4awi8YQYDw",
+        "name": "OpenAI API"
+      }
+    }
+  },
+  {
+    "parameters": {
+      "assignments": {
+        "assignments": [
+          {
+            "id": "fv1",
+            "name": "userMessage",
+            "value": "={{ $json.text }}",
+            "type": "string"
+          },
+          {
+            "id": "fv2",
+            "name": "chatId",
+            "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+            "type": "string"
+          },
+          {
+            "id": "fv3",
+            "name": "firstName",
+            "value": "={{ $('Telegram Trigger').item.json.message.from.first_name }}",
+            "type": "string"
+          },
+          {
+            "id": "fv4",
+            "name": "hasImage",
+            "value": "false",
+            "type": "string"
+          },
+          {
+            "id": "fv5",
+            "name": "imageUrl",
+            "value": "",
+            "type": "string"
+          }
+        ]
+      },
+      "options": {}
+    },
+    "id": "format-voice",
+    "name": "Format Voice",
+    "type": "n8n-nodes-base.set",
+    "typeVersion": 3.4,
+    "position": [
+      656,
+      -96
+    ]
+  },
+  {
+    "parameters": {
+      "resource": "file",
+      "fileId": "={{ $json.message.photo.slice(-1)[0].file_id }}",
+      "additionalFields": {}
+    },
+    "id": "get-photo-file",
+    "name": "Get Photo File",
+    "type": "n8n-nodes-base.telegram",
+    "typeVersion": 1.2,
+    "position": [
+      -96,
+      112
+    ],
+    "webhookId": "c7da5143-804f-43f9-93d5-7f32e7eeb025",
+    "credentials": {
+      "telegramApi": {
+        "id": "scDdqO17ychsATg1",
+        "name": "jarvis"
+      }
+    }
+  },
+  {
+    "parameters": {
+      "assignments": {
+        "assignments": [
+          {
+            "id": "fp1",
+            "name": "chatId",
+            "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+            "type": "string"
+          },
+          {
+            "id": "fp2",
+            "name": "userMessage",
+            "value": "={{ $('Telegram Trigger').item.json.message.caption || 'Image reçue' }}",
+            "type": "string"
+          },
+          {
+            "id": "fp3",
+            "name": "firstName",
+            "value": "={{ $('Telegram Trigger').item.json.message.from.first_name }}",
+            "type": "string"
+          },
+          {
+            "id": "fp4",
+            "name": "imageUrl",
+            "value": "=https://api.telegram.org/file/bot{{ $credentials.telegramApi.accessToken }}/{{ $json.result.file_path }}",
+            "type": "string"
+          },
+          {
+            "id": "fp5",
+            "name": "hasImage",
+            "value": "true",
+            "type": "string"
+          }
+        ]
+      },
+      "options": {}
+    },
+    "id": "format-photo",
+    "name": "Format Photo",
+    "type": "n8n-nodes-base.set",
+    "typeVersion": 3.4,
+    "position": [
+      208,
+      112
+    ]
+  },
+  {
+    "parameters": {
+      "assignments": {
+        "assignments": [
+          {
+            "id": "fd1",
+            "name": "chatId",
+            "value": "={{ $json.message.chat.id }}",
+            "type": "string"
+          },
+          {
+            "id": "fd2",
+            "name": "userMessage",
+            "value": "={{ $json.message.caption || 'Document reçu' }}",
+            "type": "string"
+          },
+          {
+            "id": "fd3",
+            "name": "firstName",
+            "value": "={{ $json.message.from.first_name }}",
+            "type": "string"
+          },
+          {
+            "id": "fd4",
+            "name": "hasImage",
+            "value": "false",
+            "type": "string"
+          },
+          {
+            "id": "fd5",
+            "name": "fileId",
+            "value": "={{ $json.message.document.file_id }}",
+            "type": "string"
+          },
+          {
+            "id": "fd6",
+            "name": "fileName",
+            "value": "={{ $json.message.document.file_name }}",
+            "type": "string"
+          }
+        ]
+      },
+      "options": {}
+    },
+    "id": "format-document",
+    "name": "Format Document",
+    "type": "n8n-nodes-base.set",
+    "typeVersion": 3.4,
+    "position": [
+      -96,
+      304
+    ]
+  },
+  {
+    "parameters": {
+      "assignments": {
+        "assignments": [
+          {
+            "id": "fvd1",
+            "name": "chatId",
+            "value": "={{ $json.message.chat.id }}",
+            "type": "string"
+          },
+          {
+            "id": "fvd2",
+            "name": "userMessage",
+            "value": "={{ $json.message.caption || 'Vidéo reçue' }}",
+            "type": "string"
+          },
+          {
+            "id": "fvd3",
+            "name": "firstName",
+            "value": "={{ $json.message.from.first_name }}",
+            "type": "string"
+          },
+          {
+            "id": "fvd4",
+            "name": "hasImage",
+            "value": "false",
+            "type": "string"
+          },
+          {
+            "id": "fvd5",
+            "name": "fileId",
+            "value": "={{ $json.message.video.file_id }}",
+            "type": "string"
+          }
+        ]
+      },
+      "options": {}
+    },
+    "id": "format-video",
+    "name": "Format Video",
+    "type": "n8n-nodes-base.set",
+    "typeVersion": 3.4,
+    "position": [
+      -96,
+      480
+    ]
+  },
+  {
+    "parameters": {
+      "assignments": {
+        "assignments": [
+          {
+            "id": "ft1",
+            "name": "userMessage",
+            "value": "={{ $json.message ? $json.message.text : ($json.callback_query ? $json.callback_query.data : '') }}",
+            "type": "string"
+          },
+          {
+            "id": "ft2",
+            "name": "chatId",
+            "value": "={{ $json.message ? $json.message.chat.id : $json.callback_query.message.chat.id }}",
+            "type": "string"
+          },
+          {
+            "id": "ft3",
+            "name": "firstName",
+            "value": "={{ $json.message ? $json.message.from.first_name : $json.callback_query.from.first_name }}",
+            "type": "string"
+          },
+          {
+            "id": "ft4",
+            "name": "hasImage",
+            "value": "false",
+            "type": "string"
+          }
+        ]
+      },
+      "options": {}
+    },
+    "id": "format-text",
+    "name": "Format Text",
+    "type": "n8n-nodes-base.set",
+    "typeVersion": 3.4,
+    "position": [
+      -96,
+      672
+    ]
+  },
+  {
+    "parameters": {
+      "mode": "chooseBranch",
+      "output": "empty"
+    },
+    "id": "merge-branches",
+    "name": "Merge Branches",
+    "type": "n8n-nodes-base.merge",
+    "typeVersion": 3,
+    "position": [
+      912,
+      304
+    ]
+  },
+  {
+    "parameters": {
+      "promptType": "define",
+      "text": "={{ $json.userMessage + (($json.hasImage === 'true' && $json.imageUrl) ? '\\n[Image fournie: ' + $json.imageUrl + ']' : '') }}",
+      "options": {
+        "systemMessage": "Tu es JARVIS UNIFIÉ, l'assistant IA personnel tout-en-un de Pierre, fondateur de Pixel en Route (SIRET: 897 732 228 00027).\nAgence de production audiovisuelle basée à Paris. Email: contact@pixelenroute.com\n\nTES 11 MODES:\n\n1. CRM (Notion) - Gestion contacts: ajouter, rechercher, modifier, lister. Statuts: Lead/Client/Prospect/Partenaire\n2. PROJETS (Notion) - Gestion projets: créer, rechercher, modifier, lister. Statuts: À faire/En cours/En révision/Terminé/Annulé\n3. FACTURATION (Qonto) - Créer factures (TVA 20%), lister. SIRET: 897 732 228 00027, TVA: FR12897732228\n4. EMAIL (Gmail) - Lire, envoyer emails. Toujours français impeccable\n5. CALENDRIER (Google Calendar) - Événements. Timezone: Europe/Paris\n6. PROSPECTION - Recherche web (Perplexity)\n7. VIDÉO IA (VEO3) - Génération vidéo via Kie.ai: text-to-video, image-to-video, extend. Traduis TOUJOURS les prompts en anglais cinématographique\n8. IMAGES IA (BananaPro) - Génération/modification images. Formats: 1:1, 16:9, 9:16, 4:5. Traduis prompts en anglais\n9. SOCIAL MEDIA - Posts LinkedIn/Instagram, vignettes YouTube, scripts viraux\n10. VEILLE - Météo, actualités GNews, veille tech/créative, tutos Premiere/After Effects\n11. MONTEUR VIDÉO - Direction artistique (couleurs HEX, polices, style), scripts viraux\n\nRÈGLES:\n- Toujours répondre en français\n- Tutoyer Pierre\n- Confirmer AVANT les actions destructives\n- TVA 20%, format euros, dates JJ/MM/AAAA\n- Pour VEO3/BananaPro: traduire les prompts en anglais professionnel\n- Pour le contenu social: proposer texte + prompt image + hashtags",
+        "maxIterations": 20,
+        "returnIntermediateSteps": false
+      }
+    },
+    "id": "jarvis-agent",
+    "name": "JARVIS Agent",
+    "type": "@n8n/n8n-nodes-langchain.agent",
+    "typeVersion": 1.7,
+    "position": [
+      1200,
+      304
+    ]
+  },
+  {
+    "parameters": {
+      "operation": "sendMessage",
+      "chatId": "={{ $('Merge Branches').item.json.chatId }}",
+      "text": "={{ $json.output }}",
+      "additionalFields": {
+        "parse_mode": "Markdown"
+      }
+    },
+    "id": "telegram-response",
+    "name": "Telegram Response",
+    "type": "n8n-nodes-base.telegram",
+    "typeVersion": 1.2,
+    "position": [
+      1504,
+      304
+    ],
+    "webhookId": "77e258df-b640-4e3c-9150-2b0c31213256",
+    "credentials": {
+      "telegramApi": {
+        "id": "scDdqO17ychsATg1",
+        "name": "jarvis"
+      }
+    }
+  }
+]

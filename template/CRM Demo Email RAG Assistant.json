@@ -1,0 +1,536 @@
+{
+  "name": "[CRM DEMO] Email RAG Assistant (Public)",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        256
+      ],
+      "id": "643e0665-e0db-4fdd-8bae-de340058b0fb",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1ett6EzVDPYthO-6gbkbIezDrQzmRyrPu",
+          "mode": "list",
+          "cachedResultName": "Wave Return Policy.pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/1ett6EzVDPYthO-6gbkbIezDrQzmRyrPu/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1344,
+        256
+      ],
+      "id": "a608e4dc-6164-4b6c-8fbe-6f79d54709ff",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "zedjsYC56OiNkNm8",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1536,
+        256
+      ],
+      "id": "a9017f26-379f-4993-bd6b-7cb8a467042e",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JyoApXCuqapVOS2Q",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        416
+      ],
+      "id": "54233602-0518-4d72-8e78-267d84cbaeda",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1472,
+        592
+      ],
+      "id": "37e34bfa-f44c-4199-a279-638e588fa238",
+      "name": "Embedding",
+      "credentials": {
+        "openAiApi": {
+          "id": "hPPhcVMtTyQFIcPh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        848,
+        976
+      ],
+      "id": "b635d8cb-2f34-4c47-b3ef-2706338a6920",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "R2ls1E9UtTCEn1Bg",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6cee1c60-b7f7-4e90-b111-90255c8176ba",
+              "name": "emailBodys",
+              "value": "={{ $json.snippet }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        976
+      ],
+      "id": "a6e55b37-17b9-4792-87ed-3d25a1bb3e3b",
+      "name": "EmailBody"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Work with the data inside the vector database to answer any questions",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": null,
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1616,
+        848
+      ],
+      "id": "254e231b-e36b-49a3-a1e4-c2c5703ae351",
+      "name": "Vector_Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JyoApXCuqapVOS2Q",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To_Email', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        1888,
+        848
+      ],
+      "id": "3c4b0227-c625-4582-bf0e-32db1993652c",
+      "name": "email_draft",
+      "webhookId": "6f580163-89b7-4bc8-9260-885fb517eb37",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "R2ls1E9UtTCEn1Bg",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Réception d'Emails",
+        "height": 304,
+        "width": 256,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        768,
+        880
+      ],
+      "typeVersion": 1,
+      "id": "f7d11fbd-de25-43c2-8569-a3a45e183b8b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Classification de l'email\nest-ce qu'on répond ou non",
+        "height": 304,
+        "width": 512,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1040,
+        880
+      ],
+      "typeVersion": 1,
+      "id": "2d9edc83-f45c-4777-9225-3800e7e63c34",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Rédaction de la réponse support",
+        "height": 416,
+        "width": 464,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1568,
+        768
+      ],
+      "typeVersion": 1,
+      "id": "a706bad0-e931-4e2e-bb4d-6a3b51727fd9",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Notification à l'équipe support",
+        "height": 320,
+        "width": 320,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2064,
+        864
+      ],
+      "typeVersion": 1,
+      "id": "2bc98240-8ee9-4a86-8af8-6033061b06ea",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1504,
+        1280
+      ],
+      "id": "58a7d353-7cc6-46af-a30a-85482bd6b843",
+      "name": "4.1 mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "hPPhcVMtTyQFIcPh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.emailBodys }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Promotional",
+              "description": "Marketing, offers, discounts, sales pitches, newsletters."
+            },
+            {
+              "category": "Support",
+              "description": "Customer inquiries, troubleshooting, complaints, or help requests."
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "Please classify the text provided by the user into one of the following categories: {categories}, and use the provided formatting instructions below. Don't explain, and only output the json."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        976
+      ],
+      "id": "570f0cc2-c2d8-498d-b931-69d90c41530d",
+      "name": "Email Classifier"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Email received: {{ $json.emailBodys }}\n\n\nFrom: {{ $('Gmail Trigger').item.json.From }}",
+        "options": {
+          "systemMessage": "=#Overview\nYou are a helpful assistant that answers any inquiries for surf board shop called \"WAVE\".You will be drafting email replies for the incoming queries that come through.\n\n##Tools\nVector_Store - This tool will be used to help us answer any incoming queries from users\nemail_draft - This tool will be used to draft any emails back to the user. Make sure to use the Vector_store before using this tool\n\n\n##Rules\n- ALWAYS use Vector_Store before answering and drafting any emails\n- ALWAYS draft an email with an answer\n- Make the email draft a medium length, keeping it concise with a good structure\n\n##Extra information\nMy name is Julien\n- Make sure to include that when drafting the email"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        976
+      ],
+      "id": "a8793c5b-ad3c-4010-aad0-45f1357a299a",
+      "name": "Customer Support Agent"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0931JHB3HD",
+          "mode": "list",
+          "cachedResultName": "all-oxyan"
+        },
+        "text": "=New Inquiry received from {{ $('Gmail Trigger').item.json.From.split(\"<\").first() }}  \n\nAbout: {{ $('Gmail Trigger').item.json.Subject }}  \n\nACTION: Email Drafted to your email",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2160,
+        976
+      ],
+      "id": "d613faa3-115e-4e52-9611-3cd445abf885",
+      "name": "Inform Customer Support Team",
+      "webhookId": "da19e45c-7818-48ea-acb1-85e076d11fb7",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "qG32UKaPK9cNvFlg",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Upload Vector Database",
+        "height": 368,
+        "width": 848
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1056,
+        160
+      ],
+      "typeVersion": 1,
+      "id": "fdd280f7-0266-4663-84f6-d21dcdc075bf",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embedding": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Vector_Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "EmailBody",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EmailBody": {
+      "main": [
+        [
+          {
+            "node": "Email Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector_Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Customer Support Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "email_draft": {
+      "ai_tool": [
+        [
+          {
+            "node": "Customer Support Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4.1 mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Customer Support Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Classifier": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Customer Support Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Support Agent": {
+      "main": [
+        [
+          {
+            "node": "Inform Customer Support Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fcb289a5-64dc-406b-9857-75ae4d95660d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2c4533c7a1e56e822a6fde3f376121580e6f7d83dda36974d922278fe743aa10"
+  },
+  "id": "BmCGGWzFzM3VikjH",
+  "tags": [
+    {
+      "createdAt": "2025-10-12T19:54:48.978Z",
+      "updatedAt": "2025-10-12T19:54:48.978Z",
+      "id": "i7LPLPTU5QkUPRR6",
+      "name": "Julien Sanson's Template"
+    }
+  ]
+}

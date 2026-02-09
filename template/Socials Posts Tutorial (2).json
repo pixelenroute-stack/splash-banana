@@ -1,0 +1,1508 @@
+{
+  "name": "Socials Posts - Tutoriel",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Post w/ Image ",
+        "height": 260,
+        "width": 720,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        140,
+        -640
+      ],
+      "id": "a2637974-09ad-465c-886e-dccc4e6b8e1b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<INSTAGRAM_ACCOUNT_ID>",
+        "edge": "media_publish",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "creation_id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        700,
+        1120
+      ],
+      "id": "3d573f51-90b5-4cee-81e9-de13c0e14421",
+      "name": "Post to IG - STORY",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<INSTAGRAM_ACCOUNT_ID>",
+        "edge": "media_publish",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "creation_id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        660,
+        240
+      ],
+      "id": "2fe83830-1d60-4231-8c90-d7317ea9363d",
+      "name": "Post to IG - IMAGE",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Post Image",
+        "height": 280,
+        "width": 720,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        120
+      ],
+      "id": "467407d3-a8e3-4a02-b45f-be69ac3d98cb",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<INSTAGRAM_ACCOUNT_ID>",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "image_url",
+                "value": "={{ $json.URL }}"
+              },
+              {
+                "name": "caption",
+                "value": "={{ $json.Caption }}"
+              },
+              {
+                "name": "media_type",
+                "value": "IMAGE"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        240,
+        240
+      ],
+      "id": "a0e709dd-a0c6-4f71-b670-1a3627775ef2",
+      "name": "Create Container - IMAGE",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<FB_PAGE_ID>",
+        "edge": "photos",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "published",
+                "value": "false"
+              },
+              {
+                "name": "url",
+                "value": "={{ $json.URL }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        300,
+        -560
+      ],
+      "id": "fb885413-cf00-4cd9-84ba-f342975307d9",
+      "name": "Prepare Image",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Post Reel",
+        "height": 280,
+        "width": 720,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        720
+      ],
+      "id": "1a9b5d46-da25-4fab-8015-68ae9783533a",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<INSTAGRAM_ACCOUNT_ID>",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "video_url",
+                "value": "={{ $json.movie.url }}"
+              },
+              {
+                "name": "caption",
+                "value": "={{ $('Trigger').item.json.Caption }}"
+              },
+              {
+                "name": "media_type",
+                "value": "REELS"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        380,
+        820
+      ],
+      "id": "63e071a7-09ae-4144-a5dd-f04848a6c8e5",
+      "name": "Create Container - REEL",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<INSTAGRAM_ACCOUNT_ID>",
+        "edge": "media_publish",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "creation_id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        700,
+        820
+      ],
+      "id": "51afa017-a672-48dc-a99f-3a01e20553a9",
+      "name": "Post to IG - REEL",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=<VIDEO_URL>",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        820
+      ],
+      "id": "d79035b2-36db-450d-ab7e-308419da1f7b",
+      "name": "Retrieve Video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8oeesqjwTqXKKYCI",
+          "name": "JSON2VIDEO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<INSTAGRAM_ACCOUNT_ID>",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "image_url",
+                "value": "={{ $json.URL }}"
+              },
+              {
+                "name": "caption",
+                "value": "={{ $json.Caption }}"
+              },
+              {
+                "name": "media_type",
+                "value": "STORIES"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        240,
+        520
+      ],
+      "id": "b33c73f2-055a-4253-9c99-a0929166cd98",
+      "name": "Create Container - STORY - IMG",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<INSTAGRAM_ACCOUNT_ID>",
+        "edge": "media",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "video_url",
+                "value": "={{ $('Retrieve Video').first().json.movie.url }}"
+              },
+              {
+                "name": "caption",
+                "value": "={{ $('Caption').first().json.Caption }}"
+              },
+              {
+                "name": "media_type",
+                "value": "STORIES"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        380,
+        1120
+      ],
+      "id": "2a15b596-c02d-4b74-9c25-e54d0defe7a4",
+      "name": "Create Container - STORY - REEL",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        460,
+        240
+      ],
+      "id": "37026ad6-040e-4e17-bddf-7aef5be221cc",
+      "name": "Wait2",
+      "webhookId": "591675a5-c402-4e00-9dfe-b91d322fff2f",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        540,
+        820
+      ],
+      "id": "8aba5032-07a6-43d2-9105-60ff51af71d1",
+      "name": "Wait3",
+      "webhookId": "37b6bddc-2f7b-4e3e-b28c-e75518d79a6c",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        460,
+        520
+      ],
+      "id": "76f5939b-7d2d-4fc0-a93d-228f6d37cb87",
+      "name": "Wait4",
+      "webhookId": "67b678ce-99a4-4990-a621-4b96d619011a"
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        540,
+        1120
+      ],
+      "id": "bc8e66e6-3e6f-4df2-9b5d-e5830e778856",
+      "name": "Wait5",
+      "webhookId": "c312219c-1888-46fc-aa23-f3c1bd118caa"
+    },
+    {
+      "parameters": {
+        "content": "## Story",
+        "height": 260,
+        "width": 720,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        140,
+        -960
+      ],
+      "id": "7849410f-6bd6-498a-a878-97ac6c475968",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<FB_PAGE_ID>",
+        "edge": "photos",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "published",
+                "value": "false"
+              },
+              {
+                "name": "url",
+                "value": "={{ $json.URL }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        300,
+        -880
+      ],
+      "id": "917f432e-84a4-4262-a0be-e2870e9ae927",
+      "name": "Prepare Image - STORY",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<FB_PAGE_ID>",
+        "edge": "photo_stories",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{$('Image URL + Caption').first().json.Caption}}"
+              },
+              {
+                "name": "photo_id",
+                "value": "={{ $json.id }}"
+              },
+              {
+                "name": "published",
+                "value": "true"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -880
+      ],
+      "id": "76807350-7c5b-4f3e-bce3-28ae210d7402",
+      "name": "Post to FB STORY",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<INSTAGRAM_ACCOUNT_ID>",
+        "edge": "media_publish",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "creation_id",
+                "value": "={{ $json.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        660,
+        520
+      ],
+      "id": "34e86189-6b82-4a27-ad2e-02042d2feceb",
+      "name": "Post to IG - STORY1",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -780,
+        -140
+      ],
+      "id": "8255d84e-c53d-4b8c-8857-82737a04c588",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "content": "# Facebook",
+        "height": 1100,
+        "width": 800,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        100,
+        -1080
+      ],
+      "id": "8b33c751-545b-46e0-aed2-ab839075fae9",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# Instagram",
+        "height": 1280,
+        "width": 800,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        100,
+        40
+      ],
+      "id": "c322ef82-f172-48eb-89c5-13acac9e89cc",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Story Image",
+        "height": 280,
+        "width": 720,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        420
+      ],
+      "id": "e8138e9c-8486-48a9-bf3c-d9a352cbb4ad",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Story Reel",
+        "height": 280,
+        "width": 720,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        1020
+      ],
+      "id": "45387fb1-22d5-42ac-94f2-fee3ebc538f8",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b3e9b268-3f6c-4434-a26b-42e5ed7b65a7",
+              "name": "URL",
+              "value": "=<IMAGE_URL>",
+              "type": "string"
+            },
+            {
+              "id": "7ec99e2a-915e-471d-88de-9df6daed9104",
+              "name": "Caption",
+              "value": "=Voici la description du post ! On parle des aujourd'hui des sujets de la tech, d'IA et d'automatisation ! 🤖",
+              "type": "string"
+            },
+            {
+              "id": "5f3de172-9c80-4496-a5dd-27541cc91f49",
+              "name": "Trigger",
+              "value": "3",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        -360
+      ],
+      "id": "c5a52290-4b0e-4ea0-8846-ce0fada73e69",
+      "name": "Image URL + Caption"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7ec99e2a-915e-471d-88de-9df6daed9104",
+              "name": "Caption",
+              "value": "=Voici la description de la vidéo ! On parle d'une vidéo abordant les sujets de la tech, d'IA et d'automatisation ! 🤖",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        -220
+      ],
+      "id": "d7f0efc5-e844-4555-ba0d-eaed5f59b595",
+      "name": "Caption"
+    },
+    {
+      "parameters": {
+        "content": "## -> Récupérer l'ID de la page Facebook sur Meta Business directement\n## -> Ajouter l'image en \"Published\" = FALSE\n\n## ⚠️ Récupérer l'ID de la page Facebook à indiquer dans le Node",
+        "width": 800,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -840
+      ],
+      "id": "0387ec0e-0c37-40e9-bf23-397476644bdc",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Pour Publier en STORY : \"Edge\" = \"photo_stories\"\n## Pour Publier en POST : \"Edge\" = \"feed\"",
+        "height": 100,
+        "width": 800,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -640
+      ],
+      "id": "69363e45-95ab-4ccf-9565-cf3133fa6fdb",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "## 1. Créer un conteneur comprenant l'Image/ Vidéo \"Edge\" : \"media\"\n## 2. Poster le contenu avec le \"Edge\" : \"media_publish\"\n\n## ⚠️ Récupérer l'ID de la page Instagram à indiquer dans le Node",
+        "height": 180,
+        "width": 800,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        940,
+        560
+      ],
+      "id": "cd94c518-c72d-418a-b515-31eb02544f97",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "## La différence STORY <> POST se fait au niveau du conteneur ! \n\n## POST -> media_type : \"REELS\"\n## STORY -> media_type : \"STORIES\"",
+        "width": 800,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        940,
+        820
+      ],
+      "id": "7962b1d4-db12-4a09-8d27-359c4abbc419",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Trigger }}",
+                    "rightValue": "1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "b4096941-0486-4881-b549-a840862a282e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "1"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1606a1a0-fa16-4a7a-88bb-9017d929646c",
+                    "leftValue": "={{ $json.Trigger }}",
+                    "rightValue": "2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "2"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a1df4bad-9ca0-4eb4-862d-222db0a533ec",
+                    "leftValue": "={{ $json.Trigger }}",
+                    "rightValue": "3",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "3"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "308c31d8-a358-4550-94d2-097c683a5a69",
+                    "leftValue": "={{ $json.Trigger }}",
+                    "rightValue": "4",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "4"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -180,
+        -380
+      ],
+      "id": "c681280a-9d82-4718-b28c-171c9ae945f2",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "content": "## Post w/ Video",
+        "height": 320,
+        "width": 720,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        140,
+        -340
+      ],
+      "id": "5d8467d9-1121-4958-a02e-c641f0415a8b",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "url": "<GET_VIDEO_URL>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        -220
+      ],
+      "id": "4b9de027-ad26-40ea-99bd-d8f2923b9ead",
+      "name": "Get Video"
+    },
+    {
+      "parameters": {
+        "hostUrl": "graph-video.facebook.com",
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<FB_PAGE_ID>",
+        "edge": "videos",
+        "sendBinaryData": true,
+        "binaryPropertyName": "source:data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -220
+      ],
+      "id": "c3ebfae8-0a84-4fc5-a307-c0e3f30cc93f",
+      "name": "Post Video",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "<FB_PAGE_ID>",
+        "edge": "feed",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{$('Image URL + Caption').first().json.Caption}}"
+              },
+              {
+                "name": "attached_media",
+                "value": "=[\n{\n\"media_fbid\":\"{{ $json.id }}\"\n}\n]"
+              },
+              {
+                "name": "published",
+                "value": "true"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -560
+      ],
+      "id": "7761843d-5d91-4930-9ad7-f62782307c7d",
+      "name": "Post Image",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "hLCy4U6sjRg2Utmh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=<VIDEO_URL>",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        1120
+      ],
+      "id": "8ed7dfee-5636-47f8-8ea3-4096dfbb5b1f",
+      "name": "Retrieve Video1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8oeesqjwTqXKKYCI",
+          "name": "JSON2VIDEO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Trigger }}",
+                    "rightValue": "1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "b4096941-0486-4881-b549-a840862a282e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "1"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1606a1a0-fa16-4a7a-88bb-9017d929646c",
+                    "leftValue": "={{ $json.Trigger }}",
+                    "rightValue": "2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "2"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3766c97d-4eaf-4c97-9dcd-86bbde370d5f",
+                    "leftValue": "={{ $json.Trigger }}",
+                    "rightValue": "3",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -200,
+        140
+      ],
+      "id": "99a257b8-c7c2-48a8-a524-49586b56a577",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5f3de172-9c80-4496-a5dd-27541cc91f49",
+              "name": "Trigger",
+              "value": "2",
+              "type": "string"
+            },
+            {
+              "id": "7c951f08-0aed-49d5-a326-4554faf216c3",
+              "name": "Caption",
+              "value": "Test",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -380,
+        140
+      ],
+      "id": "51dd4a3f-0c95-4845-96a1-70a8baaa5ec2",
+      "name": "Trigger"
+    },
+    {
+      "parameters": {
+        "content": "## 📝 Documentation\n\n- Console Développeurs Meta : https://developers.facebook.com/\n\n- Meta Business : https://business.facebook.com/\n\n- TermsFeed (Pour générer les politiques) : https://app.termsfeed.com/\n\n- Facebook API : https://developers.facebook.com/docs/video-api/guides/publishing?locale=fr_FR\n\n- Instagram API : https://developers.facebook.com/docs/instagram-platform/content-publishing?locale=fr_FR",
+        "height": 300,
+        "width": 740,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        -1080
+      ],
+      "id": "960e1122-f77f-46ee-b95a-01015b4e9680",
+      "name": "Sticky Note13"
+    },
+    {
+      "parameters": {
+        "content": "Indiquer ici un URL d'image à envoyer sur les réseaux",
+        "height": 220,
+        "width": 320,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -420
+      ],
+      "id": "3c9f8e87-3620-4c53-ab95-67e9d85003fb",
+      "name": "Sticky Note14"
+    },
+    {
+      "parameters": {
+        "content": "Indiquer ici un URL de vidéo",
+        "height": 220,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        380,
+        -280
+      ],
+      "id": "a5e794b4-5cb1-4f21-94d5-e77deeb152c5",
+      "name": "Sticky Note15"
+    },
+    {
+      "parameters": {
+        "content": "Indiquer ici un URL de vidéo",
+        "height": 220,
+        "width": 180,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        760
+      ],
+      "id": "7e52c653-7f01-4eec-b490-1d0dfeba6df6",
+      "name": "Sticky Note16"
+    },
+    {
+      "parameters": {
+        "content": "Indiquer ici un URL de vidéo",
+        "height": 200,
+        "width": 180,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        1080
+      ],
+      "id": "7a7c3853-0b18-4edd-8150-619f8ca0a896",
+      "name": "Sticky Note17"
+    },
+    {
+      "parameters": {
+        "content": "# Explication & Setup du template dans ma dernière vidéo Youtube ! ▶️\n\n# Ici 👉🏻 https://youtu.be/neVYoVwPAJo",
+        "height": 200,
+        "width": 800,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        100,
+        -1420
+      ],
+      "id": "764afdeb-20a9-4562-9453-4b543b998706",
+      "name": "Sticky Note18"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Create Container - IMAGE": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Image": {
+      "main": [
+        [
+          {
+            "node": "Post Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to IG - IMAGE": {
+      "main": [
+        []
+      ]
+    },
+    "Create Container - REEL": {
+      "main": [
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Video": {
+      "main": [
+        [
+          {
+            "node": "Create Container - REEL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to IG - REEL": {
+      "main": [
+        []
+      ]
+    },
+    "Create Container - STORY - IMG": {
+      "main": [
+        [
+          {
+            "node": "Wait4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Container - STORY - REEL": {
+      "main": [
+        [
+          {
+            "node": "Wait5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Post to IG - IMAGE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "Post to IG - REEL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4": {
+      "main": [
+        [
+          {
+            "node": "Post to IG - STORY1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait5": {
+      "main": [
+        [
+          {
+            "node": "Post to IG - STORY",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to IG - STORY": {
+      "main": [
+        []
+      ]
+    },
+    "Prepare Image - STORY": {
+      "main": [
+        [
+          {
+            "node": "Post to FB STORY",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Trigger",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Image URL + Caption",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image URL + Caption": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Caption": {
+      "main": [
+        [
+          {
+            "node": "Get Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Prepare Image - STORY",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Container - IMAGE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Container - STORY - IMG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video": {
+      "main": [
+        [
+          {
+            "node": "Post Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Video": {
+      "main": [
+        []
+      ]
+    },
+    "Post Image": {
+      "main": [
+        []
+      ]
+    },
+    "Retrieve Video1": {
+      "main": [
+        [
+          {
+            "node": "Create Container - STORY - REEL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Caption",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Retrieve Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Retrieve Video1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "Vu4qNmRU8yG2oGkh"
+  },
+  "versionId": "8ea8f68d-6f6c-43ef-944f-388a239d116c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2c4533c7a1e56e822a6fde3f376121580e6f7d83dda36974d922278fe743aa10"
+  },
+  "id": "5UYfpzbHNjcmTT5M",
+  "tags": [
+    {
+      "createdAt": "2025-06-06T12:15:13.667Z",
+      "updatedAt": "2025-06-09T10:04:00.117Z",
+      "id": "hZELXzdKBaDpxj3F",
+      "name": "Youtube"
+    }
+  ]
+}

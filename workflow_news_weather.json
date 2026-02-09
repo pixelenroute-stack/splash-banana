@@ -1,0 +1,71 @@
+[
+  {
+    "parameters": {
+      "toolDescription": "Rechercher des actualités par mots-clés via GNews. Retourne les 8 articles les plus récents en français. Paramètre: query.",
+      "url": "=https://gnews.io/api/v4/search?q={query}&lang=fr&country=fr&max=8&apikey=GNEWS_API_KEY",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "query",
+            "description": "Mots-clés de recherche actualités",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-gnews-search",
+    "name": "📰 GNews: Recherche Actualités",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      640,
+      2400
+    ]
+  },
+  {
+    "parameters": {
+      "toolDescription": "Récupérer les gros titres par catégorie via GNews. Paramètre: category (general, world, nation, business, technology, entertainment, sports, science, health).",
+      "url": "=https://gnews.io/api/v4/top-headlines?category={category}&lang=fr&country=fr&max=8&apikey=GNEWS_API_KEY",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "category",
+            "description": "general/world/nation/business/technology/entertainment/sports/science/health",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-gnews-headlines",
+    "name": "🏷️ GNews: Headlines",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      880,
+      2400
+    ]
+  },
+  {
+    "parameters": {
+      "toolDescription": "Récupérer la météo actuelle d'une ville. Paramètre: city_name (nom de la ville en français ou anglais).",
+      "url": "=https://api.openweathermap.org/data/2.5/weather?q={city_name}&appid=OPENWEATHER_API_KEY&units=metric&lang=fr",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "city_name",
+            "description": "Nom de la ville",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-weather",
+    "name": "🌤️ Météo OpenWeather",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      400,
+      2400
+    ]
+  }
+]

@@ -1,0 +1,178 @@
+[
+  {
+    "parameters": {
+      "toolDescription": "Ajouter un nouveau contact dans le CRM Notion. Utilise ce tool quand l'utilisateur veut ajouter, créer ou enregistrer un nouveau contact/client/prospect.",
+      "method": "POST",
+      "url": "https://api.notion.com/v1/pages",
+      "authentication": "predefinedCredentialType",
+      "nodeCredentialType": "notionApi",
+      "sendHeaders": true,
+      "specifyHeaders": "json",
+      "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "={\"parent\":{\"database_id\":\"6bd8c6a6a31342a09500ecff1a7516ca\"},\"properties\":{\"Nom\":{\"title\":[{\"text\":{\"content\":\"{nom}\"}}]},\"Email\":{\"email\":\"{email}\"},\"Téléphone\":{\"phone_number\":\"{telephone}\"},\"Entreprise\":{\"rich_text\":[{\"text\":{\"content\":\"{entreprise}\"}}]},\"Statut\":{\"select\":{\"name\":\"{statut}\"}},\"Notes\":{\"rich_text\":[{\"text\":{\"content\":\"{notes}\"}}]}}}",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "nom",
+            "description": "Nom complet du contact",
+            "type": "string"
+          },
+          {
+            "name": "email",
+            "description": "Adresse email du contact (optionnel, utiliser chaîne vide si inconnu)",
+            "type": "string"
+          },
+          {
+            "name": "telephone",
+            "description": "Numéro de téléphone (optionnel, utiliser chaîne vide si inconnu)",
+            "type": "string"
+          },
+          {
+            "name": "entreprise",
+            "description": "Nom de l'entreprise (optionnel, utiliser chaîne vide si inconnu)",
+            "type": "string"
+          },
+          {
+            "name": "statut",
+            "description": "Statut du contact: Lead, Client, Prospect ou Partenaire. Par défaut Lead",
+            "type": "string"
+          },
+          {
+            "name": "notes",
+            "description": "Notes additionnelles (optionnel, utiliser chaîne vide si aucune)",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-crm-add",
+    "name": "📇 CRM: Ajouter Contact",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      400,
+      800
+    ],
+    "credentials": {
+      "notionApi": {
+        "id": "oq65T9ZpEzVe0jny",
+        "name": "Notion account 2"
+      }
+    }
+  },
+  {
+    "parameters": {
+      "toolDescription": "Rechercher un contact dans le CRM Notion par nom, entreprise ou email. Utilise ce tool quand l'utilisateur veut chercher, trouver ou regarder un contact.",
+      "method": "POST",
+      "url": "https://api.notion.com/v1/databases/6bd8c6a6a31342a09500ecff1a7516ca/query",
+      "authentication": "predefinedCredentialType",
+      "nodeCredentialType": "notionApi",
+      "sendHeaders": true,
+      "specifyHeaders": "json",
+      "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "={\"filter\":{\"or\":[{\"property\":\"Nom\",\"title\":{\"contains\":\"{search_term}\"}},{\"property\":\"Entreprise\",\"rich_text\":{\"contains\":\"{search_term}\"}},{\"property\":\"Email\",\"email\":{\"contains\":\"{search_term}\"}}]}}",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "search_term",
+            "description": "Terme de recherche: nom, entreprise ou email du contact",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "id": "tool-crm-search",
+    "name": "🔍 CRM: Rechercher Contact",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      608,
+      800
+    ],
+    "credentials": {
+      "notionApi": {
+        "id": "oq65T9ZpEzVe0jny",
+        "name": "Notion account 2"
+      }
+    }
+  },
+  {
+    "parameters": {
+      "toolDescription": "Lister tous les contacts du CRM Notion. Utilise ce tool quand l'utilisateur veut voir, afficher ou lister tous les contacts.",
+      "method": "POST",
+      "url": "https://api.notion.com/v1/databases/6bd8c6a6a31342a09500ecff1a7516ca/query",
+      "authentication": "predefinedCredentialType",
+      "nodeCredentialType": "notionApi",
+      "sendHeaders": true,
+      "specifyHeaders": "json",
+      "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "{\"page_size\": 50, \"sorts\": [{\"property\": \"Nom\", \"direction\": \"ascending\"}]}",
+      "placeholderDefinitions": {
+        "values": []
+      }
+    },
+    "id": "tool-crm-list",
+    "name": "📋 CRM: Lister Contacts",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      800,
+      800
+    ],
+    "credentials": {
+      "notionApi": {
+        "id": "oq65T9ZpEzVe0jny",
+        "name": "Notion account 2"
+      }
+    }
+  },
+  {
+    "parameters": {
+      "toolDescription": "Modifier un contact existant dans le CRM Notion par son page_id. Utilise ce tool quand l'utilisateur veut mettre à jour, modifier ou changer les infos d'un contact. Il faut d'abord rechercher le contact pour obtenir son page_id.",
+      "method": "PATCH",
+      "url": "=https://api.notion.com/v1/pages/{page_id}",
+      "authentication": "predefinedCredentialType",
+      "nodeCredentialType": "notionApi",
+      "sendHeaders": true,
+      "specifyHeaders": "json",
+      "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "={\"properties\": {properties_json}}",
+      "placeholderDefinitions": {
+        "values": [
+          {
+            "name": "page_id",
+            "description": "ID de la page Notion du contact (obtenu via recherche)",
+            "type": "string"
+          },
+          {
+            "name": "properties_json",
+            "description": "Objet JSON des propriétés Notion à modifier. Ex: {\"Statut\":{\"select\":{\"name\":\"Client\"}}} ou {\"Email\":{\"email\":\"new@email.com\"}}",
+            "type": "json"
+          }
+        ]
+      }
+    },
+    "id": "tool-crm-modify",
+    "name": "✏️ CRM: Modifier Contact",
+    "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+    "typeVersion": 1.1,
+    "position": [
+      1008,
+      800
+    ],
+    "credentials": {
+      "notionApi": {
+        "id": "oq65T9ZpEzVe0jny",
+        "name": "Notion account 2"
+      }
+    }
+  }
+]

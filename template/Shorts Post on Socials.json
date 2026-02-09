@@ -1,0 +1,1330 @@
+{
+  "name": "Shorts - Post on Socials (Public)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 17
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -128,
+        -976
+      ],
+      "id": "f7ca766a-6701-4ff9-bd38-8358a18c9f3d",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appKiocnaJ3dFsalp",
+          "mode": "list",
+          "cachedResultName": "Shorts",
+          "cachedResultUrl": "https://airtable.com/appKiocnaJ3dFsalp"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbla6Aim6vVzRYvg0",
+          "mode": "list",
+          "cachedResultName": "Videos",
+          "cachedResultUrl": "https://airtable.com/appKiocnaJ3dFsalp/tbla6Aim6vVzRYvg0"
+        },
+        "filterByFormula": "=AND(\n  {To Publish} = 1,\n  {Instagram} = 0,\n  {TikTok} = 0,\n  {Youtube} = 0\n  )",
+        "returnAll": false,
+        "limit": 1,
+        "options": {
+          "fields": [
+            "Title",
+            "Keywords",
+            "Script",
+            "Video",
+            "Created Time",
+            "Description Insta",
+            "Description YT",
+            "Description TikTok",
+            "Instagram",
+            "TikTok",
+            "Youtube"
+          ]
+        },
+        "sort": {
+          "property": [
+            {
+              "field": "Created Time",
+              "direction": "desc"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        -976
+      ],
+      "id": "d0f30585-215a-4ea7-8a35-1231a742b628",
+      "name": "Get Video",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "1AlhYdgLIH9ldfEy",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "mediaUrl": "={{ $('Get Video').item.json.Video[0].url }}"
+      },
+      "type": "@blotato/n8n-nodes-blotato.blotato",
+      "typeVersion": 2,
+      "position": [
+        416,
+        -736
+      ],
+      "id": "9e4f4db1-db3b-4156-ab47-f037c2916dd8",
+      "name": "Upload media",
+      "credentials": {
+        "blotatoApi": {
+          "id": "LFKZh6eaYkdS8Fnz",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "platform": "tiktok",
+        "accountId": {
+          "__rl": true,
+          "value": "18084",
+          "mode": "list",
+          "cachedResultName": "julien.snsn",
+          "cachedResultUrl": "https://backend.blotato.com/v2/accounts/18084"
+        },
+        "postContentText": "={{ $('Create or update a record').item.json.fields.Title }}\n\n{{ $('Create or update a record').item.json.fields['Description TikTok'] }}\n\n{{ $('Create or update a record').item.json.fields.Keywords }}",
+        "postContentMediaUrls": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "@blotato/n8n-nodes-blotato.blotato",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -736
+      ],
+      "id": "7a22b62a-de7f-4858-98e0-3b4be7262736",
+      "name": "TikTok Post",
+      "credentials": {
+        "blotatoApi": {
+          "id": "LFKZh6eaYkdS8Fnz",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appKiocnaJ3dFsalp",
+          "mode": "list",
+          "cachedResultName": "Shorts",
+          "cachedResultUrl": "https://airtable.com/appKiocnaJ3dFsalp"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbla6Aim6vVzRYvg0",
+          "mode": "list",
+          "cachedResultName": "Videos",
+          "cachedResultUrl": "https://airtable.com/appKiocnaJ3dFsalp/tbla6Aim6vVzRYvg0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Instagram": true,
+            "id": "={{ $('Get Video').item.json.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description Insta",
+              "displayName": "Description Insta",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description YT",
+              "displayName": "Description YT",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description TikTok",
+              "displayName": "Description TikTok",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Script",
+              "displayName": "Script",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Video",
+              "displayName": "Video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "To Publish",
+              "displayName": "To Publish",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Instagram",
+              "displayName": "Instagram",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "TikTok",
+              "displayName": "TikTok",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Youtube",
+              "displayName": "Youtube",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Created Time",
+              "displayName": "Created Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        864,
+        -976
+      ],
+      "id": "00b47a03-f2f4-49eb-b9c7-1a4a7e13abcd",
+      "name": "Instagram Post ✅",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "1AlhYdgLIH9ldfEy",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Titre de la vidéo : \n{{ $json.Title }}\n\nContenu de la vidéo : \n{{ $json.Script }}\n\nMots-clés à intégrer dans la description : \n{{ $json.Keywords }}\n\nInformations de mon business : \nNiche :  {{ $('Set Infos').item.json.Niche }}\nAudience Cible : {{ $('Set Infos').item.json['Audience Cible'] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=## Role \nTu es un copywriter qui m'aide à rédiger les descriptions de mes vidéos de type \"Short\" sur les différents réseaux sociaux. \n\n## Mission\nGénère une description par réseau social. Il y en a trois : Youtube, Instagram et TikTok. Pour chacun je vais te soumettre un prompt à suivre pour rédiger la description en fonction. \nTu devras m'output le résultat selon le format JSON suivant : \n\n{\n\"Youtube\":\"Description du Short Youtube\",\n\"Instagram\":\"Description du Réel Instagram\",\n\"TikTok\":\"Description du TikTok\"\n}\n\nVoici le prompt pour réaliser la description de chacun des posts : \n\n### Prompt Youtube : \n\" Je veux que tu m'écrives une description de 80-120 mots pour ma vidéo Youtube. je veux qu'elle soit remplie de mots-clés reliés à ma niche et optimisée SEO pour qu'elle soit mentrée aux personnes cherchant des vidéos comme la mienne. Je t'ai fourni au préalable des infos relatives à ma niche, mon audience et la vidéo. \"\n\n### Prompt Instagram : \n\" Je veux que tu m'écrives une description de 80-120 mots pour ma vidéo Instagram. je veux qu'elle soit remplie de mots-clés reliés à ma niche et optimisée SEO pour qu'elle soit montrée aux personnes cherchant des vidéos comme la mienne. Elle doit aussi comporter un appel à l'action et tu peux rajouter des emojis pour animer le texte et le rendre plus attrayant ! N'en abuse pas non plus. Je t'ai fourni au préalable des infos relatives à ma niche, mon audience et la vidéo. \"\n\n### Prompt TikTok : \n\" Je veux que tu m'écrives une description de 80-120 mots pour ma vidéo TikTok. je veux qu'elle soit remplie de mots-clés reliés à ma niche et optimisée SEO pour qu'elle soit mentrée aux personnes cherchant des vidéos comme la mienne. Je t'ai fourni au préalable des infos relatives à ma niche, mon audience et la vidéo. \"\n\n# Outils\n'Tool' : Utilise ce tool afin de vérifier que les trois descriptions (pour chacun des réseaux sociaux) ont bien été générées. SI ce n'est pas le cas, relance l'agent afin de générer les trois.\n\n## Règles\n- N'invente pas d'informations qui ne sont pas dans le résumé de la vidéo\n- Ne génère aucun contenu tendancieux ou pouvant être amené à être bloqué\n- Génère uniquement l'OUTPUT en JSON \n- Ne rajoute pas de hashtags dans les descriptions\n- Ne rajoute pas d'appel à l'action si je ne te le demande pas\n- Ne rajoute pas d'emoji si ce n'est pas demandé\n- Pour chaque description, output uniquement le contenu de la description, sans description ou réflexion de l'IA\n- Ne dépasse pas 120 mots par description"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        -80,
+        -736
+      ],
+      "id": "ae8d9bf6-6b93-4936-82e2-15ac90031443",
+      "name": "Generate Shorts Description"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"Youtube\":\"Description du Short Youtube\",\n\"Instagram\":\"Description du Réel Instagram\",\n\"TikTok\":\"Description du TikTok\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        -544
+      ],
+      "id": "ca8f5848-2893-4438-881f-b3fa2d0d5b1e",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d2015a81-cf66-4b47-b7d0-0e85c467c28c",
+              "leftValue": "={{ $json.Video[0].filename }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "6b424013-4709-49dd-b185-fe0d941cb618",
+              "leftValue": "={{ $json.Keywords }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "a61f8542-94db-4e18-974f-ca02cfc6e4e2",
+              "leftValue": "={{ $json.Title }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "be96f8cd-5831-4e70-a037-48f92a656291",
+              "leftValue": "={{ $json.Script }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        -976
+      ],
+      "id": "bb6ccbd7-4494-47c8-b2c3-7a6e825db99a",
+      "name": "Check if Informations are filled"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3f59f346-0889-442c-813a-f3d56ab147cd",
+              "name": "Niche",
+              "value": "Automatisations IA, Automatisation de process, CRM, Nocode",
+              "type": "string"
+            },
+            {
+              "id": "7de4d8ea-9dd8-4108-9194-7bb7133a2e45",
+              "name": "Audience Cible",
+              "value": "=V otre stratégie doit segmenter l'ICP en trois tiers avec des offres adaptées. Le Segment Primaire (50% de votre focus) :\n\"Le Growth-Seeking Solopreneur\" représente Marie, 30-45 ans, consultante/freelance transitionnant vers solopreneur,\n40-70K€ CA annuel, qui passe 8-10h/semaine sur l'admin et veut atteindre 100K€+. Tech-comfortable avec no-code,\nutilise ChatGPT occasionnellement. Budget : 500€ CPF + 50-100€/mois outils. Géographie : urbain (Paris, Lyon).\nBesoin : méthodologie pour scaler sans recruter.\nLe Segment Secondaire (30% de votre focus) : \"Le Scaling Entrepreneur\" est plus avancé : 35-50 ans, 5-10+ ans\nd'expérience freelance, transition solo vers petite équipe (5-20 employés), prêt à investir 2000-10 000€ dans\nl'automatisation. Consultants établis, agences, services B2B. Sophistication technique plus élevée. Focus sur scalabilité et\nefficience système.\nLe Segment Tertiaire (20% de votre focus) : \"Le Career Transitioner\" représente 40-55 ans, transition récente vers\nindépendance (0-2 ans), forte expertise domaine mais maturité digitale plus faible, besoin d'éducation + support\nimplémentation, risk-averse, valorise les preuves de ROI. Consulting, services professionnels.\nL'architecture d'offres progressives suit une échelle de valeur. Niveau Entry (297-497€) : cours self-paced sur\nl'automatisation de 3-5 processus core, 100% vidéo en français, accès communauté Slack/Facebook privée, bibliothèque\nde templates. Peut être financé via CPF si vous obtenez la certification Qualiopi. Freelance +2 Niveau Mid-Tier (997-\n1997€) : programme coaching de groupe en cohorte de 8-12 semaines, calls live hebdomadaires en français,\naccountability entre pairs, support implémentation, assistance setup outils. Niveau High-Tier (2500-5000€) : consulting\n1:1 ou done-with-you, stratégie automatisation custom, setup accompagné, support 90 jours.\nLa timeline de monétisation suit trois phases. Année 1 (0-50K followers) - Construire l'autorité : contenu gratuit\n(YouTube, LinkedIn), low-ticket (templates 29-99€), consulting early (800-1200€/jour), objectif d'établir la voix\nfrançaise de référence en RevOps. Année 2 (50-150K followers) - Scaler l'éducation : mid-ticket \"RevOps Academy\"\n(997€), high-ticket \"Revenue Architecture Bootcamp\" (2997€), fractional RevOps (3-5K€/mois), partenariats outils.\nAnnée 3 (150K+) - Enterprise + Communauté : consulting enterprise (15-25K€ projets), outil SaaS RevOps\nspécifique, communauté privée (97€/mois), formations corporate.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        48,
+        -976
+      ],
+      "id": "fcb948c8-f13b-4aeb-bcb5-183bf9a5e783",
+      "name": "Set Infos"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appKiocnaJ3dFsalp",
+          "mode": "list",
+          "cachedResultName": "Shorts",
+          "cachedResultUrl": "https://airtable.com/appKiocnaJ3dFsalp"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbla6Aim6vVzRYvg0",
+          "mode": "list",
+          "cachedResultName": "Videos",
+          "cachedResultUrl": "https://airtable.com/appKiocnaJ3dFsalp/tbla6Aim6vVzRYvg0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Get Video').item.json.id }}",
+            "Description Insta": "={{ $json.output.Instagram }}",
+            "Description YT": "={{ $json.output.Youtube }}",
+            "Description TikTok": "={{ $json.output.TikTok }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description Insta",
+              "displayName": "Description Insta",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Description YT",
+              "displayName": "Description YT",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Description TikTok",
+              "displayName": "Description TikTok",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Script",
+              "displayName": "Script",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Video",
+              "displayName": "Video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "To Publish",
+              "displayName": "To Publish",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Instagram",
+              "displayName": "Instagram",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "TikTok",
+              "displayName": "TikTok",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Youtube",
+              "displayName": "Youtube",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Created Time",
+              "displayName": "Created Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        -736
+      ],
+      "id": "9297813e-c309-4210-9e1b-3c65e5deccd5",
+      "name": "Create or update a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "1AlhYdgLIH9ldfEy",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "accountId": {
+          "__rl": true,
+          "value": "17347",
+          "mode": "list",
+          "cachedResultName": "juliensnsn.ai",
+          "cachedResultUrl": "https://backend.blotato.com/v2/accounts/17347"
+        },
+        "postContentText": "={{ $('Create or update a record').item.json.fields.Title }}\n\n{{ $('Create or update a record').item.json.fields['Description Insta'] }}\n\n{{ $('Create or update a record').item.json.fields.Keywords }}",
+        "postContentMediaUrls": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "@blotato/n8n-nodes-blotato.blotato",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -976
+      ],
+      "id": "a6e67651-6eef-4a62-8a9c-ba1de6e7f5f0",
+      "name": "Instagram - Post",
+      "credentials": {
+        "blotatoApi": {
+          "id": "LFKZh6eaYkdS8Fnz",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appKiocnaJ3dFsalp",
+          "mode": "list",
+          "cachedResultName": "Shorts",
+          "cachedResultUrl": "https://airtable.com/appKiocnaJ3dFsalp"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbla6Aim6vVzRYvg0",
+          "mode": "list",
+          "cachedResultName": "Videos",
+          "cachedResultUrl": "https://airtable.com/appKiocnaJ3dFsalp/tbla6Aim6vVzRYvg0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TikTok": true,
+            "id": "={{ $('Get Video').item.json.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description Insta",
+              "displayName": "Description Insta",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description YT",
+              "displayName": "Description YT",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description TikTok",
+              "displayName": "Description TikTok",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Script",
+              "displayName": "Script",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Video",
+              "displayName": "Video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "To Publish",
+              "displayName": "To Publish",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Instagram",
+              "displayName": "Instagram",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "TikTok",
+              "displayName": "TikTok",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Youtube",
+              "displayName": "Youtube",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Created Time",
+              "displayName": "Created Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        864,
+        -736
+      ],
+      "id": "c17201fa-21c1-41f6-8f71-48ded23b0d34",
+      "name": "TikTok Post ✅",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "1AlhYdgLIH9ldfEy",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "platform": "youtube",
+        "accountId": {
+          "__rl": true,
+          "value": "14171",
+          "mode": "list",
+          "cachedResultName": "Julien Sanson (Julien Sanson | Automatisation & AI)",
+          "cachedResultUrl": "https://backend.blotato.com/v2/accounts/14171"
+        },
+        "postContentText": "={{ $('Create or update a record').item.json.fields['Description TikTok'] }}\n\n{{ $('Create or update a record').item.json.fields.Keywords }}",
+        "postContentMediaUrls": "={{ $json.url }}",
+        "postCreateYoutubeOptionTitle": "={{ $('Create or update a record').item.json.fields.Title }}",
+        "options": {}
+      },
+      "type": "@blotato/n8n-nodes-blotato.blotato",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -496
+      ],
+      "id": "a4ab7d52-f01c-4bc0-b0c1-1dc3330a753c",
+      "name": "Youtube Post",
+      "credentials": {
+        "blotatoApi": {
+          "id": "LFKZh6eaYkdS8Fnz",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appKiocnaJ3dFsalp",
+          "mode": "list",
+          "cachedResultName": "Shorts",
+          "cachedResultUrl": "https://airtable.com/appKiocnaJ3dFsalp"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbla6Aim6vVzRYvg0",
+          "mode": "list",
+          "cachedResultName": "Videos",
+          "cachedResultUrl": "https://airtable.com/appKiocnaJ3dFsalp/tbla6Aim6vVzRYvg0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Get Video').item.json.id }}",
+            "Youtube": true
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description Insta",
+              "displayName": "Description Insta",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description YT",
+              "displayName": "Description YT",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Description TikTok",
+              "displayName": "Description TikTok",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Script",
+              "displayName": "Script",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Video",
+              "displayName": "Video",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "To Publish",
+              "displayName": "To Publish",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Instagram",
+              "displayName": "Instagram",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "TikTok",
+              "displayName": "TikTok",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Youtube",
+              "displayName": "Youtube",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Created Time",
+              "displayName": "Created Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        864,
+        -496
+      ],
+      "id": "a154938c-a6c6-424d-bb73-a6efe065c601",
+      "name": "Youtube Post ✅",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "1AlhYdgLIH9ldfEy",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-5-20250929",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "thinking": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        -96,
+        -544
+      ],
+      "id": "0054688f-ad9f-4e2c-9ad4-59b7ec1084fb",
+      "name": "Sonnet 4.5",
+      "credentials": {
+        "anthropicApi": {
+          "id": "wOUL0QEowSdr3Q56",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Instagram",
+        "height": 224,
+        "width": 400,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        624,
+        -1040
+      ],
+      "id": "f702d5fa-8a03-4b2b-b677-7e5690fc5277",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## TikTok",
+        "height": 224,
+        "width": 400,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        624,
+        -800
+      ],
+      "id": "29345c46-e327-4c28-adfe-d75c4d13f577",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Youtube",
+        "height": 224,
+        "width": 400,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        624,
+        -560
+      ],
+      "id": "922f3d95-9210-4cdf-a7a1-3b2f989aa79d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Get Videos Infos & Generate Descriptions",
+        "height": 704,
+        "width": 784,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        -1040
+      ],
+      "id": "9e1218a5-92cd-4ba6-9320-4f31c2421f86",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Infos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video": {
+      "main": [
+        [
+          {
+            "node": "Check if Informations are filled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload media": {
+      "main": [
+        [
+          {
+            "node": "Instagram - Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "TikTok Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Youtube Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok Post": {
+      "main": [
+        [
+          {
+            "node": "TikTok Post ✅",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Shorts Description": {
+      "main": [
+        [
+          {
+            "node": "Create or update a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Shorts Description",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Informations are filled": {
+      "main": [
+        [
+          {
+            "node": "Generate Shorts Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Infos": {
+      "main": [
+        [
+          {
+            "node": "Get Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a record": {
+      "main": [
+        [
+          {
+            "node": "Upload media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instagram - Post": {
+      "main": [
+        [
+          {
+            "node": "Instagram Post ✅",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Youtube Post": {
+      "main": [
+        [
+          {
+            "node": "Youtube Post ✅",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sonnet 4.5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Shorts Description",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a8ede0f4-e64a-428d-a8a6-aa4cf6faa85e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2c4533c7a1e56e822a6fde3f376121580e6f7d83dda36974d922278fe743aa10"
+  },
+  "id": "OWIVRNK3syevRJTZ",
+  "tags": [
+    {
+      "createdAt": "2025-10-12T19:54:48.978Z",
+      "updatedAt": "2025-10-12T19:54:48.978Z",
+      "id": "i7LPLPTU5QkUPRR6",
+      "name": "Julien Sanson's Template"
+    }
+  ]
+}

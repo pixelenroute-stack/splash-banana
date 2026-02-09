@@ -1,0 +1,887 @@
+{
+  "name": "Chatbot IA - N8N - Public",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1088,
+        1104
+      ],
+      "id": "982ea84e-93e0-4950-b6d4-576b1c9d70ac",
+      "name": "When chat message received",
+      "webhookId": "4f9cff2c-0895-4a2e-843e-b7c6e8e7f9b7"
+    },
+    {
+      "parameters": {
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "waitUserReply": false
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTool",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        176
+      ],
+      "id": "332726fb-5711-41c4-9fd7-1210b083b5b3",
+      "name": "Respond Continue"
+    },
+    {
+      "parameters": {
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "limitWaitTime": {
+            "values": {
+              "resumeAmount": 2,
+              "resumeUnit": "minutes"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTool",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        176
+      ],
+      "id": "4da455f5-2771-4c81-bf46-a0bb358f90e6",
+      "name": "Respond Wait"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "a",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -224,
+        -192
+      ],
+      "id": "e455a142-97de-4f03-be7d-978e548e2fc8",
+      "name": "Chat Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "gpt-5.1"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          }
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -656,
+        176
+      ],
+      "id": "eb458061-0ee9-4a9f-a740-3fd76c77c295",
+      "name": "GPT + Web_Search",
+      "credentials": {
+        "openAiApi": {
+          "id": "3rZU5v2qpFpCfun5",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        192,
+        -192
+      ],
+      "id": "f1fb6401-7cd3-49d5-88e7-de347b30948f",
+      "name": "Respond to Chat"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "<Put_Chat_Id>",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.telegramTool",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        176
+      ],
+      "id": "0d143e57-4654-4024-bd56-fc75a9174914",
+      "name": "Send Confirmation",
+      "webhookId": "4abc6791-0738-48a9-8af3-33e7459044e7",
+      "credentials": {
+        "telegramApi": {
+          "id": "aeV4yK4tkAhScfEo",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -432,
+        176
+      ],
+      "id": "6c88a36c-7a49-475b-a553-83588c567132",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "content": "### Search Web in model",
+        "height": 240,
+        "width": 256,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -736,
+        80
+      ],
+      "id": "5b140f8d-d3ca-4f16-a8dc-cfb37b3594dd",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "### Respond before continuing",
+        "height": 240,
+        "width": 352,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        80
+      ],
+      "id": "f85babd4-fe52-49d9-8945-170ab1642cd1",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "### Human in the Loop in agent",
+        "height": 240,
+        "width": 288,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        96,
+        80
+      ],
+      "id": "4673a63e-5b9e-4d42-90e0-f1301695d676",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "### Wait for user Reply",
+        "height": 256,
+        "width": 288,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        96,
+        -288
+      ],
+      "id": "6e7e2aaf-0ce7-4e8f-953f-58724fe53d69",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=# Role\nTu es un expert sur tout ce qui concerne la marque \"La Sportiva\". Réponds au besoin du client en utilisant la recherche web sur le site de la sportiva en fonction de son besoin.\n\n# Instructions\n1. Comprends le besoin du client\n2. Utilise l'outil \"Respond Continue Shop\" pour indiquer au client que tu traite sa demande\n2. Fais une recherche sur le site de la Sportiva pour trouver la réponse à la question du client\n3. Génère une réponse claire et amicale au client en utilisant le module \"Respond Wait Shop\"\n4. Tant que le client n'est pas satisfait de la réponse, utilise le module \"Respond Wait Shop\" et essaie de répondre au mieux  à sa demande\n5. Quand le client dit qu'il est satisfait tu peux lui indiquer un message de fin super sympa\n\n# Outils\n- \"Respond Wait Shop\" pour répondre au client une fois que tu as trouvé une réponse à sa question\n- \"Respond Continue Shop\" pour indiquer au client que tu traite sa demande\n\n# Règle\n- Quand le client est satisfait de la réponse, passe à la suite du workflow et ne répond pas par l'outil \"Respond Wait Shop\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        416,
+        864
+      ],
+      "id": "a0744d8f-aaea-48e8-bfcf-f90cdc4c5757",
+      "name": "Shop Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Role\ntu es un agent d'accueil de chatbot du site Lasportiva, un site d'équipement de montagne et de grimpe.\nTon role est d'accueillir le client et de lui demander quel est son besoin parmi les deux catégories suivantes : \n- Question sur un produit / politique de confidentialité ou autre question légale\n- Question sur un problème de prix / réduction sur un code promo",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -896,
+        1104
+      ],
+      "id": "69289c2b-d0b6-4e71-9b86-41955f2ee457",
+      "name": "Welcome Agent"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        1104
+      ],
+      "id": "72fce8df-0109-447e-a9b8-66e233bac706",
+      "name": "Respond to Chat Welcome"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        752,
+        864
+      ],
+      "id": "b24a8d70-2255-4e34-ae04-eed435cc37fb",
+      "name": "Respond to Chat Shop"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=# Role\nTu es un expert sur tout ce qui concerne la partie financière de \"La Sportiva\". Réponds au besoin du client en utilisant l'outil \"Send CFO Confirmation\" dès qu'il y a besoin de valider un discount via code promo\n\n# Instructions\n1. Comprends le besoin du client\n2. utilise l'outil \"Respond Continue Financial\" pour indiquer au client que tu traite sa demande\n3. utilise l'outil \"Send CFO Confirmation\" dès qu'il y a besoin de valider un discount via code promo\n4. Si la demande est approuvée réponds au client comme quoi sa demande va être traitée positivement, garde un ton amical\n5. Si la demande est refusée par le CFO indique que la demande du client ne peut pas être répondue positivement\n\n# Outils\n- \"Respond Continue Financial\" pour indiquer au client que tu traite sa demande\n- \"Send CFO Confirmation\" pour demander au CFO validation sur l'utilisation d'un code promo"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        416,
+        1360
+      ],
+      "id": "7d893804-41c2-4ede-8b89-ed88a28327b3",
+      "name": "Financial Agent"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        752,
+        1360
+      ],
+      "id": "7b84b046-25da-4e24-abde-3bf22afa43a7",
+      "name": "Respond to Chat Financial"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.chatInput }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Shop",
+              "description": "Question sur un produit ou politique de confidentialité ou autre question légale"
+            },
+            {
+              "category": "Financial",
+              "description": "Question sur un problème de prix ou réduction sur un code promo"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        -368,
+        1104
+      ],
+      "id": "e14dcf0a-816c-429b-a6fe-008644731b52",
+      "name": "Shop or Financial question"
+    },
+    {
+      "parameters": {
+        "message": "=Bienvenue sur l'assitant expert de La Sportiva ! Quelle est votre question précisément ? ",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        176,
+        864
+      ],
+      "id": "bb7c43ef-1561-41d1-a65f-f677d0cafd30",
+      "name": "Wait Question Shop"
+    },
+    {
+      "parameters": {
+        "message": "=Bienvenue sur l'assitant expert en gestion de panier de La Sportiva ! Qu'est ce qui vous arrive ? ",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        176,
+        1360
+      ],
+      "id": "09e5bbe4-7662-48fb-b0a3-41346c2b789e",
+      "name": "Wait Question Financial"
+    },
+    {
+      "parameters": {
+        "toolDescription": "pour répondre au client une fois que tu as ta réponse",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', `message a envoyer au client`, 'string') }}",
+        "options": {
+          "limitWaitTime": {
+            "values": {
+              "resumeAmount": 2,
+              "resumeUnit": "minutes"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTool",
+      "typeVersion": 1,
+      "position": [
+        688,
+        1056
+      ],
+      "id": "34f056b6-dc2e-4410-b311-57ee9bac6787",
+      "name": "Respond Wait Shop"
+    },
+    {
+      "parameters": {
+        "toolDescription": "pour indiquer au client que tu traite sa demande",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "waitUserReply": false
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTool",
+      "typeVersion": 1,
+      "position": [
+        480,
+        1568
+      ],
+      "id": "7e9def27-1a3d-4193-aaca-676b50c49eae",
+      "name": "Respond Continue Financial"
+    },
+    {
+      "parameters": {
+        "content": "## Shop Agent",
+        "height": 432,
+        "width": 816,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        752
+      ],
+      "id": "11bce4f0-08f2-4c61-8f98-3a06b4b30c20",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Financial Agent",
+        "height": 432,
+        "width": 816,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        1280
+      ],
+      "id": "6a13839f-6dd8-4328-951d-aeb5c9c16fae",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -768,
+        1328
+      ],
+      "id": "5ded7dc8-bb08-4dd6-9345-7d96601150e0",
+      "name": "4.1 Mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "3rZU5v2qpFpCfun5",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "gpt-5.1"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium",
+            "allowedDomains": "lasportiva.com"
+          }
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        1056
+      ],
+      "id": "8b13b33f-b7df-4a22-83c1-8d8c88797e96",
+      "name": "4.1 RAG",
+      "credentials": {
+        "openAiApi": {
+          "id": "3rZU5v2qpFpCfun5",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "gpt-5.1"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        1568
+      ],
+      "id": "de5c7e2a-8d60-4e4c-a331-561707eb8154",
+      "name": "4.1",
+      "credentials": {
+        "openAiApi": {
+          "id": "3rZU5v2qpFpCfun5",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "<put_chat_id>",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.telegramTool",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        1568
+      ],
+      "id": "6ff77e58-6fad-4f22-8426-bea7368e8260",
+      "name": "Send CFO Confirmation",
+      "webhookId": "6db2cfde-0b11-4d37-9c82-2e72b4a75d9a",
+      "credentials": {
+        "telegramApi": {
+          "id": "aeV4yK4tkAhScfEo",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        1360
+      ],
+      "id": "d0c218a0-4a40-4b4d-9b0c-c5ae23552f6e",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "sJcDRhWuQMRs2VFg",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "pour indiquer au client que tu traite sa demande",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "waitUserReply": false
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTool",
+      "typeVersion": 1,
+      "position": [
+        512,
+        1056
+      ],
+      "id": "07e61cc7-0efc-4aef-ab8a-cf3342e6f707",
+      "name": "Respond Continue Shop"
+    },
+    {
+      "parameters": {
+        "content": "## Cas Concret - Customer Support La Sportiva\n### By Julien Sanson 🦥",
+        "height": 112,
+        "width": 2128,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1168,
+        608
+      ],
+      "id": "bfa99b5f-39f8-4864-88a8-99d969b9a2ca",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        1136
+      ],
+      "id": "8dd64528-bc6e-461e-9ba2-3b01cf6ba74a",
+      "name": "Chat Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Welcome Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Continue": {
+      "ai_tool": [
+        [
+          {
+            "node": "Chat Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Wait": {
+      "ai_tool": [
+        [
+          {
+            "node": "Chat Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT + Web_Search": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Chat Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Confirmation": {
+      "ai_tool": [
+        [
+          {
+            "node": "Chat Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Chat Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Welcome Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shop Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat Shop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Financial Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat Financial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Chat Welcome": {
+      "main": [
+        [
+          {
+            "node": "Shop or Financial question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shop or Financial question": {
+      "main": [
+        [
+          {
+            "node": "Wait Question Shop",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait Question Financial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Question Shop": {
+      "main": [
+        [
+          {
+            "node": "Shop Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Question Financial": {
+      "main": [
+        [
+          {
+            "node": "Financial Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Wait Shop": {
+      "ai_tool": [
+        [
+          {
+            "node": "Shop Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Continue Financial": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4.1 Mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Welcome Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4.1 RAG": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Shop Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4.1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Financial Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send CFO Confirmation": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Shop or Financial question",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Continue Shop": {
+      "ai_tool": [
+        [
+          {
+            "node": "Shop Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Shop Agent",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "Financial Agent",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "Welcome Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "47f07a8a-32e9-4364-a71a-d4d81c69f6c8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f4deacd5a5e4374cff63445edf1dcd3da23992e2b49ef5871cdc5b9ac1899b22"
+  },
+  "id": "ZFGmtJzqpYh6rGKo",
+  "tags": [
+    {
+      "updatedAt": "2025-11-26T08:37:44.068Z",
+      "createdAt": "2025-11-26T08:37:44.068Z",
+      "id": "KGiFVH8ceSSFI5rN",
+      "name": "Youtube"
+    }
+  ]
+}

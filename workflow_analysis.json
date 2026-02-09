@@ -1,0 +1,4940 @@
+{
+  "updatedAt": "2026-02-09T14:08:30.521Z",
+  "createdAt": "2026-02-09T10:19:54.918Z",
+  "id": "ePDImCq5XjTn5R71",
+  "name": "🤖 JARVIS Unifié - Telegram",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {
+          "download": true,
+          "imageSize": "large"
+        }
+      },
+      "id": "telegram-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -704,
+        208
+      ],
+      "webhookId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "credentials": {
+        "telegramApi": {
+          "id": "scDdqO17ychsATg1",
+          "name": "jarvis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "voice-condition",
+                    "leftValue": "={{ $json.message.voice }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "photo-condition",
+                    "leftValue": "={{ $json.message.photo }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "array",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Photo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "doc-condition",
+                    "leftValue": "={{ $json.message.document }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Document"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "video-condition",
+                    "leftValue": "={{ $json.message.video }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Video"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "type-router",
+      "name": "Type Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -400,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "id": "get-voice-file",
+      "name": "Get Voice File",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        -96
+      ],
+      "webhookId": "872ffcae-9c6c-4ae9-9d4d-b869e5321c06",
+      "credentials": {
+        "telegramApi": {
+          "id": "scDdqO17ychsATg1",
+          "name": "jarvis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/file/bot{{ $credentials.telegramApi.accessToken }}/{{ $json.result.file_path }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "download-voice",
+      "name": "Download Voice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "whisper-1"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "language",
+              "value": "fr"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "whisper-transcribe",
+      "name": "Whisper Transcribe",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        -96
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "iiT0HF4awi8YQYDw",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fv1",
+              "name": "userMessage",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "fv2",
+              "name": "chatId",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "fv3",
+              "name": "firstName",
+              "value": "={{ $('Telegram Trigger').item.json.message.from.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "fv4",
+              "name": "hasImage",
+              "value": "false",
+              "type": "string"
+            },
+            {
+              "id": "fv5",
+              "name": "imageUrl",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-voice",
+      "name": "Format Voice",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        656,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo.slice(-1)[0].file_id }}",
+        "additionalFields": {}
+      },
+      "id": "get-photo-file",
+      "name": "Get Photo File",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        112
+      ],
+      "webhookId": "c7da5143-804f-43f9-93d5-7f32e7eeb025",
+      "credentials": {
+        "telegramApi": {
+          "id": "scDdqO17ychsATg1",
+          "name": "jarvis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fp1",
+              "name": "chatId",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "fp2",
+              "name": "userMessage",
+              "value": "={{ $('Telegram Trigger').item.json.message.caption || 'Image reçue' }}",
+              "type": "string"
+            },
+            {
+              "id": "fp3",
+              "name": "firstName",
+              "value": "={{ $('Telegram Trigger').item.json.message.from.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "fp4",
+              "name": "imageUrl",
+              "value": "=https://api.telegram.org/file/bot{{ $credentials.telegramApi.accessToken }}/{{ $json.result.file_path }}",
+              "type": "string"
+            },
+            {
+              "id": "fp5",
+              "name": "hasImage",
+              "value": "true",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-photo",
+      "name": "Format Photo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fd1",
+              "name": "chatId",
+              "value": "={{ $json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "fd2",
+              "name": "userMessage",
+              "value": "={{ $json.message.caption || 'Document reçu' }}",
+              "type": "string"
+            },
+            {
+              "id": "fd3",
+              "name": "firstName",
+              "value": "={{ $json.message.from.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "fd4",
+              "name": "hasImage",
+              "value": "false",
+              "type": "string"
+            },
+            {
+              "id": "fd5",
+              "name": "fileId",
+              "value": "={{ $json.message.document.file_id }}",
+              "type": "string"
+            },
+            {
+              "id": "fd6",
+              "name": "fileName",
+              "value": "={{ $json.message.document.file_name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-document",
+      "name": "Format Document",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fvd1",
+              "name": "chatId",
+              "value": "={{ $json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "fvd2",
+              "name": "userMessage",
+              "value": "={{ $json.message.caption || 'Vidéo reçue' }}",
+              "type": "string"
+            },
+            {
+              "id": "fvd3",
+              "name": "firstName",
+              "value": "={{ $json.message.from.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "fvd4",
+              "name": "hasImage",
+              "value": "false",
+              "type": "string"
+            },
+            {
+              "id": "fvd5",
+              "name": "fileId",
+              "value": "={{ $json.message.video.file_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-video",
+      "name": "Format Video",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ft1",
+              "name": "userMessage",
+              "value": "={{ $json.message ? $json.message.text : ($json.callback_query ? $json.callback_query.data : '') }}",
+              "type": "string"
+            },
+            {
+              "id": "ft2",
+              "name": "chatId",
+              "value": "={{ $json.message ? $json.message.chat.id : $json.callback_query.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "ft3",
+              "name": "firstName",
+              "value": "={{ $json.message ? $json.message.from.first_name : $json.callback_query.from.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "ft4",
+              "name": "hasImage",
+              "value": "false",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-text",
+      "name": "Format Text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "output": "empty"
+      },
+      "id": "merge-branches",
+      "name": "Merge Branches",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        912,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.userMessage + (($json.hasImage === 'true' && $json.imageUrl) ? '\\n[Image fournie: ' + $json.imageUrl + ']' : '') }}",
+        "options": {
+          "systemMessage": "Tu es JARVIS UNIFIÉ, l'assistant IA personnel tout-en-un de Pierre, fondateur de Pixel en Route (SIRET: 897 732 228 00027).\nAgence de production audiovisuelle basée à Paris. Email: contact@pixelenroute.com\n\nTES 11 MODES:\n\n1. CRM (Notion) - Gestion contacts: ajouter, rechercher, modifier, lister. Statuts: Lead/Client/Prospect/Partenaire\n2. PROJETS (Notion) - Gestion projets: créer, rechercher, modifier, lister. Statuts: À faire/En cours/En révision/Terminé/Annulé\n3. FACTURATION (Qonto) - Créer factures (TVA 20%), lister. SIRET: 897 732 228 00027, TVA: FR12897732228\n4. EMAIL (Gmail) - Lire, envoyer emails. Toujours français impeccable\n5. CALENDRIER (Google Calendar) - Événements. Timezone: Europe/Paris\n6. PROSPECTION - Recherche web (Perplexity)\n7. VIDÉO IA (VEO3) - Génération vidéo via Kie.ai: text-to-video, image-to-video, extend. Traduis TOUJOURS les prompts en anglais cinématographique\n8. IMAGES IA (BananaPro) - Génération/modification images. Formats: 1:1, 16:9, 9:16, 4:5. Traduis prompts en anglais\n9. SOCIAL MEDIA - Posts LinkedIn/Instagram, vignettes YouTube, scripts viraux\n10. VEILLE - Météo, actualités GNews, veille tech/créative, tutos Premiere/After Effects\n11. MONTEUR VIDÉO - Direction artistique (couleurs HEX, polices, style), scripts viraux\n\nRÈGLES:\n- Toujours répondre en français\n- Tutoyer Pierre\n- Confirmer AVANT les actions destructives\n- TVA 20%, format euros, dates JJ/MM/AAAA\n- Pour VEO3/BananaPro: traduire les prompts en anglais professionnel\n- Pour le contenu social: proposer texte + prompt image + hashtags",
+          "maxIterations": 20,
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "jarvis-agent",
+      "name": "JARVIS Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1200,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "maxTokens": 4096,
+          "temperature": 0.7
+        }
+      },
+      "id": "gpt4o-model",
+      "name": "GPT-4o",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        560
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "iiT0HF4awi8YQYDw",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.chatId }}",
+        "contextWindowLength": 20
+      },
+      "id": "chat-memory",
+      "name": "Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $('Merge Branches').item.json.chatId }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "telegram-response",
+      "name": "Telegram Response",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1504,
+        304
+      ],
+      "webhookId": "77e258df-b640-4e3c-9150-2b0c31213256",
+      "credentials": {
+        "telegramApi": {
+          "id": "scDdqO17ychsATg1",
+          "name": "jarvis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Ajouter un nouveau contact dans le CRM Notion. Utilise ce tool quand l'utilisateur veut ajouter, créer ou enregistrer un nouveau contact/client/prospect.",
+        "method": "POST",
+        "url": "https://api.notion.com/v1/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"parent\":{\"database_id\":\"6bd8c6a6a31342a09500ecff1a7516ca\"},\"properties\":{\"Nom\":{\"title\":[{\"text\":{\"content\":\"{nom}\"}}]},\"Email\":{\"email\":\"{email}\"},\"Téléphone\":{\"phone_number\":\"{telephone}\"},\"Entreprise\":{\"rich_text\":[{\"text\":{\"content\":\"{entreprise}\"}}]},\"Statut\":{\"select\":{\"name\":\"{statut}\"}},\"Notes\":{\"rich_text\":[{\"text\":{\"content\":\"{notes}\"}}]}}}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "nom",
+              "description": "Nom complet du contact",
+              "type": "string"
+            },
+            {
+              "name": "email",
+              "description": "Adresse email du contact (optionnel, utiliser chaîne vide si inconnu)",
+              "type": "string"
+            },
+            {
+              "name": "telephone",
+              "description": "Numéro de téléphone (optionnel, utiliser chaîne vide si inconnu)",
+              "type": "string"
+            },
+            {
+              "name": "entreprise",
+              "description": "Nom de l'entreprise (optionnel, utiliser chaîne vide si inconnu)",
+              "type": "string"
+            },
+            {
+              "name": "statut",
+              "description": "Statut du contact: Lead, Client, Prospect ou Partenaire. Par défaut Lead",
+              "type": "string"
+            },
+            {
+              "name": "notes",
+              "description": "Notes additionnelles (optionnel, utiliser chaîne vide si aucune)",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-crm-add",
+      "name": "📇 CRM: Ajouter Contact",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        800
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "oq65T9ZpEzVe0jny",
+          "name": "Notion account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Rechercher un contact dans le CRM Notion par nom, entreprise ou email. Utilise ce tool quand l'utilisateur veut chercher, trouver ou regarder un contact.",
+        "method": "POST",
+        "url": "https://api.notion.com/v1/databases/6bd8c6a6a31342a09500ecff1a7516ca/query",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"filter\":{\"or\":[{\"property\":\"Nom\",\"title\":{\"contains\":\"{search_term}\"}},{\"property\":\"Entreprise\",\"rich_text\":{\"contains\":\"{search_term}\"}},{\"property\":\"Email\",\"email\":{\"contains\":\"{search_term}\"}}]}}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "search_term",
+              "description": "Terme de recherche: nom, entreprise ou email du contact",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-crm-search",
+      "name": "🔍 CRM: Rechercher Contact",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        800
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "oq65T9ZpEzVe0jny",
+          "name": "Notion account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lister tous les contacts du CRM Notion. Utilise ce tool quand l'utilisateur veut voir, afficher ou lister tous les contacts.",
+        "method": "POST",
+        "url": "https://api.notion.com/v1/databases/6bd8c6a6a31342a09500ecff1a7516ca/query",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"page_size\": 50, \"sorts\": [{\"property\": \"Nom\", \"direction\": \"ascending\"}]}",
+        "placeholderDefinitions": {
+          "values": []
+        }
+      },
+      "id": "tool-crm-list",
+      "name": "📋 CRM: Lister Contacts",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        800
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "oq65T9ZpEzVe0jny",
+          "name": "Notion account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Modifier un contact existant dans le CRM Notion par son page_id. Utilise ce tool quand l'utilisateur veut mettre à jour, modifier ou changer les infos d'un contact. Il faut d'abord rechercher le contact pour obtenir son page_id.",
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/pages/{page_id}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"properties\": {properties_json}}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "page_id",
+              "description": "ID de la page Notion du contact (obtenu via recherche)",
+              "type": "string"
+            },
+            {
+              "name": "properties_json",
+              "description": "Objet JSON des propriétés Notion à modifier. Ex: {\"Statut\":{\"select\":{\"name\":\"Client\"}}} ou {\"Email\":{\"email\":\"new@email.com\"}}",
+              "type": "json"
+            }
+          ]
+        }
+      },
+      "id": "tool-crm-modify",
+      "name": "✏️ CRM: Modifier Contact",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        800
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "oq65T9ZpEzVe0jny",
+          "name": "Notion account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Créer un nouveau projet dans Notion. Utilise ce tool quand l'utilisateur veut créer, ajouter ou démarrer un nouveau projet.",
+        "method": "POST",
+        "url": "https://api.notion.com/v1/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"parent\":{\"database_id\":\"1f75ed7c2be880ada164f53f1773826c\"},\"properties\":{\"Nom du projet\":{\"title\":[{\"text\":{\"content\":\"{project_name}\"}}]},\"Client\":{\"rich_text\":[{\"text\":{\"content\":\"{client}\"}}]},\"Statut\":{\"select\":{\"name\":\"{status}\"}},\"Type\":{\"select\":{\"name\":\"{type}\"}},\"Budget\":{\"number\":{budget}},\"Date de début\":{\"date\":{\"start\":\"{start_date}\"}},\"Description\":{\"rich_text\":[{\"text\":{\"content\":\"{description}\"}}]},\"Priorité\":{\"select\":{\"name\":\"{priority}\"}}}}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "project_name",
+              "description": "Nom du projet",
+              "type": "string"
+            },
+            {
+              "name": "client",
+              "description": "Nom du client",
+              "type": "string"
+            },
+            {
+              "name": "status",
+              "description": "Statut: À faire, En cours, En révision, Terminé, Annulé",
+              "type": "string"
+            },
+            {
+              "name": "type",
+              "description": "Type de projet: Vidéo, Photo, Web, Consulting",
+              "type": "string"
+            },
+            {
+              "name": "budget",
+              "description": "Budget en euros (nombre)",
+              "type": "number"
+            },
+            {
+              "name": "start_date",
+              "description": "Date de début au format YYYY-MM-DD",
+              "type": "string"
+            },
+            {
+              "name": "description",
+              "description": "Description du projet",
+              "type": "string"
+            },
+            {
+              "name": "priority",
+              "description": "Priorité: Haute, Moyenne, Basse",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-project-create",
+      "name": "📊 Projet: Créer",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        1008
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "oq65T9ZpEzVe0jny",
+          "name": "Notion account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Rechercher un projet dans Notion par nom, client ou statut. Utilise ce tool quand l'utilisateur veut chercher ou trouver un projet.",
+        "method": "POST",
+        "url": "https://api.notion.com/v1/databases/1f75ed7c2be880ada164f53f1773826c/query",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"filter\":{\"or\":[{\"property\":\"Nom du projet\",\"title\":{\"contains\":\"{search_term}\"}},{\"property\":\"Client\",\"rich_text\":{\"contains\":\"{search_term}\"}},{\"property\":\"Statut\",\"select\":{\"equals\":\"{search_term}\"}}]}}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "search_term",
+              "description": "Terme de recherche: nom de projet, nom de client ou statut",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-project-search",
+      "name": "🔎 Projet: Rechercher",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        1008
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "oq65T9ZpEzVe0jny",
+          "name": "Notion account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Modifier un projet existant dans Notion par son page_id. Utilise ce tool pour mettre à jour le statut, budget, dates ou autres propriétés d'un projet.",
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/pages/{page_id}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"properties\": {properties_json}}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "page_id",
+              "description": "ID de la page Notion du projet (obtenu via recherche)",
+              "type": "string"
+            },
+            {
+              "name": "properties_json",
+              "description": "Objet JSON des propriétés Notion à modifier",
+              "type": "json"
+            }
+          ]
+        }
+      },
+      "id": "tool-project-modify",
+      "name": "✏️ Projet: Modifier",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        1008
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "oq65T9ZpEzVe0jny",
+          "name": "Notion account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lister tous les projets dans Notion. Utilise ce tool quand l'utilisateur veut voir tous les projets ou un résumé des projets en cours.",
+        "method": "POST",
+        "url": "https://api.notion.com/v1/databases/1f75ed7c2be880ada164f53f1773826c/query",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"page_size\": 50, \"sorts\": [{\"property\": \"Statut\", \"direction\": \"ascending\"}]}",
+        "placeholderDefinitions": {
+          "values": []
+        }
+      },
+      "id": "tool-project-list",
+      "name": "📋 Projet: Lister",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        1008
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "oq65T9ZpEzVe0jny",
+          "name": "Notion account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lire les emails récents de Gmail. Utilise ce tool quand l'utilisateur veut voir, lire ou consulter ses emails. Le paramètre query utilise la syntaxe Gmail (ex: is:unread, from:xxx, subject:xxx).",
+        "url": "=https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults={max_results}&q={query}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "max_results",
+              "description": "Nombre maximum d'emails à retourner (défaut 10)",
+              "type": "number"
+            },
+            {
+              "name": "query",
+              "description": "Requête de recherche Gmail. Ex: is:unread, from:client@email.com, subject:facture. Laisser vide pour tous les emails récents.",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-gmail-read",
+      "name": "📨 Gmail: Lire Emails",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        1200
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "m6nrlu4lrEb6T3X2",
+          "name": "Gmail pixel"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Envoyer un email via Gmail. Utilise ce tool quand l'utilisateur veut envoyer, écrire ou transmettre un email. Le body du mail doit être en français impeccable. Le champ raw doit être le message RFC 2822 encodé en base64url.",
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"raw\": \"{raw_base64}\"}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "raw_base64",
+              "description": "Le message email complet encodé en base64url. Format RFC 2822: From: contact@pixelenroute.com\\r\\nTo: {to_email}\\r\\nSubject: {subject}\\r\\nContent-Type: text/html; charset=utf-8\\r\\n\\r\\n{body_html}. Encode le tout en base64url.",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-gmail-send",
+      "name": "✉️ Gmail: Envoyer",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        1200
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "m6nrlu4lrEb6T3X2",
+          "name": "Gmail pixel"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lister les événements du Google Calendar. Utilise ce tool quand l'utilisateur veut voir son agenda, ses rendez-vous ou événements à venir.",
+        "url": "=https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin={time_min}&timeMax={time_max}&singleEvents=true&orderBy=startTime&timeZone=Europe/Paris",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "time_min",
+              "description": "Date de début au format ISO 8601 avec timezone, ex: 2025-01-15T00:00:00+01:00",
+              "type": "string"
+            },
+            {
+              "name": "time_max",
+              "description": "Date de fin au format ISO 8601 avec timezone, ex: 2025-01-22T23:59:59+01:00",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-calendar-list",
+      "name": "📅 Calendar: Lister",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        1200
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "m6nrlu4lrEb6T3X2",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Créer un événement dans Google Calendar. Utilise ce tool quand l'utilisateur veut ajouter un rendez-vous, événement ou réunion à son calendrier.",
+        "method": "POST",
+        "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"summary\":\"{event_title}\",\"description\":\"{event_description}\",\"location\":\"{event_location}\",\"start\":{\"dateTime\":\"{start_datetime}\",\"timeZone\":\"Europe/Paris\"},\"end\":{\"dateTime\":\"{end_datetime}\",\"timeZone\":\"Europe/Paris\"}}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "event_title",
+              "description": "Titre de l'événement",
+              "type": "string"
+            },
+            {
+              "name": "event_description",
+              "description": "Description de l'événement",
+              "type": "string"
+            },
+            {
+              "name": "event_location",
+              "description": "Lieu de l'événement (optionnel)",
+              "type": "string"
+            },
+            {
+              "name": "start_datetime",
+              "description": "Date et heure de début au format ISO 8601, ex: 2025-01-15T10:00:00",
+              "type": "string"
+            },
+            {
+              "name": "end_datetime",
+              "description": "Date et heure de fin au format ISO 8601, ex: 2025-01-15T11:00:00",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-calendar-create",
+      "name": "📅 Calendar: Créer",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        1200
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "m6nrlu4lrEb6T3X2",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Créer une facture client via Qonto. Utilise ce tool quand l'utilisateur veut facturer, créer une facture ou envoyer une note de paiement. TVA toujours à 20%.",
+        "method": "POST",
+        "url": "https://thirdparty.qonto.com/v2/client_invoices",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"client_id\":\"{client_id}\",\"issue_date\":\"{issue_date}\",\"due_date\":\"{due_date}\",\"line_items\":[{\"title\":\"{item_title}\",\"description\":\"{item_description}\",\"quantity\":{item_quantity},\"unit_price\":\"{item_unit_price}\",\"vat_rate\":\"20.0\"}]}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "client_id",
+              "description": "ID du client Qonto",
+              "type": "string"
+            },
+            {
+              "name": "issue_date",
+              "description": "Date d'émission au format YYYY-MM-DD",
+              "type": "string"
+            },
+            {
+              "name": "due_date",
+              "description": "Date d'échéance au format YYYY-MM-DD (généralement 30 jours après issue_date)",
+              "type": "string"
+            },
+            {
+              "name": "item_title",
+              "description": "Titre de la prestation",
+              "type": "string"
+            },
+            {
+              "name": "item_description",
+              "description": "Description détaillée de la prestation",
+              "type": "string"
+            },
+            {
+              "name": "item_quantity",
+              "description": "Quantité (nombre)",
+              "type": "number"
+            },
+            {
+              "name": "item_unit_price",
+              "description": "Prix unitaire HT en euros (ex: 500.00)",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-qonto-invoice-create",
+      "name": "💰 Qonto: Créer Facture",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        1408
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lister les factures dans Qonto. Utilise ce tool quand l'utilisateur veut voir ses factures, vérifier les paiements ou faire un suivi de facturation. Statuts possibles: draft, pending, paid, cancelled.",
+        "url": "=https://thirdparty.qonto.com/v2/client_invoices?status={status}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "status",
+              "description": "Filtre par statut: draft, pending, paid, cancelled. Laisser vide pour tous.",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-qonto-invoice-list",
+      "name": "📄 Qonto: Lister Factures",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        1408
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Rechercher des informations en temps réel sur le web via Perplexity AI. Utilise ce tool pour la prospection, la veille, les actualités, la météo, ou toute recherche d'information actualisée.",
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\":\"sonar-pro\",\"messages\":[{\"role\":\"user\",\"content\":\"{search_query}\"}]}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "search_query",
+              "description": "La question ou requête de recherche. Sois spécifique pour de meilleurs résultats.",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-perplexity",
+      "name": "🌐 Perplexity: Recherche",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        1408
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Générer une vidéo IA à partir d'un prompt textuel via VEO3. Le prompt DOIT être en anglais avec terminologie cinématographique. Paramètres: prompt, model (veo3 pour qualité, veo3_fast pour rapide), aspect_ratio (16:9, 9:16, 1:1), negative_prompt.",
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/veo/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization"
+            },
+            {
+              "name": "Content-Type"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"prompt\": \"{prompt}\", \"model\": \"{model}\", \"aspect_ratio\": \"{aspect_ratio}\", \"negative_prompt\": \"{negative_prompt}\", \"enableTranslation\": false, \"generationType\": \"TEXT_2_VIDEO\"}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "prompt",
+              "description": "Prompt vidéo en ANGLAIS avec terminologie cinématographique détaillée",
+              "type": "string"
+            },
+            {
+              "name": "model",
+              "description": "Modèle: veo3 (haute qualité) ou veo3_fast (rapide)",
+              "type": "string"
+            },
+            {
+              "name": "aspect_ratio",
+              "description": "Ratio: 16:9 (paysage), 9:16 (portrait), 1:1 (carré)",
+              "type": "string"
+            },
+            {
+              "name": "negative_prompt",
+              "description": "Ce qu'on ne veut PAS voir dans la vidéo",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-veo3-text2video",
+      "name": "🎬 VEO3: Text-to-Video",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Animer une image en vidéo via VEO3. Transformer une image statique en vidéo animée. Paramètres: prompt (description animation en anglais), image_url, model, aspect_ratio.",
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/veo/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization"
+            },
+            {
+              "name": "Content-Type"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"prompt\": \"{prompt}\", \"imageUrls\": [\"{image_url}\"], \"model\": \"{model}\", \"aspect_ratio\": \"{aspect_ratio}\", \"generationType\": \"FIRST_AND_LAST_FRAMES_2_VIDEO\"}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "prompt",
+              "description": "Description de l'animation souhaitée en anglais cinématographique",
+              "type": "string"
+            },
+            {
+              "name": "image_url",
+              "description": "URL de l'image source à animer",
+              "type": "string"
+            },
+            {
+              "name": "model",
+              "description": "Modèle: veo3 (haute qualité) ou veo3_fast (rapide)",
+              "type": "string"
+            },
+            {
+              "name": "aspect_ratio",
+              "description": "Ratio: 16:9 (paysage), 9:16 (portrait), 1:1 (carré)",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-veo3-img2video",
+      "name": "🖼️➡️🎬 VEO3: Image-to-Video",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Vérifier le statut d'une tâche de génération vidéo VEO3. Utiliser après avoir lancé une génération. Paramètre: task_id (ID de la tâche VEO3).",
+        "url": "=https://api.kie.ai/api/v1/veo/detail?taskId={task_id}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization"
+            }
+          ]
+        },
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "task_id",
+              "description": "ID de la tâche VEO3 retourné lors de la génération",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-veo3-status",
+      "name": "🔄 VEO3: Check Status",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Prolonger/étendre une vidéo VEO3 existante. Paramètres: task_id (ID de la vidéo originale), prompt (description de la suite en anglais).",
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/veo/extend",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization"
+            },
+            {
+              "name": "Content-Type"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"taskId\": \"{task_id}\", \"prompt\": \"{prompt}\"}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "task_id",
+              "description": "ID de la vidéo VEO3 originale à prolonger",
+              "type": "string"
+            },
+            {
+              "name": "prompt",
+              "description": "Description de la suite souhaitée en anglais",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-veo3-extend",
+      "name": "⏩ VEO3: Extend Video",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Générer une image IA avec BananaPro (Nano Banana Pro). Le prompt DOIT être en anglais. Paramètres: prompt, resolution (1K, 2K, 4K), aspect_ratio (1:1, 16:9, 9:16, 4:5, 21:9).",
+        "method": "POST",
+        "url": "https://gateway.bananapro.site/api/v1/images/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization"
+            },
+            {
+              "name": "Content-Type"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\": \"nano-banana-pro\", \"prompt\": \"{prompt}\", \"resolution\": \"{resolution}\", \"aspect_ratio\": \"{aspect_ratio}\"}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "prompt",
+              "description": "Prompt de génération d'image en ANGLAIS détaillé",
+              "type": "string"
+            },
+            {
+              "name": "resolution",
+              "description": "Résolution: 1K, 2K ou 4K",
+              "type": "string"
+            },
+            {
+              "name": "aspect_ratio",
+              "description": "Ratio: 1:1, 16:9, 9:16, 4:5 ou 21:9",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-bananapro-generate",
+      "name": "🖼️ BananaPro: Générer Image",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        1808
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Modifier une image existante avec BananaPro. Paramètres: prompt (instructions en anglais), resolution, image_url (URL de l'image à modifier).",
+        "method": "POST",
+        "url": "https://gateway.bananapro.site/api/v1/images/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization"
+            },
+            {
+              "name": "Content-Type"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\": \"nano-banana-pro\", \"prompt\": \"{prompt}\", \"resolution\": \"{resolution}\", \"image_url\": \"{image_url}\"}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "prompt",
+              "description": "Instructions de modification en ANGLAIS",
+              "type": "string"
+            },
+            {
+              "name": "resolution",
+              "description": "Résolution: 1K, 2K ou 4K",
+              "type": "string"
+            },
+            {
+              "name": "image_url",
+              "description": "URL de l'image à modifier",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-bananapro-edit",
+      "name": "✏️ BananaPro: Modifier Image",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        1808
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Récupérer la météo actuelle d'une ville. Paramètre: city_name (nom de la ville en français ou anglais).",
+        "url": "=https://api.openweathermap.org/data/2.5/weather?q={city_name}&appid=OPENWEATHER_API_KEY&units=metric&lang=fr",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "city_name",
+              "description": "Nom de la ville",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-weather",
+      "name": "🌤️ Météo OpenWeather",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        2400
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Rechercher des actualités par mots-clés via GNews. Retourne les 8 articles les plus récents en français. Paramètre: query.",
+        "url": "=https://gnews.io/api/v4/search?q={query}&lang=fr&country=fr&max=8&apikey=GNEWS_API_KEY",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "query",
+              "description": "Mots-clés de recherche actualités",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-gnews-search",
+      "name": "📰 GNews: Recherche Actualités",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        2400
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Récupérer les gros titres par catégorie via GNews. Paramètre: category (general, world, nation, business, technology, entertainment, sports, science, health).",
+        "url": "=https://gnews.io/api/v4/top-headlines?category={category}&lang=fr&country=fr&max=8&apikey=GNEWS_API_KEY",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "category",
+              "description": "general/world/nation/business/technology/entertainment/sports/science/health",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-gnews-headlines",
+      "name": "🏷️ GNews: Headlines",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        2400
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Recherche approfondie via Perplexity pour veille tech/créative (production vidéo, motion design, After Effects, Premiere Pro). Paramètre: question.",
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\": \"sonar-pro\", \"messages\": [{\"role\": \"system\", \"content\": \"Assistant de veille spécialisé en production audiovisuelle, montage vidéo, motion design, After Effects, Premiere Pro. Réponds en français avec liens sources.\"}, {\"role\": \"user\", \"content\": \"{question}\"}], \"search_recency_filter\": \"week\", \"return_citations\": true, \"return_related_questions\": true}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "question",
+              "description": "Question de recherche pour la veille",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-perplexity-veille",
+      "name": "🔍 Perplexity: Veille Créative",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        2400
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Trouver les derniers tutoriels Premiere Pro par sujet. Paramètre: search_query.",
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\": \"sonar-pro\", \"messages\": [{\"role\": \"system\", \"content\": \"Expert Adobe Premiere Pro. Cherche les derniers tutoriels, effets, plugins et techniques de montage vidéo pour Premiere Pro. Donne des liens YouTube et sites de tutos. Français.\"}, {\"role\": \"user\", \"content\": \"Trouve les derniers tutoriels Premiere Pro sur: {search_query}\"}], \"search_recency_filter\": \"month\", \"search_domain_filter\": [\"youtube.com\", \"premierepro.net\", \"adobe.com\", \"motionarray.com\", \"envato.com\"], \"return_citations\": true}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "search_query",
+              "description": "Sujet du tuto Premiere Pro recherché",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-tutos-premiere",
+      "name": "🎬 Tutos Premiere Pro",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        2608
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Trouver les derniers tutoriels After Effects et motion design par sujet. Paramètre: search_query.",
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\": \"sonar-pro\", \"messages\": [{\"role\": \"system\", \"content\": \"Expert After Effects et motion design. Cherche les derniers tutoriels, techniques d'animation, plugins et tendances en motion design. Donne des liens YouTube et ressources. Français.\"}, {\"role\": \"user\", \"content\": \"Trouve les derniers tutoriels After Effects / motion design sur: {search_query}\"}], \"search_recency_filter\": \"month\", \"search_domain_filter\": [\"youtube.com\", \"schoolofmotion.com\", \"motiondesign.school\", \"videocopilot.net\", \"adobe.com\"], \"return_citations\": true}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "search_query",
+              "description": "Sujet du tuto After Effects/motion design recherché",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-tutos-aftereffects",
+      "name": "✨ Tutos After Effects",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        2608
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Rédiger du contenu social media (LinkedIn, Instagram). Paramètres: plateforme, sujet, ton, format_post.",
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Content-Type"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\": \"gpt-4o\", \"max_tokens\": 4096, \"temperature\": 0.8, \"messages\": [{\"role\": \"system\", \"content\": \"Tu es un community manager expert pour Pixel en Route, agence de production audiovisuelle bas\\u00e9e \\u00e0 Paris. Tu cr\\u00e9es du contenu viral en fran\\u00e7ais. Structure: Hook accrocheur \\u2192 Contenu valeur \\u2192 CTA engageant. Ajoute des hashtags optimis\\u00e9s et un prompt image en anglais pour g\\u00e9n\\u00e9rer le visuel avec BananaPro.\"}, {\"role\": \"user\", \"content\": \"Plateforme: {plateforme}\\nSujet: {sujet}\\nTon: {ton}\\nFormat: {format_post}\"}]}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "plateforme",
+              "description": "Plateforme cible: linkedin ou instagram",
+              "type": "string"
+            },
+            {
+              "name": "sujet",
+              "description": "Sujet du post",
+              "type": "string"
+            },
+            {
+              "name": "ton",
+              "description": "Ton du post: professionnel, engageant, humoristique ou éducatif",
+              "type": "string"
+            },
+            {
+              "name": "format_post",
+              "description": "Format: post, story, reel ou carrousel",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-social-writer",
+      "name": "✍️ Rédacteur Social",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Générer un prompt pour vignette YouTube professionnelle. Paramètres: titre_video, style, couleurs, texte_vignette (max 5 mots).",
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Content-Type"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\": \"gpt-4o\", \"max_tokens\": 2048, \"temperature\": 0.7, \"messages\": [{\"role\": \"system\", \"content\": \"Tu es un expert en cr\\u00e9ation de vignettes YouTube virales. Tu g\\u00e9n\\u00e8res un prompt EN ANGLAIS optimis\\u00e9 pour BananaPro. Format 16:9 1280x720. Le texte sur la vignette doit \\u00eatre gros, lisible, max 3-5 mots percutants. Inclus: composition, couleurs, typographie, expression du sujet, \\u00e9clairage.\"}, {\"role\": \"user\", \"content\": \"Titre vid\\u00e9o: {titre_video}\\nStyle: {style}\\nCouleurs: {couleurs}\\nTexte vignette: {texte_vignette}\"}]}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "titre_video",
+              "description": "Titre de la vidéo YouTube",
+              "type": "string"
+            },
+            {
+              "name": "style",
+              "description": "Style: moderne, gaming, tech, vlog, tuto ou corporate",
+              "type": "string"
+            },
+            {
+              "name": "couleurs",
+              "description": "Palette de couleurs souhaitée",
+              "type": "string"
+            },
+            {
+              "name": "texte_vignette",
+              "description": "Texte à afficher sur la vignette (max 5 mots)",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-yt-thumbnail",
+      "name": "🎨 Prompt Vignette YouTube",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Analyser une image ou vidéo pour la direction artistique (couleurs HEX, polices, style, mood). Paramètres: analysis_type, url.",
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Content-Type"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\": \"gpt-4o\", \"max_tokens\": 4096, \"messages\": [{\"role\": \"system\", \"content\": \"Tu es un directeur artistique expert en production audiovisuelle. Tu analyses les images et vid\\u00e9os avec pr\\u00e9cision: palette couleurs (codes HEX), polices recommand\\u00e9es, style d'animation, mood/ambiance, composition. Sois tr\\u00e8s pr\\u00e9cis et technique. R\\u00e9ponds en fran\\u00e7ais.\"}, {\"role\": \"user\", \"content\": [{\"type\": \"text\", \"text\": \"Analyse cette image/vid\\u00e9o pour la direction artistique. Type d'analyse: {analysis_type}\"}, {\"type\": \"image_url\", \"image_url\": {\"url\": \"{url}\"}}]}]}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "analysis_type",
+              "description": "Type d'analyse: direction_artistique, palette_couleurs, typographie ou animation_style",
+              "type": "string"
+            },
+            {
+              "name": "url",
+              "description": "URL de l'image ou vidéo à analyser",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-vision-analyse",
+      "name": "👁️ Vision Analyse",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        2208
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Générer 3 scripts viraux pour vidéo. Paramètres: sujet, rushes_description, plateforme, duree_cible (en secondes).",
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Content-Type"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\": \"gpt-4o\", \"max_tokens\": 8192, \"temperature\": 0.8, \"messages\": [{\"role\": \"system\", \"content\": \"Tu es un expert en contenu viral et montage vid\\u00e9o. G\\u00e9n\\u00e8re 3 scripts viraux distincts avec pour chacun: titre accrocheur, hook (3 premi\\u00e8res secondes), structure avec timecodes, plans B-roll sugg\\u00e9r\\u00e9s, voix off, musique/ambiance sonore, transitions, CTA final. R\\u00e9ponds en fran\\u00e7ais.\"}, {\"role\": \"user\", \"content\": \"Sujet: {sujet}\\nRushes disponibles: {rushes_description}\\nPlateforme: {plateforme}\\nDur\\u00e9e cible: {duree_cible}s\"}]}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "sujet",
+              "description": "Sujet/thème de la vidéo",
+              "type": "string"
+            },
+            {
+              "name": "rushes_description",
+              "description": "Description des rushes/médias disponibles",
+              "type": "string"
+            },
+            {
+              "name": "plateforme",
+              "description": "Plateforme cible: youtube, instagram, tiktok ou linkedin",
+              "type": "string"
+            },
+            {
+              "name": "duree_cible",
+              "description": "Durée cible en secondes",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "tool-scripts-viraux",
+      "name": "📝 Scripts Viraux",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        2208
+      ]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Type Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Type Router": {
+      "main": [
+        [
+          {
+            "node": "Get Voice File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Photo File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Voice File": {
+      "main": [
+        [
+          {
+            "node": "Download Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice": {
+      "main": [
+        [
+          {
+            "node": "Whisper Transcribe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Whisper Transcribe": {
+      "main": [
+        [
+          {
+            "node": "Format Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Voice": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Photo File": {
+      "main": [
+        [
+          {
+            "node": "Format Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Photo": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Document": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Video": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Text": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Branches": {
+      "main": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JARVIS Agent": {
+      "main": [
+        [
+          {
+            "node": "Telegram Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4o": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📇 CRM: Ajouter Contact": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 CRM: Rechercher Contact": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 CRM: Lister Contacts": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✏️ CRM: Modifier Contact": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Projet: Créer": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔎 Projet: Rechercher": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✏️ Projet: Modifier": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Projet: Lister": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📨 Gmail: Lire Emails": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✉️ Gmail: Envoyer": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📅 Calendar: Lister": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📅 Calendar: Créer": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💰 Qonto: Créer Facture": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📄 Qonto: Lister Factures": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🌐 Perplexity: Recherche": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎬 VEO3: Text-to-Video": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🖼️➡️🎬 VEO3: Image-to-Video": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔄 VEO3: Check Status": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⏩ VEO3: Extend Video": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🖼️ BananaPro: Générer Image": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✏️ BananaPro: Modifier Image": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🌤️ Météo OpenWeather": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📰 GNews: Recherche Actualités": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🏷️ GNews: Headlines": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Perplexity: Veille Créative": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎬 Tutos Premiere Pro": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✨ Tutos After Effects": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✍️ Rédacteur Social": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎨 Prompt Vignette YouTube": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "👁️ Vision Analyse": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📝 Scripts Viraux": {
+      "ai_tool": [
+        [
+          {
+            "node": "JARVIS Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Paris",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "d9e051ba-7124-4a35-843c-fec803555cbc",
+  "activeVersionId": "d9e051ba-7124-4a35-843c-fec803555cbc",
+  "versionCounter": 12,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-02-09T10:19:54.921Z",
+      "createdAt": "2026-02-09T10:19:54.921Z",
+      "role": "workflow:owner",
+      "workflowId": "ePDImCq5XjTn5R71",
+      "projectId": "83b4uEbuE3IexAHm",
+      "project": {
+        "updatedAt": "2025-11-29T15:29:00.645Z",
+        "createdAt": "2025-11-29T15:25:39.868Z",
+        "id": "83b4uEbuE3IexAHm",
+        "name": "pierre maupoux <pixelenroute@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "2dac7f82-1ea6-49de-bf61-0dfa9f96395f",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-11-29T15:25:39.868Z",
+            "createdAt": "2025-11-29T15:25:39.868Z",
+            "userId": "2dac7f82-1ea6-49de-bf61-0dfa9f96395f",
+            "projectId": "83b4uEbuE3IexAHm",
+            "user": {
+              "updatedAt": "2026-02-09T12:25:05.000Z",
+              "createdAt": "2025-11-29T15:25:39.257Z",
+              "id": "2dac7f82-1ea6-49de-bf61-0dfa9f96395f",
+              "email": "pixelenroute@gmail.com",
+              "firstName": "pierre",
+              "lastName": "maupoux",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-11-29T15:29:25.473Z",
+                "personalization_survey_n8n_version": "1.121.3",
+                "companySize": "<20",
+                "companyType": "ecommerce",
+                "role": "business-owner",
+                "reportedSource": "google"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "bAP5bgU5OS6RS51E",
+                "userActivatedAt": 1764430967889,
+                "dismissedCallouts": {
+                  "aiAgentStarterCallout": true
+                },
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1767195265748
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-02-08",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-02-09T14:08:08.223Z",
+    "createdAt": "2026-02-09T14:08:08.223Z",
+    "versionId": "d9e051ba-7124-4a35-843c-fec803555cbc",
+    "workflowId": "ePDImCq5XjTn5R71",
+    "nodes": [
+      {
+        "parameters": {
+          "updates": [
+            "message",
+            "callback_query"
+          ],
+          "additionalFields": {
+            "download": true,
+            "imageSize": "large"
+          }
+        },
+        "id": "telegram-trigger",
+        "name": "Telegram Trigger",
+        "type": "n8n-nodes-base.telegramTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          -704,
+          208
+        ],
+        "webhookId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "credentials": {
+          "telegramApi": {
+            "id": "scDdqO17ychsATg1",
+            "name": "jarvis"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "id": "voice-condition",
+                      "leftValue": "={{ $json.message.voice }}",
+                      "rightValue": "",
+                      "operator": {
+                        "type": "object",
+                        "operation": "exists",
+                        "singleValue": true
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Voice"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "id": "photo-condition",
+                      "leftValue": "={{ $json.message.photo }}",
+                      "rightValue": "",
+                      "operator": {
+                        "type": "array",
+                        "operation": "exists",
+                        "singleValue": true
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Photo"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "id": "doc-condition",
+                      "leftValue": "={{ $json.message.document }}",
+                      "rightValue": "",
+                      "operator": {
+                        "type": "object",
+                        "operation": "exists",
+                        "singleValue": true
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Document"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "id": "video-condition",
+                      "leftValue": "={{ $json.message.video }}",
+                      "rightValue": "",
+                      "operator": {
+                        "type": "object",
+                        "operation": "exists",
+                        "singleValue": true
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Video"
+              }
+            ]
+          },
+          "options": {
+            "fallbackOutput": "extra"
+          }
+        },
+        "id": "type-router",
+        "name": "Type Router",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          -400,
+          208
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "file",
+          "fileId": "={{ $json.message.voice.file_id }}",
+          "additionalFields": {}
+        },
+        "id": "get-voice-file",
+        "name": "Get Voice File",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          -96,
+          -96
+        ],
+        "webhookId": "872ffcae-9c6c-4ae9-9d4d-b869e5321c06",
+        "credentials": {
+          "telegramApi": {
+            "id": "scDdqO17ychsATg1",
+            "name": "jarvis"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "url": "=https://api.telegram.org/file/bot{{ $credentials.telegramApi.accessToken }}/{{ $json.result.file_path }}",
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "file"
+              }
+            }
+          }
+        },
+        "id": "download-voice",
+        "name": "Download Voice",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          160,
+          -96
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.openai.com/v1/audio/transcriptions",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "contentType": "multipart-form-data",
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "model",
+                "value": "whisper-1"
+              },
+              {
+                "parameterType": "formBinaryData",
+                "name": "file",
+                "inputDataFieldName": "data"
+              },
+              {
+                "name": "language",
+                "value": "fr"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "whisper-transcribe",
+        "name": "Whisper Transcribe",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          400,
+          -96
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "iiT0HF4awi8YQYDw",
+            "name": "OpenAI API"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "fv1",
+                "name": "userMessage",
+                "value": "={{ $json.text }}",
+                "type": "string"
+              },
+              {
+                "id": "fv2",
+                "name": "chatId",
+                "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+                "type": "string"
+              },
+              {
+                "id": "fv3",
+                "name": "firstName",
+                "value": "={{ $('Telegram Trigger').item.json.message.from.first_name }}",
+                "type": "string"
+              },
+              {
+                "id": "fv4",
+                "name": "hasImage",
+                "value": "false",
+                "type": "string"
+              },
+              {
+                "id": "fv5",
+                "name": "imageUrl",
+                "value": "",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "format-voice",
+        "name": "Format Voice",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          656,
+          -96
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "file",
+          "fileId": "={{ $json.message.photo.slice(-1)[0].file_id }}",
+          "additionalFields": {}
+        },
+        "id": "get-photo-file",
+        "name": "Get Photo File",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          -96,
+          112
+        ],
+        "webhookId": "c7da5143-804f-43f9-93d5-7f32e7eeb025",
+        "credentials": {
+          "telegramApi": {
+            "id": "scDdqO17ychsATg1",
+            "name": "jarvis"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "fp1",
+                "name": "chatId",
+                "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+                "type": "string"
+              },
+              {
+                "id": "fp2",
+                "name": "userMessage",
+                "value": "={{ $('Telegram Trigger').item.json.message.caption || 'Image reçue' }}",
+                "type": "string"
+              },
+              {
+                "id": "fp3",
+                "name": "firstName",
+                "value": "={{ $('Telegram Trigger').item.json.message.from.first_name }}",
+                "type": "string"
+              },
+              {
+                "id": "fp4",
+                "name": "imageUrl",
+                "value": "=https://api.telegram.org/file/bot{{ $credentials.telegramApi.accessToken }}/{{ $json.result.file_path }}",
+                "type": "string"
+              },
+              {
+                "id": "fp5",
+                "name": "hasImage",
+                "value": "true",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "format-photo",
+        "name": "Format Photo",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          208,
+          112
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "fd1",
+                "name": "chatId",
+                "value": "={{ $json.message.chat.id }}",
+                "type": "string"
+              },
+              {
+                "id": "fd2",
+                "name": "userMessage",
+                "value": "={{ $json.message.caption || 'Document reçu' }}",
+                "type": "string"
+              },
+              {
+                "id": "fd3",
+                "name": "firstName",
+                "value": "={{ $json.message.from.first_name }}",
+                "type": "string"
+              },
+              {
+                "id": "fd4",
+                "name": "hasImage",
+                "value": "false",
+                "type": "string"
+              },
+              {
+                "id": "fd5",
+                "name": "fileId",
+                "value": "={{ $json.message.document.file_id }}",
+                "type": "string"
+              },
+              {
+                "id": "fd6",
+                "name": "fileName",
+                "value": "={{ $json.message.document.file_name }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "format-document",
+        "name": "Format Document",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -96,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "fvd1",
+                "name": "chatId",
+                "value": "={{ $json.message.chat.id }}",
+                "type": "string"
+              },
+              {
+                "id": "fvd2",
+                "name": "userMessage",
+                "value": "={{ $json.message.caption || 'Vidéo reçue' }}",
+                "type": "string"
+              },
+              {
+                "id": "fvd3",
+                "name": "firstName",
+                "value": "={{ $json.message.from.first_name }}",
+                "type": "string"
+              },
+              {
+                "id": "fvd4",
+                "name": "hasImage",
+                "value": "false",
+                "type": "string"
+              },
+              {
+                "id": "fvd5",
+                "name": "fileId",
+                "value": "={{ $json.message.video.file_id }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "format-video",
+        "name": "Format Video",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -96,
+          480
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "ft1",
+                "name": "userMessage",
+                "value": "={{ $json.message ? $json.message.text : ($json.callback_query ? $json.callback_query.data : '') }}",
+                "type": "string"
+              },
+              {
+                "id": "ft2",
+                "name": "chatId",
+                "value": "={{ $json.message ? $json.message.chat.id : $json.callback_query.message.chat.id }}",
+                "type": "string"
+              },
+              {
+                "id": "ft3",
+                "name": "firstName",
+                "value": "={{ $json.message ? $json.message.from.first_name : $json.callback_query.from.first_name }}",
+                "type": "string"
+              },
+              {
+                "id": "ft4",
+                "name": "hasImage",
+                "value": "false",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "format-text",
+        "name": "Format Text",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -96,
+          672
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "chooseBranch",
+          "output": "empty"
+        },
+        "id": "merge-branches",
+        "name": "Merge Branches",
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3,
+        "position": [
+          912,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $json.userMessage + (($json.hasImage === 'true' && $json.imageUrl) ? '\\n[Image fournie: ' + $json.imageUrl + ']' : '') }}",
+          "options": {
+            "systemMessage": "Tu es JARVIS UNIFIÉ, l'assistant IA personnel tout-en-un de Pierre, fondateur de Pixel en Route (SIRET: 897 732 228 00027).\nAgence de production audiovisuelle basée à Paris. Email: contact@pixelenroute.com\n\nTES 11 MODES:\n\n1. CRM (Notion) - Gestion contacts: ajouter, rechercher, modifier, lister. Statuts: Lead/Client/Prospect/Partenaire\n2. PROJETS (Notion) - Gestion projets: créer, rechercher, modifier, lister. Statuts: À faire/En cours/En révision/Terminé/Annulé\n3. FACTURATION (Qonto) - Créer factures (TVA 20%), lister. SIRET: 897 732 228 00027, TVA: FR12897732228\n4. EMAIL (Gmail) - Lire, envoyer emails. Toujours français impeccable\n5. CALENDRIER (Google Calendar) - Événements. Timezone: Europe/Paris\n6. PROSPECTION - Recherche web (Perplexity)\n7. VIDÉO IA (VEO3) - Génération vidéo via Kie.ai: text-to-video, image-to-video, extend. Traduis TOUJOURS les prompts en anglais cinématographique\n8. IMAGES IA (BananaPro) - Génération/modification images. Formats: 1:1, 16:9, 9:16, 4:5. Traduis prompts en anglais\n9. SOCIAL MEDIA - Posts LinkedIn/Instagram, vignettes YouTube, scripts viraux\n10. VEILLE - Météo, actualités GNews, veille tech/créative, tutos Premiere/After Effects\n11. MONTEUR VIDÉO - Direction artistique (couleurs HEX, polices, style), scripts viraux\n\nRÈGLES:\n- Toujours répondre en français\n- Tutoyer Pierre\n- Confirmer AVANT les actions destructives\n- TVA 20%, format euros, dates JJ/MM/AAAA\n- Pour VEO3/BananaPro: traduire les prompts en anglais professionnel\n- Pour le contenu social: proposer texte + prompt image + hashtags",
+            "maxIterations": 20,
+            "returnIntermediateSteps": false
+          }
+        },
+        "id": "jarvis-agent",
+        "name": "JARVIS Agent",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 1.7,
+        "position": [
+          1200,
+          304
+        ]
+      },
+      {
+        "parameters": {
+          "model": "gpt-4o",
+          "options": {
+            "maxTokens": 4096,
+            "temperature": 0.7
+          }
+        },
+        "id": "gpt4o-model",
+        "name": "GPT-4o",
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1,
+        "position": [
+          1056,
+          560
+        ],
+        "credentials": {
+          "openAiApi": {
+            "id": "iiT0HF4awi8YQYDw",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sessionIdType": "customKey",
+          "sessionKey": "={{ $json.chatId }}",
+          "contextWindowLength": 20
+        },
+        "id": "chat-memory",
+        "name": "Chat Memory",
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "typeVersion": 1.2,
+        "position": [
+          1200,
+          560
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "sendMessage",
+          "chatId": "={{ $('Merge Branches').item.json.chatId }}",
+          "text": "={{ $json.output }}",
+          "additionalFields": {
+            "parse_mode": "Markdown"
+          }
+        },
+        "id": "telegram-response",
+        "name": "Telegram Response",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          1504,
+          304
+        ],
+        "webhookId": "77e258df-b640-4e3c-9150-2b0c31213256",
+        "credentials": {
+          "telegramApi": {
+            "id": "scDdqO17ychsATg1",
+            "name": "jarvis"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Ajouter un nouveau contact dans le CRM Notion. Utilise ce tool quand l'utilisateur veut ajouter, créer ou enregistrer un nouveau contact/client/prospect.",
+          "method": "POST",
+          "url": "https://api.notion.com/v1/pages",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "notionApi",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"parent\":{\"database_id\":\"6bd8c6a6a31342a09500ecff1a7516ca\"},\"properties\":{\"Nom\":{\"title\":[{\"text\":{\"content\":\"{nom}\"}}]},\"Email\":{\"email\":\"{email}\"},\"Téléphone\":{\"phone_number\":\"{telephone}\"},\"Entreprise\":{\"rich_text\":[{\"text\":{\"content\":\"{entreprise}\"}}]},\"Statut\":{\"select\":{\"name\":\"{statut}\"}},\"Notes\":{\"rich_text\":[{\"text\":{\"content\":\"{notes}\"}}]}}}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "nom",
+                "description": "Nom complet du contact",
+                "type": "string"
+              },
+              {
+                "name": "email",
+                "description": "Adresse email du contact (optionnel, utiliser chaîne vide si inconnu)",
+                "type": "string"
+              },
+              {
+                "name": "telephone",
+                "description": "Numéro de téléphone (optionnel, utiliser chaîne vide si inconnu)",
+                "type": "string"
+              },
+              {
+                "name": "entreprise",
+                "description": "Nom de l'entreprise (optionnel, utiliser chaîne vide si inconnu)",
+                "type": "string"
+              },
+              {
+                "name": "statut",
+                "description": "Statut du contact: Lead, Client, Prospect ou Partenaire. Par défaut Lead",
+                "type": "string"
+              },
+              {
+                "name": "notes",
+                "description": "Notes additionnelles (optionnel, utiliser chaîne vide si aucune)",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-crm-add",
+        "name": "📇 CRM: Ajouter Contact",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          400,
+          800
+        ],
+        "credentials": {
+          "notionApi": {
+            "id": "oq65T9ZpEzVe0jny",
+            "name": "Notion account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Rechercher un contact dans le CRM Notion par nom, entreprise ou email. Utilise ce tool quand l'utilisateur veut chercher, trouver ou regarder un contact.",
+          "method": "POST",
+          "url": "https://api.notion.com/v1/databases/6bd8c6a6a31342a09500ecff1a7516ca/query",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "notionApi",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"filter\":{\"or\":[{\"property\":\"Nom\",\"title\":{\"contains\":\"{search_term}\"}},{\"property\":\"Entreprise\",\"rich_text\":{\"contains\":\"{search_term}\"}},{\"property\":\"Email\",\"email\":{\"contains\":\"{search_term}\"}}]}}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "search_term",
+                "description": "Terme de recherche: nom, entreprise ou email du contact",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-crm-search",
+        "name": "🔍 CRM: Rechercher Contact",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          608,
+          800
+        ],
+        "credentials": {
+          "notionApi": {
+            "id": "oq65T9ZpEzVe0jny",
+            "name": "Notion account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Lister tous les contacts du CRM Notion. Utilise ce tool quand l'utilisateur veut voir, afficher ou lister tous les contacts.",
+          "method": "POST",
+          "url": "https://api.notion.com/v1/databases/6bd8c6a6a31342a09500ecff1a7516ca/query",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "notionApi",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "{\"page_size\": 50, \"sorts\": [{\"property\": \"Nom\", \"direction\": \"ascending\"}]}",
+          "placeholderDefinitions": {
+            "values": []
+          }
+        },
+        "id": "tool-crm-list",
+        "name": "📋 CRM: Lister Contacts",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          800,
+          800
+        ],
+        "credentials": {
+          "notionApi": {
+            "id": "oq65T9ZpEzVe0jny",
+            "name": "Notion account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Modifier un contact existant dans le CRM Notion par son page_id. Utilise ce tool quand l'utilisateur veut mettre à jour, modifier ou changer les infos d'un contact. Il faut d'abord rechercher le contact pour obtenir son page_id.",
+          "method": "PATCH",
+          "url": "=https://api.notion.com/v1/pages/{page_id}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "notionApi",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"properties\": {properties_json}}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "page_id",
+                "description": "ID de la page Notion du contact (obtenu via recherche)",
+                "type": "string"
+              },
+              {
+                "name": "properties_json",
+                "description": "Objet JSON des propriétés Notion à modifier. Ex: {\"Statut\":{\"select\":{\"name\":\"Client\"}}} ou {\"Email\":{\"email\":\"new@email.com\"}}",
+                "type": "json"
+              }
+            ]
+          }
+        },
+        "id": "tool-crm-modify",
+        "name": "✏️ CRM: Modifier Contact",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          1008,
+          800
+        ],
+        "credentials": {
+          "notionApi": {
+            "id": "oq65T9ZpEzVe0jny",
+            "name": "Notion account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Créer un nouveau projet dans Notion. Utilise ce tool quand l'utilisateur veut créer, ajouter ou démarrer un nouveau projet.",
+          "method": "POST",
+          "url": "https://api.notion.com/v1/pages",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "notionApi",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"parent\":{\"database_id\":\"1f75ed7c2be880ada164f53f1773826c\"},\"properties\":{\"Nom du projet\":{\"title\":[{\"text\":{\"content\":\"{project_name}\"}}]},\"Client\":{\"rich_text\":[{\"text\":{\"content\":\"{client}\"}}]},\"Statut\":{\"select\":{\"name\":\"{status}\"}},\"Type\":{\"select\":{\"name\":\"{type}\"}},\"Budget\":{\"number\":{budget}},\"Date de début\":{\"date\":{\"start\":\"{start_date}\"}},\"Description\":{\"rich_text\":[{\"text\":{\"content\":\"{description}\"}}]},\"Priorité\":{\"select\":{\"name\":\"{priority}\"}}}}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "project_name",
+                "description": "Nom du projet",
+                "type": "string"
+              },
+              {
+                "name": "client",
+                "description": "Nom du client",
+                "type": "string"
+              },
+              {
+                "name": "status",
+                "description": "Statut: À faire, En cours, En révision, Terminé, Annulé",
+                "type": "string"
+              },
+              {
+                "name": "type",
+                "description": "Type de projet: Vidéo, Photo, Web, Consulting",
+                "type": "string"
+              },
+              {
+                "name": "budget",
+                "description": "Budget en euros (nombre)",
+                "type": "number"
+              },
+              {
+                "name": "start_date",
+                "description": "Date de début au format YYYY-MM-DD",
+                "type": "string"
+              },
+              {
+                "name": "description",
+                "description": "Description du projet",
+                "type": "string"
+              },
+              {
+                "name": "priority",
+                "description": "Priorité: Haute, Moyenne, Basse",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-project-create",
+        "name": "📊 Projet: Créer",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          400,
+          1008
+        ],
+        "credentials": {
+          "notionApi": {
+            "id": "oq65T9ZpEzVe0jny",
+            "name": "Notion account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Rechercher un projet dans Notion par nom, client ou statut. Utilise ce tool quand l'utilisateur veut chercher ou trouver un projet.",
+          "method": "POST",
+          "url": "https://api.notion.com/v1/databases/1f75ed7c2be880ada164f53f1773826c/query",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "notionApi",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"filter\":{\"or\":[{\"property\":\"Nom du projet\",\"title\":{\"contains\":\"{search_term}\"}},{\"property\":\"Client\",\"rich_text\":{\"contains\":\"{search_term}\"}},{\"property\":\"Statut\",\"select\":{\"equals\":\"{search_term}\"}}]}}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "search_term",
+                "description": "Terme de recherche: nom de projet, nom de client ou statut",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-project-search",
+        "name": "🔎 Projet: Rechercher",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          608,
+          1008
+        ],
+        "credentials": {
+          "notionApi": {
+            "id": "oq65T9ZpEzVe0jny",
+            "name": "Notion account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Modifier un projet existant dans Notion par son page_id. Utilise ce tool pour mettre à jour le statut, budget, dates ou autres propriétés d'un projet.",
+          "method": "PATCH",
+          "url": "=https://api.notion.com/v1/pages/{page_id}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "notionApi",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"properties\": {properties_json}}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "page_id",
+                "description": "ID de la page Notion du projet (obtenu via recherche)",
+                "type": "string"
+              },
+              {
+                "name": "properties_json",
+                "description": "Objet JSON des propriétés Notion à modifier",
+                "type": "json"
+              }
+            ]
+          }
+        },
+        "id": "tool-project-modify",
+        "name": "✏️ Projet: Modifier",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          800,
+          1008
+        ],
+        "credentials": {
+          "notionApi": {
+            "id": "oq65T9ZpEzVe0jny",
+            "name": "Notion account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Lister tous les projets dans Notion. Utilise ce tool quand l'utilisateur veut voir tous les projets ou un résumé des projets en cours.",
+          "method": "POST",
+          "url": "https://api.notion.com/v1/databases/1f75ed7c2be880ada164f53f1773826c/query",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "notionApi",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Notion-Version\": \"2022-06-28\", \"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "{\"page_size\": 50, \"sorts\": [{\"property\": \"Statut\", \"direction\": \"ascending\"}]}",
+          "placeholderDefinitions": {
+            "values": []
+          }
+        },
+        "id": "tool-project-list",
+        "name": "📋 Projet: Lister",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          1008,
+          1008
+        ],
+        "credentials": {
+          "notionApi": {
+            "id": "oq65T9ZpEzVe0jny",
+            "name": "Notion account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Lire les emails récents de Gmail. Utilise ce tool quand l'utilisateur veut voir, lire ou consulter ses emails. Le paramètre query utilise la syntaxe Gmail (ex: is:unread, from:xxx, subject:xxx).",
+          "url": "=https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults={max_results}&q={query}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "gmailOAuth2",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "max_results",
+                "description": "Nombre maximum d'emails à retourner (défaut 10)",
+                "type": "number"
+              },
+              {
+                "name": "query",
+                "description": "Requête de recherche Gmail. Ex: is:unread, from:client@email.com, subject:facture. Laisser vide pour tous les emails récents.",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-gmail-read",
+        "name": "📨 Gmail: Lire Emails",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          400,
+          1200
+        ],
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "m6nrlu4lrEb6T3X2",
+            "name": "Gmail pixel"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Envoyer un email via Gmail. Utilise ce tool quand l'utilisateur veut envoyer, écrire ou transmettre un email. Le body du mail doit être en français impeccable. Le champ raw doit être le message RFC 2822 encodé en base64url.",
+          "method": "POST",
+          "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "gmailOAuth2",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"raw\": \"{raw_base64}\"}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "raw_base64",
+                "description": "Le message email complet encodé en base64url. Format RFC 2822: From: contact@pixelenroute.com\\r\\nTo: {to_email}\\r\\nSubject: {subject}\\r\\nContent-Type: text/html; charset=utf-8\\r\\n\\r\\n{body_html}. Encode le tout en base64url.",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-gmail-send",
+        "name": "✉️ Gmail: Envoyer",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          608,
+          1200
+        ],
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "m6nrlu4lrEb6T3X2",
+            "name": "Gmail pixel"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Lister les événements du Google Calendar. Utilise ce tool quand l'utilisateur veut voir son agenda, ses rendez-vous ou événements à venir.",
+          "url": "=https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin={time_min}&timeMax={time_max}&singleEvents=true&orderBy=startTime&timeZone=Europe/Paris",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "googleCalendarOAuth2Api",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "time_min",
+                "description": "Date de début au format ISO 8601 avec timezone, ex: 2025-01-15T00:00:00+01:00",
+                "type": "string"
+              },
+              {
+                "name": "time_max",
+                "description": "Date de fin au format ISO 8601 avec timezone, ex: 2025-01-22T23:59:59+01:00",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-calendar-list",
+        "name": "📅 Calendar: Lister",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          800,
+          1200
+        ],
+        "credentials": {
+          "googleCalendarOAuth2Api": {
+            "id": "m6nrlu4lrEb6T3X2",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Créer un événement dans Google Calendar. Utilise ce tool quand l'utilisateur veut ajouter un rendez-vous, événement ou réunion à son calendrier.",
+          "method": "POST",
+          "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "googleCalendarOAuth2Api",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"summary\":\"{event_title}\",\"description\":\"{event_description}\",\"location\":\"{event_location}\",\"start\":{\"dateTime\":\"{start_datetime}\",\"timeZone\":\"Europe/Paris\"},\"end\":{\"dateTime\":\"{end_datetime}\",\"timeZone\":\"Europe/Paris\"}}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "event_title",
+                "description": "Titre de l'événement",
+                "type": "string"
+              },
+              {
+                "name": "event_description",
+                "description": "Description de l'événement",
+                "type": "string"
+              },
+              {
+                "name": "event_location",
+                "description": "Lieu de l'événement (optionnel)",
+                "type": "string"
+              },
+              {
+                "name": "start_datetime",
+                "description": "Date et heure de début au format ISO 8601, ex: 2025-01-15T10:00:00",
+                "type": "string"
+              },
+              {
+                "name": "end_datetime",
+                "description": "Date et heure de fin au format ISO 8601, ex: 2025-01-15T11:00:00",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-calendar-create",
+        "name": "📅 Calendar: Créer",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          1008,
+          1200
+        ],
+        "credentials": {
+          "googleCalendarOAuth2Api": {
+            "id": "m6nrlu4lrEb6T3X2",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "toolDescription": "Créer une facture client via Qonto. Utilise ce tool quand l'utilisateur veut facturer, créer une facture ou envoyer une note de paiement. TVA toujours à 20%.",
+          "method": "POST",
+          "url": "https://thirdparty.qonto.com/v2/client_invoices",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"client_id\":\"{client_id}\",\"issue_date\":\"{issue_date}\",\"due_date\":\"{due_date}\",\"line_items\":[{\"title\":\"{item_title}\",\"description\":\"{item_description}\",\"quantity\":{item_quantity},\"unit_price\":\"{item_unit_price}\",\"vat_rate\":\"20.0\"}]}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "client_id",
+                "description": "ID du client Qonto",
+                "type": "string"
+              },
+              {
+                "name": "issue_date",
+                "description": "Date d'émission au format YYYY-MM-DD",
+                "type": "string"
+              },
+              {
+                "name": "due_date",
+                "description": "Date d'échéance au format YYYY-MM-DD (généralement 30 jours après issue_date)",
+                "type": "string"
+              },
+              {
+                "name": "item_title",
+                "description": "Titre de la prestation",
+                "type": "string"
+              },
+              {
+                "name": "item_description",
+                "description": "Description détaillée de la prestation",
+                "type": "string"
+              },
+              {
+                "name": "item_quantity",
+                "description": "Quantité (nombre)",
+                "type": "number"
+              },
+              {
+                "name": "item_unit_price",
+                "description": "Prix unitaire HT en euros (ex: 500.00)",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-qonto-invoice-create",
+        "name": "💰 Qonto: Créer Facture",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          400,
+          1408
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Lister les factures dans Qonto. Utilise ce tool quand l'utilisateur veut voir ses factures, vérifier les paiements ou faire un suivi de facturation. Statuts possibles: draft, pending, paid, cancelled.",
+          "url": "=https://thirdparty.qonto.com/v2/client_invoices?status={status}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "status",
+                "description": "Filtre par statut: draft, pending, paid, cancelled. Laisser vide pour tous.",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-qonto-invoice-list",
+        "name": "📄 Qonto: Lister Factures",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          608,
+          1408
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Rechercher des informations en temps réel sur le web via Perplexity AI. Utilise ce tool pour la prospection, la veille, les actualités, la météo, ou toute recherche d'information actualisée.",
+          "method": "POST",
+          "url": "https://api.perplexity.ai/chat/completions",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"model\":\"sonar-pro\",\"messages\":[{\"role\":\"user\",\"content\":\"{search_query}\"}]}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "search_query",
+                "description": "La question ou requête de recherche. Sois spécifique pour de meilleurs résultats.",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-perplexity",
+        "name": "🌐 Perplexity: Recherche",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          800,
+          1408
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Générer une vidéo IA à partir d'un prompt textuel via VEO3. Le prompt DOIT être en anglais avec terminologie cinématographique. Paramètres: prompt, model (veo3 pour qualité, veo3_fast pour rapide), aspect_ratio (16:9, 9:16, 1:1), negative_prompt.",
+          "method": "POST",
+          "url": "https://api.kie.ai/api/v1/veo/generate",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "parametersHeaders": {
+            "values": [
+              {
+                "name": "Authorization"
+              },
+              {
+                "name": "Content-Type"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"prompt\": \"{prompt}\", \"model\": \"{model}\", \"aspect_ratio\": \"{aspect_ratio}\", \"negative_prompt\": \"{negative_prompt}\", \"enableTranslation\": false, \"generationType\": \"TEXT_2_VIDEO\"}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "prompt",
+                "description": "Prompt vidéo en ANGLAIS avec terminologie cinématographique détaillée",
+                "type": "string"
+              },
+              {
+                "name": "model",
+                "description": "Modèle: veo3 (haute qualité) ou veo3_fast (rapide)",
+                "type": "string"
+              },
+              {
+                "name": "aspect_ratio",
+                "description": "Ratio: 16:9 (paysage), 9:16 (portrait), 1:1 (carré)",
+                "type": "string"
+              },
+              {
+                "name": "negative_prompt",
+                "description": "Ce qu'on ne veut PAS voir dans la vidéo",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-veo3-text2video",
+        "name": "🎬 VEO3: Text-to-Video",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          400,
+          1600
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Animer une image en vidéo via VEO3. Transformer une image statique en vidéo animée. Paramètres: prompt (description animation en anglais), image_url, model, aspect_ratio.",
+          "method": "POST",
+          "url": "https://api.kie.ai/api/v1/veo/generate",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "parametersHeaders": {
+            "values": [
+              {
+                "name": "Authorization"
+              },
+              {
+                "name": "Content-Type"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"prompt\": \"{prompt}\", \"imageUrls\": [\"{image_url}\"], \"model\": \"{model}\", \"aspect_ratio\": \"{aspect_ratio}\", \"generationType\": \"FIRST_AND_LAST_FRAMES_2_VIDEO\"}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "prompt",
+                "description": "Description de l'animation souhaitée en anglais cinématographique",
+                "type": "string"
+              },
+              {
+                "name": "image_url",
+                "description": "URL de l'image source à animer",
+                "type": "string"
+              },
+              {
+                "name": "model",
+                "description": "Modèle: veo3 (haute qualité) ou veo3_fast (rapide)",
+                "type": "string"
+              },
+              {
+                "name": "aspect_ratio",
+                "description": "Ratio: 16:9 (paysage), 9:16 (portrait), 1:1 (carré)",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-veo3-img2video",
+        "name": "🖼️➡️🎬 VEO3: Image-to-Video",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          640,
+          1600
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Vérifier le statut d'une tâche de génération vidéo VEO3. Utiliser après avoir lancé une génération. Paramètre: task_id (ID de la tâche VEO3).",
+          "url": "=https://api.kie.ai/api/v1/veo/detail?taskId={task_id}",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "parametersHeaders": {
+            "values": [
+              {
+                "name": "Authorization"
+              }
+            ]
+          },
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "task_id",
+                "description": "ID de la tâche VEO3 retourné lors de la génération",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-veo3-status",
+        "name": "🔄 VEO3: Check Status",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          880,
+          1600
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Prolonger/étendre une vidéo VEO3 existante. Paramètres: task_id (ID de la vidéo originale), prompt (description de la suite en anglais).",
+          "method": "POST",
+          "url": "https://api.kie.ai/api/v1/veo/extend",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "parametersHeaders": {
+            "values": [
+              {
+                "name": "Authorization"
+              },
+              {
+                "name": "Content-Type"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"taskId\": \"{task_id}\", \"prompt\": \"{prompt}\"}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "task_id",
+                "description": "ID de la vidéo VEO3 originale à prolonger",
+                "type": "string"
+              },
+              {
+                "name": "prompt",
+                "description": "Description de la suite souhaitée en anglais",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-veo3-extend",
+        "name": "⏩ VEO3: Extend Video",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          1120,
+          1600
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Générer une image IA avec BananaPro (Nano Banana Pro). Le prompt DOIT être en anglais. Paramètres: prompt, resolution (1K, 2K, 4K), aspect_ratio (1:1, 16:9, 9:16, 4:5, 21:9).",
+          "method": "POST",
+          "url": "https://gateway.bananapro.site/api/v1/images/generate",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "parametersHeaders": {
+            "values": [
+              {
+                "name": "Authorization"
+              },
+              {
+                "name": "Content-Type"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"model\": \"nano-banana-pro\", \"prompt\": \"{prompt}\", \"resolution\": \"{resolution}\", \"aspect_ratio\": \"{aspect_ratio}\"}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "prompt",
+                "description": "Prompt de génération d'image en ANGLAIS détaillé",
+                "type": "string"
+              },
+              {
+                "name": "resolution",
+                "description": "Résolution: 1K, 2K ou 4K",
+                "type": "string"
+              },
+              {
+                "name": "aspect_ratio",
+                "description": "Ratio: 1:1, 16:9, 9:16, 4:5 ou 21:9",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-bananapro-generate",
+        "name": "🖼️ BananaPro: Générer Image",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          400,
+          1808
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Modifier une image existante avec BananaPro. Paramètres: prompt (instructions en anglais), resolution, image_url (URL de l'image à modifier).",
+          "method": "POST",
+          "url": "https://gateway.bananapro.site/api/v1/images/generate",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "parametersHeaders": {
+            "values": [
+              {
+                "name": "Authorization"
+              },
+              {
+                "name": "Content-Type"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"model\": \"nano-banana-pro\", \"prompt\": \"{prompt}\", \"resolution\": \"{resolution}\", \"image_url\": \"{image_url}\"}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "prompt",
+                "description": "Instructions de modification en ANGLAIS",
+                "type": "string"
+              },
+              {
+                "name": "resolution",
+                "description": "Résolution: 1K, 2K ou 4K",
+                "type": "string"
+              },
+              {
+                "name": "image_url",
+                "description": "URL de l'image à modifier",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-bananapro-edit",
+        "name": "✏️ BananaPro: Modifier Image",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          640,
+          1808
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Récupérer la météo actuelle d'une ville. Paramètre: city_name (nom de la ville en français ou anglais).",
+          "url": "=https://api.openweathermap.org/data/2.5/weather?q={city_name}&appid=OPENWEATHER_API_KEY&units=metric&lang=fr",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "city_name",
+                "description": "Nom de la ville",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-weather",
+        "name": "🌤️ Météo OpenWeather",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          400,
+          2400
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Rechercher des actualités par mots-clés via GNews. Retourne les 8 articles les plus récents en français. Paramètre: query.",
+          "url": "=https://gnews.io/api/v4/search?q={query}&lang=fr&country=fr&max=8&apikey=GNEWS_API_KEY",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "query",
+                "description": "Mots-clés de recherche actualités",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-gnews-search",
+        "name": "📰 GNews: Recherche Actualités",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          640,
+          2400
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Récupérer les gros titres par catégorie via GNews. Paramètre: category (general, world, nation, business, technology, entertainment, sports, science, health).",
+          "url": "=https://gnews.io/api/v4/top-headlines?category={category}&lang=fr&country=fr&max=8&apikey=GNEWS_API_KEY",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "category",
+                "description": "general/world/nation/business/technology/entertainment/sports/science/health",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-gnews-headlines",
+        "name": "🏷️ GNews: Headlines",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          880,
+          2400
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Recherche approfondie via Perplexity pour veille tech/créative (production vidéo, motion design, After Effects, Premiere Pro). Paramètre: question.",
+          "method": "POST",
+          "url": "https://api.perplexity.ai/chat/completions",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"model\": \"sonar-pro\", \"messages\": [{\"role\": \"system\", \"content\": \"Assistant de veille spécialisé en production audiovisuelle, montage vidéo, motion design, After Effects, Premiere Pro. Réponds en français avec liens sources.\"}, {\"role\": \"user\", \"content\": \"{question}\"}], \"search_recency_filter\": \"week\", \"return_citations\": true, \"return_related_questions\": true}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "question",
+                "description": "Question de recherche pour la veille",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-perplexity-veille",
+        "name": "🔍 Perplexity: Veille Créative",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          1120,
+          2400
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Trouver les derniers tutoriels Premiere Pro par sujet. Paramètre: search_query.",
+          "method": "POST",
+          "url": "https://api.perplexity.ai/chat/completions",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"model\": \"sonar-pro\", \"messages\": [{\"role\": \"system\", \"content\": \"Expert Adobe Premiere Pro. Cherche les derniers tutoriels, effets, plugins et techniques de montage vidéo pour Premiere Pro. Donne des liens YouTube et sites de tutos. Français.\"}, {\"role\": \"user\", \"content\": \"Trouve les derniers tutoriels Premiere Pro sur: {search_query}\"}], \"search_recency_filter\": \"month\", \"search_domain_filter\": [\"youtube.com\", \"premierepro.net\", \"adobe.com\", \"motionarray.com\", \"envato.com\"], \"return_citations\": true}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "search_query",
+                "description": "Sujet du tuto Premiere Pro recherché",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-tutos-premiere",
+        "name": "🎬 Tutos Premiere Pro",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          400,
+          2608
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Trouver les derniers tutoriels After Effects et motion design par sujet. Paramètre: search_query.",
+          "method": "POST",
+          "url": "https://api.perplexity.ai/chat/completions",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "{\"Content-Type\": \"application/json\"}",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"model\": \"sonar-pro\", \"messages\": [{\"role\": \"system\", \"content\": \"Expert After Effects et motion design. Cherche les derniers tutoriels, techniques d'animation, plugins et tendances en motion design. Donne des liens YouTube et ressources. Français.\"}, {\"role\": \"user\", \"content\": \"Trouve les derniers tutoriels After Effects / motion design sur: {search_query}\"}], \"search_recency_filter\": \"month\", \"search_domain_filter\": [\"youtube.com\", \"schoolofmotion.com\", \"motiondesign.school\", \"videocopilot.net\", \"adobe.com\"], \"return_citations\": true}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "search_query",
+                "description": "Sujet du tuto After Effects/motion design recherché",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-tutos-aftereffects",
+        "name": "✨ Tutos After Effects",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          640,
+          2608
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Rédiger du contenu social media (LinkedIn, Instagram). Paramètres: plateforme, sujet, ton, format_post.",
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "parametersHeaders": {
+            "values": [
+              {
+                "name": "Content-Type"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"model\": \"gpt-4o\", \"max_tokens\": 4096, \"temperature\": 0.8, \"messages\": [{\"role\": \"system\", \"content\": \"Tu es un community manager expert pour Pixel en Route, agence de production audiovisuelle bas\\u00e9e \\u00e0 Paris. Tu cr\\u00e9es du contenu viral en fran\\u00e7ais. Structure: Hook accrocheur \\u2192 Contenu valeur \\u2192 CTA engageant. Ajoute des hashtags optimis\\u00e9s et un prompt image en anglais pour g\\u00e9n\\u00e9rer le visuel avec BananaPro.\"}, {\"role\": \"user\", \"content\": \"Plateforme: {plateforme}\\nSujet: {sujet}\\nTon: {ton}\\nFormat: {format_post}\"}]}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "plateforme",
+                "description": "Plateforme cible: linkedin ou instagram",
+                "type": "string"
+              },
+              {
+                "name": "sujet",
+                "description": "Sujet du post",
+                "type": "string"
+              },
+              {
+                "name": "ton",
+                "description": "Ton du post: professionnel, engageant, humoristique ou éducatif",
+                "type": "string"
+              },
+              {
+                "name": "format_post",
+                "description": "Format: post, story, reel ou carrousel",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-social-writer",
+        "name": "✍️ Rédacteur Social",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          400,
+          2000
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Générer un prompt pour vignette YouTube professionnelle. Paramètres: titre_video, style, couleurs, texte_vignette (max 5 mots).",
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "parametersHeaders": {
+            "values": [
+              {
+                "name": "Content-Type"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"model\": \"gpt-4o\", \"max_tokens\": 2048, \"temperature\": 0.7, \"messages\": [{\"role\": \"system\", \"content\": \"Tu es un expert en cr\\u00e9ation de vignettes YouTube virales. Tu g\\u00e9n\\u00e8res un prompt EN ANGLAIS optimis\\u00e9 pour BananaPro. Format 16:9 1280x720. Le texte sur la vignette doit \\u00eatre gros, lisible, max 3-5 mots percutants. Inclus: composition, couleurs, typographie, expression du sujet, \\u00e9clairage.\"}, {\"role\": \"user\", \"content\": \"Titre vid\\u00e9o: {titre_video}\\nStyle: {style}\\nCouleurs: {couleurs}\\nTexte vignette: {texte_vignette}\"}]}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "titre_video",
+                "description": "Titre de la vidéo YouTube",
+                "type": "string"
+              },
+              {
+                "name": "style",
+                "description": "Style: moderne, gaming, tech, vlog, tuto ou corporate",
+                "type": "string"
+              },
+              {
+                "name": "couleurs",
+                "description": "Palette de couleurs souhaitée",
+                "type": "string"
+              },
+              {
+                "name": "texte_vignette",
+                "description": "Texte à afficher sur la vignette (max 5 mots)",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-yt-thumbnail",
+        "name": "🎨 Prompt Vignette YouTube",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          640,
+          2000
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Analyser une image ou vidéo pour la direction artistique (couleurs HEX, polices, style, mood). Paramètres: analysis_type, url.",
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "parametersHeaders": {
+            "values": [
+              {
+                "name": "Content-Type"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"model\": \"gpt-4o\", \"max_tokens\": 4096, \"messages\": [{\"role\": \"system\", \"content\": \"Tu es un directeur artistique expert en production audiovisuelle. Tu analyses les images et vid\\u00e9os avec pr\\u00e9cision: palette couleurs (codes HEX), polices recommand\\u00e9es, style d'animation, mood/ambiance, composition. Sois tr\\u00e8s pr\\u00e9cis et technique. R\\u00e9ponds en fran\\u00e7ais.\"}, {\"role\": \"user\", \"content\": [{\"type\": \"text\", \"text\": \"Analyse cette image/vid\\u00e9o pour la direction artistique. Type d'analyse: {analysis_type}\"}, {\"type\": \"image_url\", \"image_url\": {\"url\": \"{url}\"}}]}]}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "analysis_type",
+                "description": "Type d'analyse: direction_artistique, palette_couleurs, typographie ou animation_style",
+                "type": "string"
+              },
+              {
+                "name": "url",
+                "description": "URL de l'image ou vidéo à analyser",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-vision-analyse",
+        "name": "👁️ Vision Analyse",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          400,
+          2208
+        ]
+      },
+      {
+        "parameters": {
+          "toolDescription": "Générer 3 scripts viraux pour vidéo. Paramètres: sujet, rushes_description, plateforme, duree_cible (en secondes).",
+          "method": "POST",
+          "url": "https://api.openai.com/v1/chat/completions",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "parametersHeaders": {
+            "values": [
+              {
+                "name": "Content-Type"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"model\": \"gpt-4o\", \"max_tokens\": 8192, \"temperature\": 0.8, \"messages\": [{\"role\": \"system\", \"content\": \"Tu es un expert en contenu viral et montage vid\\u00e9o. G\\u00e9n\\u00e8re 3 scripts viraux distincts avec pour chacun: titre accrocheur, hook (3 premi\\u00e8res secondes), structure avec timecodes, plans B-roll sugg\\u00e9r\\u00e9s, voix off, musique/ambiance sonore, transitions, CTA final. R\\u00e9ponds en fran\\u00e7ais.\"}, {\"role\": \"user\", \"content\": \"Sujet: {sujet}\\nRushes disponibles: {rushes_description}\\nPlateforme: {plateforme}\\nDur\\u00e9e cible: {duree_cible}s\"}]}",
+          "placeholderDefinitions": {
+            "values": [
+              {
+                "name": "sujet",
+                "description": "Sujet/thème de la vidéo",
+                "type": "string"
+              },
+              {
+                "name": "rushes_description",
+                "description": "Description des rushes/médias disponibles",
+                "type": "string"
+              },
+              {
+                "name": "plateforme",
+                "description": "Plateforme cible: youtube, instagram, tiktok ou linkedin",
+                "type": "string"
+              },
+              {
+                "name": "duree_cible",
+                "description": "Durée cible en secondes",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "id": "tool-scripts-viraux",
+        "name": "📝 Scripts Viraux",
+        "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+        "typeVersion": 1.1,
+        "position": [
+          640,
+          2208
+        ]
+      }
+    ],
+    "connections": {
+      "Telegram Trigger": {
+        "main": [
+          [
+            {
+              "node": "Type Router",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Type Router": {
+        "main": [
+          [
+            {
+              "node": "Get Voice File",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Get Photo File",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Format Document",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Format Video",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Format Text",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Voice File": {
+        "main": [
+          [
+            {
+              "node": "Download Voice",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Download Voice": {
+        "main": [
+          [
+            {
+              "node": "Whisper Transcribe",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Whisper Transcribe": {
+        "main": [
+          [
+            {
+              "node": "Format Voice",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Voice": {
+        "main": [
+          [
+            {
+              "node": "Merge Branches",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Photo File": {
+        "main": [
+          [
+            {
+              "node": "Format Photo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Photo": {
+        "main": [
+          [
+            {
+              "node": "Merge Branches",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Document": {
+        "main": [
+          [
+            {
+              "node": "Merge Branches",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Video": {
+        "main": [
+          [
+            {
+              "node": "Merge Branches",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Text": {
+        "main": [
+          [
+            {
+              "node": "Merge Branches",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge Branches": {
+        "main": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "JARVIS Agent": {
+        "main": [
+          [
+            {
+              "node": "Telegram Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GPT-4o": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Chat Memory": {
+        "ai_memory": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "📇 CRM: Ajouter Contact": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🔍 CRM: Rechercher Contact": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "📋 CRM: Lister Contacts": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "✏️ CRM: Modifier Contact": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "📊 Projet: Créer": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🔎 Projet: Rechercher": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "✏️ Projet: Modifier": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "📋 Projet: Lister": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "📨 Gmail: Lire Emails": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "✉️ Gmail: Envoyer": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "📅 Calendar: Lister": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "📅 Calendar: Créer": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "💰 Qonto: Créer Facture": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "📄 Qonto: Lister Factures": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🌐 Perplexity: Recherche": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🎬 VEO3: Text-to-Video": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🖼️➡️🎬 VEO3: Image-to-Video": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🔄 VEO3: Check Status": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "⏩ VEO3: Extend Video": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🖼️ BananaPro: Générer Image": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "✏️ BananaPro: Modifier Image": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🌤️ Météo OpenWeather": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "📰 GNews: Recherche Actualités": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🏷️ GNews: Headlines": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🔍 Perplexity: Veille Créative": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🎬 Tutos Premiere Pro": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "✨ Tutos After Effects": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "✍️ Rédacteur Social": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "🎨 Prompt Vignette YouTube": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "👁️ Vision Analyse": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "📝 Scripts Viraux": {
+        "ai_tool": [
+          [
+            {
+              "node": "JARVIS Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "pierre maupoux",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-02-09T14:08:31.506Z",
+        "id": 507,
+        "workflowId": "ePDImCq5XjTn5R71",
+        "versionId": "d9e051ba-7124-4a35-843c-fec803555cbc",
+        "event": "activated",
+        "userId": "2dac7f82-1ea6-49de-bf61-0dfa9f96395f"
+      }
+    ]
+  }
+}

@@ -1,0 +1,866 @@
+{
+  "name": "TikTok Shorts Generator - Veo3",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1140,
+        160
+      ],
+      "id": "2a0d54a6-f742-464a-8146-8b627233ec4f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://queue.fal.run/fal-ai/veo3",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={ \n\"prompt\": \"{{ $('🔍 Veo3 Prompt').item.json.output }}\",\n\"aspect_ratio\": \"9:16\"\n}\n",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        840
+      ],
+      "id": "876eccc2-c6f3-461c-ab85-f57a2e1687ca",
+      "name": "Create Video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "n6AcTP0yCiPZ9twh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/veo3/requests/{{ $json.request_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1580,
+        820
+      ],
+      "id": "15b39c76-302c-496b-aad9-9385eb84c5a9",
+      "name": "Get Video",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "n6AcTP0yCiPZ9twh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d9d16c9f-4ba7-4a93-a520-ab697b935896",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "=COMPLETED",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        760
+      ],
+      "id": "1e03b4e7-9781-40ae-a7aa-e860d20edadb",
+      "name": "Render Finished ?"
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/veo3/requests/{{ $json.request_id }}/status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1180,
+        760
+      ],
+      "id": "f15d58fb-eeac-4c22-a9bd-aa6fb48fd1c6",
+      "name": "Retrieve Video Status",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "n6AcTP0yCiPZ9twh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1000,
+        760
+      ],
+      "id": "5280d3cf-a2a8-4de2-94aa-941779844497",
+      "name": "Wait Render",
+      "webhookId": "d1ed8822-6b77-4e95-a874-6d87937d57c1"
+    },
+    {
+      "parameters": {
+        "description": "use this tool to verify that all instructions has been followed. Re do them if it's not the case"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        400
+      ],
+      "id": "db17dba0-8b08-4136-8fac-0b310b5c50c0",
+      "name": "think"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Give me an idea about {{ $json.Idea }}.  ",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=## Role\nYou are an AI designed to generate 1 immersive, realistic idea based on a user-provided topic. The user will provide a key topic (e.g. “urban farming,” “arctic survival,” “street food in Vietnam”). Following this topic you will create an Idea and an Environment based on the  \"Instructions\" section.\n\n## Instructions\nYou will create the Idea and Environment of the Video based on the following parts.\n\n1. The Idea : \n- Describe an interesting and viral-worthy moment, action, or event related to the provided topic.\n- The Idea must be composed of a subject (a character interacting with its environment, it can be an object, person, animal or a scenery), a context (Background/Scenery description) and an action (what the subject is doing)\n- The Idea can be as surreal as you can get, doesn't have to be real-world!\n- Be very concise (15 words Maximum)\n\n2. The Environment : \n- Be under 20 words.\n- Match the action in the Idea exactly.\n- Describe where the event is happening (e.g. rooftop, jungle trail, city alley, frozen lake)\n- Key visuals or background details (e.g. smoke rising, neon lights, fog, birds overhead)\n- Main participants (e.g. farmer, cook, mechanic, rescue team, animal)\n- Style of scene (e.g. cinematic realism, handheld docu-style, aerial tracking shot, macro close-up)\n\n3. Create the caption of the video. \nIt must be :\n- Short, punchy, and viral-friendly.\n- Include one relevant emoji.\n- Include exactly 12 hashtags in this order:\n** 4 topic-relevant hashtags\n** 4 all-time most popular hashtags\n** 4 currently trending hashtags (based on live research)\n\n\n## Tools\n- \"think\" : use this tool to verify that all the instructions has been followed. If not, correct the missing ones\n\n## Output (single-line JSON array)\n[\n  {\n    \"Idea\":\"A rooftop farmer dances among glowing tomato vines bursting fruit under neon dusk sky\",\n    \"Environment\":\"rooftop greenhouse at twilight, neon string lights, farmer silhouette, cinematic aerial tracking shot\",\n    \"Caption\": \"Sky-high harvest vibe 🥒 #urbangardening #rooftopfarming #greenliving #foodie #love #instagood #photooftheday #tbt #viral #trend #daily #mustsee\",\n    \"Status\": \"Build\"\n  }\n]\n\n## Rules\n- Only return 1 idea at a time.\n- The idea must involves a character.\n- Ok with fictional settings\n- Your output must be formatted as a JSON array (single line)\n- Use the \"think\" tool to verify that all the instructions has been followed\n- All hashtags must be lowercase.\n- Output \"Status\" : \"Build\" in the output"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        920,
+        540
+      ],
+      "id": "55da017b-d739-489c-a8d1-520a6dee5393",
+      "name": "🔍 Generate Idea"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "18wFAeI1k2Lw4g5AKC0eeFPQ8phOgwAR2QS8CH-FWZZw",
+          "mode": "list",
+          "cachedResultName": "Veo3 - TikTok Shorts - JulienSnSn",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18wFAeI1k2Lw4g5AKC0eeFPQ8phOgwAR2QS8CH-FWZZw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 699184502,
+          "mode": "list",
+          "cachedResultName": "Idea",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18wFAeI1k2Lw4g5AKC0eeFPQ8phOgwAR2QS8CH-FWZZw/edit#gid=699184502"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRange"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        740,
+        540
+      ],
+      "id": "77141bd2-19ba-406c-abe4-6f65541e5925",
+      "name": "Retrieve Idea",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SDgHlMNwTHgV30lR",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "[\n  {\n    \"Idea\":\"A rooftop farmer dances among glowing tomato vines bursting fruit under neon dusk sky\",\n    \"Environment\":\"rooftop greenhouse at twilight, neon string lights, farmer silhouette, cinematic aerial tracking shot\",\n    \"Caption\": \"Sky-high harvest vibe 🥒 #urbangardening #rooftopfarming #greenliving #foodie #love #instagood #photooftheday #tbt #viral #trend #daily #mustsee\",\n    \"Status\": \"Build\"\n  }\n]"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1180,
+        400
+      ],
+      "id": "2bd3ca3b-bb7f-4840-b571-b89c9de609e1",
+      "name": "Output"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1060,
+        400
+      ],
+      "id": "b4fb293d-cc8a-4094-90c7-9c8a4a291966",
+      "name": "4.1",
+      "credentials": {
+        "openAiApi": {
+          "id": "hPPhcVMtTyQFIcPh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Give me a Veo3 prompt for this idea:\n{{ $json.output[0].Idea }}\n\nThis is the environment:\n{{ $json.output[0].Environment }}\n\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=## Role \nYou are an AI agent that writes hyper-realistic, cinematic video prompts for Google VEO3. Each prompt should describe a short, vivid selfie-style video clip featuring one unnamed character speaking or acting in a specific moment. The final video should look like found footage or documentary-style film — grounded, realistic, and immersive.\n\n## REQUIRED STRUCTURE (FILL IN THE BRACKETS BELOW):\n\n[Scene paragraph prompt here]\n\n- Main character: [description of character]\n- They say: [insert one line of dialogue, fits the scene and mood].\n- They [describe a physical action or subtle camera movement, e.g. pans the camera, shifts position, glances around].\n- Time of Day: [day / night / dusk / etc.]\n- Lens: [describe lens]\n- Audio: (implied) [ambient sounds, e.g. lion growls, wind, distant traffic, birdsong]\n- Background: [brief restatement of what is visible behind them]\n- The Style of the video : The visual aesthetic we're aiming for. Keep a logic between the idea and the style of the video (e.g. If the subject of the video is mysterious, you can choose a horror/mysterious atmosphere or if the subject is funny, keep a good vibe)\n- Camera Motion : How the camera moves (aerial view, tracking shot...). Keep a logic between the camera movement and the subject of the video to emphasize the content\n- Composition : How the shot is framed (wide shot, close-up...). Keep a logic between the composition and the subject of the video to emphasize the content\n- Color and lighting details : The mood and lighting (wide shot, close-up...). Keep a logic between the Color and lighting details and the subject of the video to emphasize the content\n\n## RULES FOR PROMPT GENERATION\n- Single paragraph only, 750–1500 characters. No line breaks or headings.\n- Only one human character. Never give them a name.\n- Include one spoken line of dialogue and describe how it’s delivered.\n- Character must do something physical, even if subtle (e.g. glance, smirk, pan camera).\n- Use selfie-style framing. Always describe the lens, stock, and camera behavior.\n- Scene must feel real and cinematic — like a short clip someone might record on a stylized camera.\n- Always include these key technical elements: Time of Day, Lens, Film Stock, Audio, Background, Style, Camera Motion, Composition, Color and Lightning Details.\n\n## DO NOT DO THIS:\n- Don’t name the character.\n- Don’t include more than one character.\n- Don’t describe subtitles or on-screen text.\n- Don’t break the paragraph or use formatting.\n- Don’t write vague or abstract scenes — always keep them grounded in physical detail."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1300,
+        540
+      ],
+      "id": "ba65cb07-f6de-4a68-8419-5f912883e879",
+      "name": "🔍 Veo3 Prompt"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://backend.blotato.com/v2/media",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $('Get Video').item.json.video.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1060,
+        1040
+      ],
+      "id": "05cbba73-c5f8-4b9c-b4fb-d0a3f5ca269c",
+      "name": "Upload to Blotato",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "n6AcTP0yCiPZ9twh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://backend.blotato.com/v2/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"post\": {\n    \"target\": {\n      \"targetType\": \"tiktok\",\n      \"isYourBrand\": false,\n      \"disabledDuet\": false,\n      \"privacyLevel\": \"PUBLIC_TO_EVERYONE\",\n      \"isAiGenerated\": true,\n      \"disabledStitch\": false,\n      \"disabledComments\": false,\n      \"isBrandedContent\": false\n    },\n    \"content\": {\n      \"text\": \"{{ $('Update DB to Ready 🔥').item.json.Caption }}\",\n      \"platform\": \"tiktok\",\n      \"mediaUrls\": [\"{{ $json.url }}\"]\n    },\n    \"accountId\": \"<ACCOUNT_ID>\"\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        1040
+      ],
+      "id": "704e9a6a-cb5b-4145-bc93-0aab6a268d0b",
+      "name": "TikTok",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "n6AcTP0yCiPZ9twh",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "18wFAeI1k2Lw4g5AKC0eeFPQ8phOgwAR2QS8CH-FWZZw",
+          "mode": "list",
+          "cachedResultName": "Veo3 - TikTok Shorts - JulienSnSn",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18wFAeI1k2Lw4g5AKC0eeFPQ8phOgwAR2QS8CH-FWZZw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "TikTok Shorts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18wFAeI1k2Lw4g5AKC0eeFPQ8phOgwAR2QS8CH-FWZZw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "=Published",
+            "Caption": "={{ $('Log Prompt 📝').first().json.Caption }}"
+          },
+          "matchingColumns": [
+            "Caption"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Prompt",
+              "displayName": "Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Video URL",
+              "displayName": "Video URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1520,
+        1040
+      ],
+      "id": "f6ff5643-8641-4b2f-8a16-604809f9a53e",
+      "name": "Update DB to Published ✅",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SDgHlMNwTHgV30lR",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "18wFAeI1k2Lw4g5AKC0eeFPQ8phOgwAR2QS8CH-FWZZw",
+          "mode": "list",
+          "cachedResultName": "Veo3 - TikTok Shorts - JulienSnSn",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18wFAeI1k2Lw4g5AKC0eeFPQ8phOgwAR2QS8CH-FWZZw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "TikTok Shorts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18wFAeI1k2Lw4g5AKC0eeFPQ8phOgwAR2QS8CH-FWZZw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "=Ready",
+            "Video URL": "={{ $json.video.url }}",
+            "Caption": "={{ $('Log Prompt 📝').first().json.Caption }}"
+          },
+          "matchingColumns": [
+            "Caption"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Prompt",
+              "displayName": "Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Video URL",
+              "displayName": "Video URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        840,
+        1040
+      ],
+      "id": "99e5fdca-8ff5-4a40-bc66-6e42173a8362",
+      "name": "Update DB to Ready 🔥",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SDgHlMNwTHgV30lR",
+          "name": "Public"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "18wFAeI1k2Lw4g5AKC0eeFPQ8phOgwAR2QS8CH-FWZZw",
+          "mode": "list",
+          "cachedResultName": "Veo3 - TikTok Shorts - JulienSnSn",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18wFAeI1k2Lw4g5AKC0eeFPQ8phOgwAR2QS8CH-FWZZw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "TikTok Shorts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18wFAeI1k2Lw4g5AKC0eeFPQ8phOgwAR2QS8CH-FWZZw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "==ROW()-1",
+            "Status": "=Build",
+            "Caption": "={{ $('🔍 Generate Idea').item.json.output[0].Caption }}",
+            "Prompt": "={{ $json.output }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Prompt",
+              "displayName": "Prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Video URL",
+              "displayName": "Video URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1660,
+        540
+      ],
+      "id": "9c22ca0f-0acd-42a4-bbb0-0b238f745163",
+      "name": "Log Prompt 📝",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SDgHlMNwTHgV30lR",
+          "name": "Public"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Idea",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Video": {
+      "main": [
+        [
+          {
+            "node": "Wait Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video": {
+      "main": [
+        [
+          {
+            "node": "Update DB to Ready 🔥",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Finished ?": {
+      "main": [
+        [
+          {
+            "node": "Get Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Video Status": {
+      "main": [
+        [
+          {
+            "node": "Render Finished ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Render": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Video Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "think": {
+      "ai_tool": [
+        [
+          {
+            "node": "🔍 Generate Idea",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "🔍 Veo3 Prompt",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Generate Idea": {
+      "main": [
+        [
+          {
+            "node": "🔍 Veo3 Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Idea": {
+      "main": [
+        [
+          {
+            "node": "🔍 Generate Idea",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "🔍 Generate Idea",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4.1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "🔍 Generate Idea",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "🔍 Veo3 Prompt",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Veo3 Prompt": {
+      "main": [
+        [
+          {
+            "node": "Log Prompt 📝",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Blotato": {
+      "main": [
+        [
+          {
+            "node": "TikTok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TikTok": {
+      "main": [
+        [
+          {
+            "node": "Update DB to Published ✅",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update DB to Ready 🔥": {
+      "main": [
+        [
+          {
+            "node": "Upload to Blotato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Prompt 📝": {
+      "main": [
+        [
+          {
+            "node": "Create Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "84dc30a4-9245-4ebe-a711-3694c656f465",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2c4533c7a1e56e822a6fde3f376121580e6f7d83dda36974d922278fe743aa10"
+  },
+  "id": "5IP5gSIpzGDYS4gY",
+  "tags": [
+    {
+      "createdAt": "2025-06-06T12:15:13.667Z",
+      "updatedAt": "2025-06-09T10:04:00.117Z",
+      "id": "hZELXzdKBaDpxj3F",
+      "name": "Youtube"
+    }
+  ]
+}

@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSetting } from '@/lib/settings-service'
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY
-const NOTION_CRM_DB = process.env.NOTION_CRM_DATABASE_ID
 const NOTION_BASE = 'https://api.notion.com/v1'
 
-async function notionFetch(path: string, options: RequestInit = {}) {
+async function notionFetch(apiKey: string, path: string, options: RequestInit = {}) {
   return fetch(`${NOTION_BASE}${path}`, {
     ...options,
     headers: {
-      'Authorization': `Bearer ${NOTION_API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Notion-Version': '2022-06-28',
       'Content-Type': 'application/json',
       ...options.headers,
@@ -17,12 +16,15 @@ async function notionFetch(path: string, options: RequestInit = {}) {
 }
 
 export async function GET() {
-  if (!NOTION_API_KEY || !NOTION_CRM_DB) {
-    return NextResponse.json({ success: false, error: 'Notion non configuré' }, { status: 500 })
+  const apiKey = await getSetting('notion_api_key')
+  const crmDb = await getSetting('notion_crm_db_id')
+
+  if (!apiKey || !crmDb) {
+    return NextResponse.json({ success: false, error: 'Notion non configuré. Configurez-le dans Paramètres.' }, { status: 500 })
   }
 
   try {
-    const res = await notionFetch(`/databases/${NOTION_CRM_DB}/query`, {
+    const res = await notionFetch(apiKey, `/databases/${crmDb}/query`, {
       method: 'POST',
       body: JSON.stringify({ page_size: 100 }),
     })
@@ -59,17 +61,20 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  if (!NOTION_API_KEY || !NOTION_CRM_DB) {
-    return NextResponse.json({ success: false, error: 'Notion non configuré' }, { status: 500 })
+  const apiKey = await getSetting('notion_api_key')
+  const crmDb = await getSetting('notion_crm_db_id')
+
+  if (!apiKey || !crmDb) {
+    return NextResponse.json({ success: false, error: 'Notion non configuré. Configurez-le dans Paramètres.' }, { status: 500 })
   }
 
   try {
     const body = await request.json()
 
-    const res = await notionFetch('/pages', {
+    const res = await notionFetch(apiKey, '/pages', {
       method: 'POST',
       body: JSON.stringify({
-        parent: { database_id: NOTION_CRM_DB },
+        parent: { database_id: crmDb },
         properties: {
           Name: { title: [{ text: { content: body.name } }] },
           Email: { rich_text: [{ text: { content: body.email || '' } }] },

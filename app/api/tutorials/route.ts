@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+import { getSetting } from '@/lib/settings-service'
 
 const SOFTWARE_INFO: Record<string, { name: string; docUrl: string; effects: string }> = {
   'after-effects': {
@@ -31,8 +30,9 @@ const SOFTWARE_INFO: Record<string, { name: string; docUrl: string; effects: str
 }
 
 export async function POST(request: NextRequest) {
-  if (!GEMINI_API_KEY) {
-    return NextResponse.json({ success: false, error: 'GEMINI_API_KEY non configurée' }, { status: 500 })
+  const apiKey = await getSetting('gemini_api_key')
+  if (!apiKey) {
+    return NextResponse.json({ success: false, error: 'GEMINI_API_KEY non configurée. Configurez-la dans Paramètres.' }, { status: 500 })
   }
 
   try {
@@ -95,7 +95,7 @@ Réponds en JSON valide avec ce format exact :
 
 IMPORTANT : Génère au minimum 10 à 15 étapes détaillées avec au minimum 4 paramètres par étape. Chaque description d'étape doit faire au moins 3 phrases. C'est un tutoriel PROFESSIONNEL, pas un guide rapide.`
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

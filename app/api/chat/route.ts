@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenAI } from '@google/genai'
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+import { getSetting } from '@/lib/settings-service'
 
 const SYSTEM_PROMPT = 'Tu es un assistant professionnel pour la plateforme Splash Banana. Tu aides avec la gestion de projets, clients, facturation et création de contenu. Réponds en français de manière concise et utile.'
 
-async function chatGemini(messages: Array<{ role: string; content: string }>) {
-  if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY non configurée')
-
-  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY })
+async function chatGemini(messages: Array<{ role: string; content: string }>, apiKey: string) {
+  const ai = new GoogleGenAI({ apiKey })
 
   const contents = messages.map((m) => ({
     role: m.role === 'assistant' ? 'model' : 'user',
@@ -30,13 +27,18 @@ async function chatGemini(messages: Array<{ role: string; content: string }>) {
 
 export async function POST(request: NextRequest) {
   try {
+    const apiKey = await getSetting('gemini_api_key')
+    if (!apiKey) {
+      return NextResponse.json({ error: 'GEMINI_API_KEY non configurée. Configurez-la dans Paramètres.' }, { status: 500 })
+    }
+
     const { messages } = await request.json()
 
     if (!messages?.length) {
       return NextResponse.json({ error: 'Messages requis' }, { status: 400 })
     }
 
-    const content = await chatGemini(messages)
+    const content = await chatGemini(messages, apiKey)
 
     return NextResponse.json({ content, model: 'gemini-2.5-flash' })
   } catch (error) {

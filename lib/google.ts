@@ -1,9 +1,8 @@
 // Google OAuth 2.0 + API Service
 // Uses authorization code flow with refresh tokens
+// Reads client credentials from settings-service (Supabase > env vars)
 
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!
-const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://splashbanana.com/api/auth/callback'
+import { getSetting } from './settings-service'
 
 const SCOPES = [
   'openid',
@@ -15,11 +14,20 @@ const SCOPES = [
   'https://www.googleapis.com/auth/documents',
 ].join(' ')
 
+// Helper to get Google credentials (async, reads from settings-service)
+async function getGoogleCredentials() {
+  const clientId = await getSetting('google_client_id') || ''
+  const clientSecret = await getSetting('google_client_secret') || ''
+  const redirectUri = await getSetting('google_redirect_uri') || 'https://splashbanana.com/api/auth/callback'
+  return { clientId, clientSecret, redirectUri }
+}
+
 // Generate the Google authorization URL
-export function getGoogleAuthUrl(state?: string): string {
+export async function getGoogleAuthUrl(state?: string): Promise<string> {
+  const { clientId, redirectUri } = await getGoogleCredentials()
   const params = new URLSearchParams({
-    client_id: GOOGLE_CLIENT_ID,
-    redirect_uri: GOOGLE_REDIRECT_URI,
+    client_id: clientId,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: SCOPES,
     access_type: 'offline',
@@ -37,14 +45,15 @@ export async function exchangeCodeForTokens(code: string): Promise<{
   token_type: string
   id_token?: string
 }> {
+  const { clientId, clientSecret, redirectUri } = await getGoogleCredentials()
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       code,
-      client_id: GOOGLE_CLIENT_ID,
-      client_secret: GOOGLE_CLIENT_SECRET,
-      redirect_uri: GOOGLE_REDIRECT_URI,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
       grant_type: 'authorization_code',
     }),
   })
@@ -62,13 +71,14 @@ export async function refreshAccessToken(refreshToken: string): Promise<{
   access_token: string
   expires_in: number
 }> {
+  const { clientId, clientSecret } = await getGoogleCredentials()
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       refresh_token: refreshToken,
-      client_id: GOOGLE_CLIENT_ID,
-      client_secret: GOOGLE_CLIENT_SECRET,
+      client_id: clientId,
+      client_secret: clientSecret,
       grant_type: 'refresh_token',
     }),
   })

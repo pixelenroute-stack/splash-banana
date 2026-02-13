@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { getSetting } from '@/lib/settings-service'
 
-// GET /api/test-connections?service=gemini|notion|perplexity|google
+// GET /api/test-connections?service=gemini|notion|perplexity|google|google-oauth
 export async function GET(request: NextRequest) {
   const service = request.nextUrl.searchParams.get('service')
 
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     switch (service) {
       case 'gemini': {
-        const key = process.env.GEMINI_API_KEY
+        const key = await getSetting('gemini_api_key')
         if (!key) return NextResponse.json({ success: false, error: 'GEMINI_API_KEY non configurée', status: 'missing' })
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       }
 
       case 'notion': {
-        const key = process.env.NOTION_API_KEY
+        const key = await getSetting('notion_api_key')
         if (!key) return NextResponse.json({ success: false, error: 'NOTION_API_KEY non configurée', status: 'missing' })
         const res = await fetch('https://api.notion.com/v1/users/me', {
           headers: { Authorization: `Bearer ${key}`, 'Notion-Version': '2022-06-28' },
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
       }
 
       case 'perplexity': {
-        const key = process.env.PERPLEXITY_API_KEY
+        const key = await getSetting('perplexity_api_key')
         if (!key) return NextResponse.json({ success: false, error: 'PERPLEXITY_API_KEY non configurée', status: 'missing' })
         const res = await fetch('https://api.perplexity.ai/chat/completions', {
           method: 'POST',
@@ -70,7 +71,6 @@ export async function GET(request: NextRequest) {
           if (!tokens.access_token) {
             return NextResponse.json({ success: false, status: 'error', error: 'Token invalide' })
           }
-          // Test with userinfo
           const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
             headers: { Authorization: `Bearer ${tokens.access_token}` },
           })
@@ -78,7 +78,6 @@ export async function GET(request: NextRequest) {
             const data = await res.json()
             return NextResponse.json({ success: true, status: 'connected', details: `Connecté: ${data.email}` })
           }
-          // Token might be expired
           if (res.status === 401 && tokens.refresh_token) {
             return NextResponse.json({ success: false, status: 'expired', error: 'Token expiré, reconnexion nécessaire' })
           }
@@ -89,13 +88,11 @@ export async function GET(request: NextRequest) {
       }
 
       case 'google-oauth': {
-        // Test if OAuth client ID is valid
-        const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+        const clientId = await getSetting('google_client_id')
         if (!clientId) {
           return NextResponse.json({ success: false, status: 'missing', error: 'GOOGLE_CLIENT_ID non configuré' })
         }
-        // We can't directly test the client ID without redirecting, but we can check if it's set
-        const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+        const clientSecret = await getSetting('google_client_secret')
         return NextResponse.json({
           success: true,
           status: clientSecret ? 'configured' : 'partial',

@@ -175,6 +175,8 @@ export interface SystemSettings {
   notionCrmDbId?: string
   notionProjectsDbId?: string
   googleClientId?: string
+  googleClientSecret?: string
+  googleRedirectUri?: string
   qontoLogin?: string
   qontoSecret?: string
   theme: 'dark' | 'light'

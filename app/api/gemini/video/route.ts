@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenAI } from '@google/genai'
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+import { getSetting } from '@/lib/settings-service'
 
 export async function POST(request: NextRequest) {
-  if (!GEMINI_API_KEY) {
-    return NextResponse.json({ success: false, error: 'Gemini non configuré' }, { status: 500 })
+  const apiKey = await getSetting('gemini_api_key')
+  if (!apiKey) {
+    return NextResponse.json({ success: false, error: 'Gemini non configuré. Configurez-le dans Paramètres.' }, { status: 500 })
   }
 
   try {
     const { prompt, operationName } = await request.json()
 
-    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY })
+    const ai = new GoogleGenAI({ apiKey })
 
     // If polling for an existing operation
     if (operationName) {

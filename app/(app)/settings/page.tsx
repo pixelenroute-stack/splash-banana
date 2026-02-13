@@ -1,13 +1,19 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Settings, Save, Eye, EyeOff, ExternalLink, CheckCircle2, XCircle, AlertCircle, Loader2, Unplug, Wifi, Zap } from 'lucide-react'
-import type { SystemSettings } from '@/types'
+import { Settings, Save, Eye, EyeOff, ExternalLink, CheckCircle2, XCircle, AlertCircle, Loader2, Unplug, Wifi, Zap, Shield, ShieldCheck } from 'lucide-react'
 
 interface TestResult {
-  status: 'idle' | 'testing' | 'connected' | 'error' | 'missing'
+  status: 'idle' | 'testing' | 'connected' | 'error' | 'missing' | 'configured'
   details?: string
   error?: string
+}
+
+interface SettingField {
+  key: string
+  label: string
+  placeholder: string
+  description?: string
 }
 
 interface ApiKeyFieldProps {
@@ -16,20 +22,21 @@ interface ApiKeyFieldProps {
   onChange: (v: string) => void
   placeholder?: string
   description?: string
+  preview?: string
 }
 
-function ApiKeyField({ label, value, onChange, placeholder, description }: ApiKeyFieldProps) {
+function ApiKeyField({ label, value, onChange, placeholder, description, preview }: ApiKeyFieldProps) {
   const [visible, setVisible] = useState(false)
   return (
     <div>
-      <label className="block text-sm font-medium mb-1">{label}</label>
+      {label && <label className="block text-sm font-medium mb-1">{label}</label>}
       {description && <p className="text-xs text-muted mb-1.5">{description}</p>}
       <div className="relative">
         <input
           type={visible ? 'text' : 'password'}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={preview ? `${preview} (enregistré)` : placeholder}
           className="w-full px-4 py-2.5 pr-10 bg-background border border-border rounded-lg text-white placeholder:text-muted outline-none focus:border-lantean-blue transition-colors font-mono text-sm"
         />
         <button
@@ -47,7 +54,7 @@ function ApiKeyField({ label, value, onChange, placeholder, description }: ApiKe
 function TestBadge({ result }: { result: TestResult }) {
   if (result.status === 'idle') return null
   if (result.status === 'testing') return <Loader2 className="w-4 h-4 text-lantean-blue animate-spin" />
-  if (result.status === 'connected') {
+  if (result.status === 'connected' || result.status === 'configured') {
     return (
       <span className="flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
         <CheckCircle2 className="w-3 h-3" />
@@ -64,14 +71,22 @@ function TestBadge({ result }: { result: TestResult }) {
 }
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<SystemSettings>({
-    theme: 'dark',
-    language: 'fr',
-  })
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({})
+  const [previews, setPreviews] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [googleConnected, setGoogleConnected] = useState(false)
   const [checkingGoogle, setCheckingGoogle] = useState(true)
   const [authError, setAuthError] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  // 2FA state
+  const [show2FA, setShow2FA] = useState(false)
+  const [qrCode, setQrCode] = useState('')
+  const [totpSecret, setTotpSecret] = useState('')
+  const [totpCode, setTotpCode] = useState('')
+  const [totpVerifying, setTotpVerifying] = useState(false)
+  const [totpMessage, setTotpMessage] = useState('')
 
   // Test results for each service
   const [tests, setTests] = useState<Record<string, TestResult>>({
@@ -79,13 +94,33 @@ export default function SettingsPage() {
     notion: { status: 'idle' },
     perplexity: { status: 'idle' },
     google: { status: 'idle' },
+    'google-oauth': { status: 'idle' },
   })
 
+  // Load settings from API on mount
   useEffect(() => {
-    const stored = localStorage.getItem('system_settings')
-    if (stored) {
-      try { setSettings(JSON.parse(stored)) } catch { /* ignore */ }
+    async function loadSettings() {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/settings')
+        const data = await res.json()
+        if (data.success && data.data) {
+          const newPreviews: Record<string, string> = {}
+          for (const [key, val] of Object.entries(data.data)) {
+            const v = val as { configured?: boolean; preview?: string } | boolean
+            if (typeof v === 'object' && v?.configured && v?.preview) {
+              newPreviews[key] = v.preview
+            }
+          }
+          setPreviews(newPreviews)
+        }
+      } catch {
+        // Settings API not available
+      } finally {
+        setLoading(false)
+      }
     }
+    loadSettings()
 
     async function checkGoogle() {
       setCheckingGoogle(true)
@@ -111,10 +146,40 @@ export default function SettingsPage() {
     }
   }, [])
 
-  function handleSave() {
-    localStorage.setItem('system_settings', JSON.stringify(settings))
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const settings: Record<string, string> = {}
+      for (const [key, value] of Object.entries(apiKeys)) {
+        if (value.trim()) {
+          settings[key] = value.trim()
+        }
+      }
+
+      if (Object.keys(settings).length > 0) {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ settings }),
+        })
+        const data = await res.json()
+        if (data.success) {
+          setSaved(true)
+          for (const [key, value] of Object.entries(settings)) {
+            setPreviews((prev) => ({
+              ...prev,
+              [key]: value.slice(0, 8) + '...' + value.slice(-4),
+            }))
+          }
+          setApiKeys({})
+          setTimeout(() => setSaved(false), 3000)
+        }
+      }
+    } catch {
+      // Save failed
+    } finally {
+      setSaving(false)
+    }
   }
 
   const testService = useCallback(async (service: string) => {
@@ -123,7 +188,7 @@ export default function SettingsPage() {
       const res = await fetch(`/api/test-connections?service=${service}`)
       const data = await res.json()
       if (data.success) {
-        setTests((prev) => ({ ...prev, [service]: { status: 'connected', details: data.details } }))
+        setTests((prev) => ({ ...prev, [service]: { status: data.status || 'connected', details: data.details } }))
       } else {
         setTests((prev) => ({
           ...prev,
@@ -139,7 +204,85 @@ export default function SettingsPage() {
   }, [])
 
   async function testAll() {
-    await Promise.all(['gemini', 'notion', 'perplexity', 'google'].map(testService))
+    await Promise.all(['gemini', 'notion', 'perplexity', 'google', 'google-oauth'].map(testService))
+  }
+
+  // 2FA functions
+  async function setup2FA() {
+    setShow2FA(true)
+    setTotpMessage('')
+    try {
+      const res = await fetch('/api/auth/2fa/setup', { method: 'POST' })
+      const data = await res.json()
+      if (data.success) {
+        setQrCode(data.data.qrCode)
+        setTotpSecret(data.data.secret)
+      } else {
+        setTotpMessage(data.error || 'Erreur 2FA')
+      }
+    } catch {
+      setTotpMessage('Erreur de connexion')
+    }
+  }
+
+  async function verify2FA() {
+    setTotpVerifying(true)
+    setTotpMessage('')
+    try {
+      const res = await fetch('/api/auth/2fa/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: totpCode }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setTotpMessage('2FA activé avec succès !')
+        setTotpCode('')
+      } else {
+        setTotpMessage(data.error || 'Code invalide')
+      }
+    } catch {
+      setTotpMessage('Erreur de vérification')
+    } finally {
+      setTotpVerifying(false)
+    }
+  }
+
+  function updateKey(key: string, value: string) {
+    setApiKeys((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const geminiFields: SettingField[] = [
+    { key: 'gemini_api_key', label: '', placeholder: 'AIzaSy...', description: 'Chat IA, Image Studio, Video Studio, Tutoriels, Vignettes YouTube' },
+  ]
+
+  const perplexityFields: SettingField[] = [
+    { key: 'perplexity_api_key', label: '', placeholder: 'pplx-...', description: 'Actualités et veille technologique' },
+  ]
+
+  const notionFields: SettingField[] = [
+    { key: 'notion_api_key', label: 'Notion API Key', placeholder: 'ntn_...', description: 'Gestion des clients et projets' },
+    { key: 'notion_crm_db_id', label: 'CRM Database ID', placeholder: '6bd8c6a6...', description: 'ID de la base clients Notion' },
+    { key: 'notion_projects_db_id', label: 'Projects Database ID', placeholder: '1f75ed7c...', description: 'ID de la base projets Notion' },
+  ]
+
+  const googleOAuthFields: SettingField[] = [
+    { key: 'google_client_id', label: 'Client ID', placeholder: '381234392877-...apps.googleusercontent.com' },
+    { key: 'google_client_secret', label: 'Client Secret', placeholder: 'GOCSPX-...' },
+    { key: 'google_redirect_uri', label: 'Redirect URI', placeholder: 'https://splashbanana.com/api/auth/callback' },
+  ]
+
+  const qontoFields: SettingField[] = [
+    { key: 'qonto_login', label: 'Identifiant Qonto', placeholder: 'ei-...' },
+    { key: 'qonto_secret', label: 'Clé secrète Qonto', placeholder: 'ac5c...' },
+  ]
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-6 h-6 text-lantean-blue animate-spin" />
+      </div>
+    )
   }
 
   return (
@@ -147,7 +290,7 @@ export default function SettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Paramètres</h1>
-          <p className="text-muted text-sm mt-1">Configuration de la plateforme</p>
+          <p className="text-muted text-sm mt-1">Configuration de la plateforme - les clés sont stockées de manière sécurisée</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -159,12 +302,13 @@ export default function SettingsPage() {
           </button>
           <button
             onClick={handleSave}
+            disabled={saving}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               saved ? 'bg-green-500/20 text-green-400' : 'bg-primary/20 text-lantean-blue hover:bg-primary/30'
-            }`}
+            } disabled:opacity-50`}
           >
-            {saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            <span className="text-sm font-medium">{saved ? 'Sauvegardé !' : 'Sauvegarder'}</span>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            <span className="text-sm font-medium">{saving ? 'Sauvegarde...' : saved ? 'Sauvegardé !' : 'Sauvegarder'}</span>
           </button>
         </div>
       </div>
@@ -181,7 +325,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Google OAuth Connection */}
+      {/* Google OAuth Connection + Config */}
       <div className="card space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -194,6 +338,13 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => testService('google-oauth')}
+              className="text-xs text-muted hover:text-lantean-blue transition-colors px-2 py-1 rounded hover:bg-lantean-blue/10"
+            >
+              Tester OAuth
+            </button>
+            <TestBadge result={tests['google-oauth']} />
             <button
               onClick={() => testService('google')}
               className="text-xs text-muted hover:text-lantean-blue transition-colors px-2 py-1 rounded hover:bg-lantean-blue/10"
@@ -215,6 +366,22 @@ export default function SettingsPage() {
               </span>
             )}
           </div>
+        </div>
+
+        {/* Google OAuth API Keys */}
+        <div className="space-y-3 pt-2 border-t border-border/50">
+          <p className="text-xs text-muted">Configurez vos identifiants Google Cloud Console (APIs &amp; Services &gt; Credentials)</p>
+          {googleOAuthFields.map((field) => (
+            <ApiKeyField
+              key={field.key}
+              label={field.label}
+              value={apiKeys[field.key] || ''}
+              onChange={(v) => updateKey(field.key, v)}
+              placeholder={field.placeholder}
+              description={field.description}
+              preview={previews[field.key]}
+            />
+          ))}
         </div>
 
         {googleConnected && (
@@ -274,13 +441,17 @@ export default function SettingsPage() {
               <TestBadge result={tests.gemini} />
             </div>
           </div>
-          <ApiKeyField
-            label=""
-            value={settings.geminiApiKey || ''}
-            onChange={(v) => setSettings({ ...settings, geminiApiKey: v })}
-            placeholder="AIzaSy..."
-            description="Chat IA, Image Studio, Video Studio, Tutoriels, Vignettes YouTube"
-          />
+          {geminiFields.map((field) => (
+            <ApiKeyField
+              key={field.key}
+              label={field.label}
+              value={apiKeys[field.key] || ''}
+              onChange={(v) => updateKey(field.key, v)}
+              placeholder={field.placeholder}
+              description={field.description}
+              preview={previews[field.key]}
+            />
+          ))}
         </div>
 
         {/* Perplexity */}
@@ -297,13 +468,17 @@ export default function SettingsPage() {
               <TestBadge result={tests.perplexity} />
             </div>
           </div>
-          <ApiKeyField
-            label=""
-            value={settings.perplexityApiKey || ''}
-            onChange={(v) => setSettings({ ...settings, perplexityApiKey: v })}
-            placeholder="pplx-..."
-            description="Actualités et veille technologique"
-          />
+          {perplexityFields.map((field) => (
+            <ApiKeyField
+              key={field.key}
+              label={field.label}
+              value={apiKeys[field.key] || ''}
+              onChange={(v) => updateKey(field.key, v)}
+              placeholder={field.placeholder}
+              description={field.description}
+              preview={previews[field.key]}
+            />
+          ))}
         </div>
       </div>
 
@@ -321,37 +496,111 @@ export default function SettingsPage() {
             <TestBadge result={tests.notion} />
           </div>
         </div>
-        <ApiKeyField
-          label="Notion API Key"
-          value={settings.notionApiKey || ''}
-          onChange={(v) => setSettings({ ...settings, notionApiKey: v })}
-          placeholder="ntn_..."
-          description="Gestion des clients et projets"
-        />
+        {notionFields.map((field) => (
+          <ApiKeyField
+            key={field.key}
+            label={field.label}
+            value={apiKeys[field.key] || ''}
+            onChange={(v) => updateKey(field.key, v)}
+            placeholder={field.placeholder}
+            description={field.description}
+            preview={previews[field.key]}
+          />
+        ))}
       </div>
 
       {/* Qonto */}
       <div className="card space-y-4">
         <h2 className="font-semibold">Qonto (Facturation)</h2>
-        <ApiKeyField
-          label="Identifiant Qonto"
-          value={settings.qontoLogin || ''}
-          onChange={(v) => setSettings({ ...settings, qontoLogin: v })}
-          placeholder="ei-..."
-        />
-        <ApiKeyField
-          label="Clé secrète Qonto"
-          value={settings.qontoSecret || ''}
-          onChange={(v) => setSettings({ ...settings, qontoSecret: v })}
-          placeholder="ac5c..."
-        />
+        {qontoFields.map((field) => (
+          <ApiKeyField
+            key={field.key}
+            label={field.label}
+            value={apiKeys[field.key] || ''}
+            onChange={(v) => updateKey(field.key, v)}
+            placeholder={field.placeholder}
+            preview={previews[field.key]}
+          />
+        ))}
+      </div>
+
+      {/* 2FA Section */}
+      <div className="card space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-gold-accent" />
+            <h2 className="font-semibold">Sécurité - 2FA</h2>
+          </div>
+          {!show2FA && (
+            <button
+              onClick={setup2FA}
+              className="flex items-center gap-2 px-4 py-2 bg-gold-accent/20 text-gold-accent rounded-lg hover:bg-gold-accent/30 transition-colors"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span className="text-sm font-medium">Configurer 2FA</span>
+            </button>
+          )}
+        </div>
+
+        {show2FA && (
+          <div className="space-y-4">
+            {qrCode && (
+              <div className="flex flex-col items-center gap-4 p-4 bg-background/50 rounded-lg">
+                <p className="text-sm text-center">Scannez ce QR code avec Google Authenticator ou Authy :</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qrCode} alt="QR Code 2FA" className="w-48 h-48" />
+                <div className="text-xs text-muted text-center">
+                  <p>Clé manuelle : <code className="bg-surface px-2 py-0.5 rounded text-lantean-blue">{totpSecret}</code></p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <input
+                type="text"
+                placeholder="Code à 6 chiffres"
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="flex-1 px-4 py-2.5 bg-background border border-border rounded-lg text-white placeholder:text-muted outline-none focus:border-gold-accent font-mono text-lg tracking-widest text-center"
+                maxLength={6}
+                onKeyDown={(e) => e.key === 'Enter' && totpCode.length === 6 && verify2FA()}
+              />
+              <button
+                onClick={verify2FA}
+                disabled={totpVerifying || totpCode.length !== 6}
+                className="px-6 py-2.5 bg-gold-accent/20 text-gold-accent rounded-lg hover:bg-gold-accent/30 transition-colors disabled:opacity-30 font-medium"
+              >
+                {totpVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Vérifier'}
+              </button>
+            </div>
+
+            {totpMessage && (
+              <p className={`text-sm text-center ${totpMessage.includes('succès') ? 'text-green-400' : 'text-red-400'}`}>
+                {totpMessage}
+              </p>
+            )}
+
+            <button
+              onClick={() => { setShow2FA(false); setQrCode(''); setTotpSecret(''); setTotpCode(''); setTotpMessage('') }}
+              className="text-xs text-muted hover:text-white transition-colors"
+            >
+              Annuler
+            </button>
+          </div>
+        )}
+
+        {!show2FA && (
+          <p className="text-xs text-muted">
+            L&apos;authentification à deux facteurs ajoute une couche de sécurité supplémentaire pour les comptes administrateurs.
+          </p>
+        )}
       </div>
 
       {/* App Info */}
       <div className="card">
         <div className="flex items-center justify-between text-sm text-muted">
           <span>Splash Banana v2.0</span>
-          <span>Next.js 14 + Gemini AI</span>
+          <span>Next.js 14 + Supabase + Gemini AI</span>
         </div>
       </div>
     </div>

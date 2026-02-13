@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY
+import { getSetting } from '@/lib/settings-service'
 
 const SYSTEM_PROMPT = `Tu es un assistant de veille technologique. Pour chaque recherche, retourne 5-8 articles d'actualité pertinents et récents. Pour chaque article, structure ta réponse EXACTEMENT ainsi:
 
@@ -47,11 +46,9 @@ function parseArticles(content: string, citations?: string[]): ParsedArticle[] {
       let url = urlMatch ? urlMatch[1].trim() : ''
       const summary = resumeMatch ? resumeMatch[1].trim() : ''
 
-      // If url is N/A or empty, try to find a matching citation
       if (!url || url === 'N/A' || url === 'n/a') {
         url = ''
         if (citations && citations.length > 0) {
-          // Try to match citation by index (article order) or by source name
           const articleIndex = articles.length
           if (articleIndex < citations.length) {
             url = citations[articleIndex]
@@ -74,8 +71,9 @@ function parseArticles(content: string, citations?: string[]): ParsedArticle[] {
 }
 
 export async function POST(request: NextRequest) {
-  if (!PERPLEXITY_API_KEY) {
-    return NextResponse.json({ success: false, error: 'Perplexity non configuré' }, { status: 500 })
+  const apiKey = await getSetting('perplexity_api_key')
+  if (!apiKey) {
+    return NextResponse.json({ success: false, error: 'Perplexity non configuré. Configurez-le dans Paramètres.' }, { status: 500 })
   }
 
   try {
@@ -88,7 +86,7 @@ export async function POST(request: NextRequest) {
     const res = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -110,18 +108,14 @@ export async function POST(request: NextRequest) {
     const content = data.choices?.[0]?.message?.content || ''
     const citations: string[] = data.citations || []
 
-    // Parse the structured response into individual articles
     const articles = parseArticles(content, citations)
 
-    // If parsing failed (no structured articles found), create a fallback
     if (articles.length === 0 && content.length > 0) {
-      // Split the content into paragraphs as a fallback
       const paragraphs = content.split('\n\n').filter((p: string) => p.trim().length > 30)
 
       if (paragraphs.length > 0) {
         for (let i = 0; i < Math.min(paragraphs.length, 6); i++) {
           const text = paragraphs[i].trim()
-          // Try to extract a title from the first line
           const lines = text.split('\n')
           const title = lines[0].replace(/^[\d#.*-]+\s*/, '').trim()
           const summary = lines.slice(1).join(' ').trim() || text
@@ -136,7 +130,6 @@ export async function POST(request: NextRequest) {
           })
         }
       } else {
-        // Last resort: return the whole content as one article
         articles.push({
           id: crypto.randomUUID(),
           title: query,
@@ -148,7 +141,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Attach any remaining citations that weren't matched to articles
     if (citations.length > 0) {
       articles.forEach((article, idx) => {
         if (!article.url && idx < citations.length) {

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenAI } from '@google/genai'
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+import { getSetting } from '@/lib/settings-service'
 
 export async function POST(request: NextRequest) {
-  if (!GEMINI_API_KEY) {
-    return NextResponse.json({ success: false, error: 'Gemini non configuré' }, { status: 500 })
+  const apiKey = await getSetting('gemini_api_key')
+  if (!apiKey) {
+    return NextResponse.json({ success: false, error: 'Gemini non configuré. Configurez-le dans Paramètres.' }, { status: 500 })
   }
 
   try {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Prompt requis' }, { status: 400 })
     }
 
-    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY })
+    const ai = new GoogleGenAI({ apiKey })
 
     // Use Imagen 3 for image generation
     const response = await ai.models.generateImages({

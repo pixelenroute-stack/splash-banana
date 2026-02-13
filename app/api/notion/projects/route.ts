@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSetting } from '@/lib/settings-service'
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY
-const NOTION_PROJECTS_DB = process.env.NOTION_PROJECTS_DATABASE_ID
 const NOTION_BASE = 'https://api.notion.com/v1'
 
-async function notionFetch(path: string, options: RequestInit = {}) {
+async function notionFetch(apiKey: string, path: string, options: RequestInit = {}) {
   return fetch(`${NOTION_BASE}${path}`, {
     ...options,
     headers: {
-      'Authorization': `Bearer ${NOTION_API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Notion-Version': '2022-06-28',
       'Content-Type': 'application/json',
       ...options.headers,
@@ -17,12 +16,15 @@ async function notionFetch(path: string, options: RequestInit = {}) {
 }
 
 export async function GET() {
-  if (!NOTION_API_KEY || !NOTION_PROJECTS_DB) {
-    return NextResponse.json({ success: false, error: 'Notion non configuré' }, { status: 500 })
+  const apiKey = await getSetting('notion_api_key')
+  const projectsDb = await getSetting('notion_projects_db_id')
+
+  if (!apiKey || !projectsDb) {
+    return NextResponse.json({ success: false, error: 'Notion non configuré. Configurez-le dans Paramètres.' }, { status: 500 })
   }
 
   try {
-    const res = await notionFetch(`/databases/${NOTION_PROJECTS_DB}/query`, {
+    const res = await notionFetch(apiKey, `/databases/${projectsDb}/query`, {
       method: 'POST',
       body: JSON.stringify({ page_size: 100 }),
     })
@@ -57,17 +59,20 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  if (!NOTION_API_KEY || !NOTION_PROJECTS_DB) {
-    return NextResponse.json({ success: false, error: 'Notion non configuré' }, { status: 500 })
+  const apiKey = await getSetting('notion_api_key')
+  const projectsDb = await getSetting('notion_projects_db_id')
+
+  if (!apiKey || !projectsDb) {
+    return NextResponse.json({ success: false, error: 'Notion non configuré. Configurez-le dans Paramètres.' }, { status: 500 })
   }
 
   try {
     const body = await request.json()
 
-    const res = await notionFetch('/pages', {
+    const res = await notionFetch(apiKey, '/pages', {
       method: 'POST',
       body: JSON.stringify({
-        parent: { database_id: NOTION_PROJECTS_DB },
+        parent: { database_id: projectsDb },
         properties: {
           Name: { title: [{ text: { content: body.name } }] },
           Status: { select: { name: body.status || 'draft' } },

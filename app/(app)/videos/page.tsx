@@ -164,30 +164,59 @@ export default function VideosPage() {
     pollVideo(video.operationName, video.id)
   }
 
+  const VIDEO_SUGGESTIONS = [
+    'Timelapse d\'un coucher de soleil sur l\'océan',
+    'Animation 3D d\'un logo qui tourne',
+    'Drone survol d\'une ville futuriste la nuit',
+    'Transition fluide entre deux scènes naturelles',
+    'Effet morphing entre deux visages abstraits',
+  ]
+
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Video Studio</h1>
-        <p className="text-muted text-sm mt-1">Generation video via Gemini Veo 2.0</p>
+        <p className="text-muted text-sm mt-1">Génération vidéo via Gemini Veo 2.0</p>
       </div>
 
-      <form onSubmit={handleGenerate} className="card">
+      <form onSubmit={handleGenerate} className="card space-y-4">
         <div className="flex gap-3">
           <input
             type="text"
             value={prompt}
             onChange={(e) => { setPrompt(e.target.value); setError(null) }}
-            placeholder="Decrivez la video a generer..."
+            placeholder="Décrivez la vidéo à générer..."
             className="flex-1 px-4 py-3 bg-background border border-border rounded-lg text-white placeholder:text-muted outline-none focus:border-lantean-blue transition-colors"
           />
           <button
             type="submit"
             disabled={isLoading || !prompt.trim()}
-            className="px-6 py-3 bg-primary/20 text-lantean-blue rounded-lg hover:bg-primary/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed font-medium"
+            className="flex items-center gap-2 px-6 py-3 bg-primary/20 text-lantean-blue rounded-lg hover:bg-primary/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed font-medium"
           >
-            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Generer'}
+            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Video className="w-5 h-5" />}
+            <span className="hidden sm:inline">{isLoading ? 'Lancement...' : 'Générer'}</span>
           </button>
         </div>
+
+        {!prompt && (
+          <div>
+            <p className="text-xs text-muted mb-2">Suggestions :</p>
+            <div className="flex flex-wrap gap-2">
+              {VIDEO_SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setPrompt(s)}
+                  className="text-xs px-3 py-1.5 bg-surface border border-border rounded-full text-muted hover:text-white hover:border-lantean-blue transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-muted">La génération prend 1-3 minutes. Les vidéos sont automatiquement sauvegardées dans la Médiathèque.</p>
       </form>
 
       {/* Error Message */}
@@ -204,8 +233,7 @@ export default function VideosPage() {
       {videos.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-muted">
           <Video className="w-12 h-12 mb-4 opacity-30" />
-          <p>Aucune video generee</p>
-          <p className="text-sm mt-1">La generation prend 1-3 minutes. Les videos sont sauvegardees dans la Mediatheque.</p>
+          <p>Aucune vidéo générée</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

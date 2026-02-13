@@ -105,7 +105,7 @@ export default function GmailPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Emails</h1>
-          <p className="text-muted text-sm mt-1">Gmail via Maton.ai</p>
+          <p className="text-muted text-sm mt-1">Gmail</p>
         </div>
         <button
           onClick={() => loadEmails(search)}

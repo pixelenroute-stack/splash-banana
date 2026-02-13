@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, Users, FolderKanban, Receipt, TrendingUp, UserPlus, Calendar, Mail, Loader2 } from 'lucide-react'
+import { Users, FolderKanban, Receipt, TrendingUp, Calendar, Mail, Loader2, Wifi, Unplug, ExternalLink, UserPlus } from 'lucide-react'
 import type { DashboardStats, CalendarEvent, Email } from '@/types'
 
 function StatCard({ icon: Icon, label, value, sub, color }: {
@@ -35,20 +35,23 @@ export default function DashboardPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [emails, setEmails] = useState<Email[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [googleConnected, setGoogleConnected] = useState<boolean | null>(null)
 
   useEffect(() => {
     async function loadAll() {
       setIsLoading(true)
       try {
-        const [clientsRes, projectsRes, calendarRes, gmailRes] = await Promise.allSettled([
+        const [clientsRes, projectsRes, calendarRes, gmailRes, authRes] = await Promise.allSettled([
           fetch('/api/notion/clients'),
           fetch('/api/notion/projects'),
           fetch('/api/calendar'),
           fetch('/api/gmail?maxResults=5&q=is:unread'),
+          fetch('/api/auth/status'),
         ])
 
         let totalClients = 0
         let activeProjects = 0
+        let newLeads = 0
         if (clientsRes.status === 'fulfilled') {
           const data = await clientsRes.value.json()
           if (data.success) totalClients = data.data.length
@@ -65,6 +68,18 @@ export default function DashboardPage() {
           const data = await gmailRes.value.json()
           if (data.success) setEmails(data.data.slice(0, 5))
         }
+        if (authRes.status === 'fulfilled') {
+          const data = await authRes.value.json()
+          setGoogleConnected(data.google === true)
+        } else {
+          setGoogleConnected(false)
+        }
+
+        // Count leads from localStorage
+        try {
+          const leads = localStorage.getItem('prospection_leads')
+          if (leads) newLeads = JSON.parse(leads).length
+        } catch { /* ignore */ }
 
         setStats({
           totalClients,
@@ -72,7 +87,7 @@ export default function DashboardPage() {
           pendingInvoices: 0,
           totalRevenue: 0,
           revenueGrowth: 0,
-          newLeads: 0,
+          newLeads,
         })
       } catch {
         // Dashboard load error
@@ -102,12 +117,49 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Google Connection Banner */}
+      {googleConnected === false && (
+        <a
+          href="/api/auth/google"
+          className="flex items-center gap-4 p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl hover:bg-yellow-500/10 transition-colors group"
+        >
+          <div className="p-2.5 rounded-lg bg-yellow-500/10">
+            <Unplug className="w-5 h-5 text-yellow-400" />
+          </div>
+          <div className="flex-1">
+            <p className="font-medium text-yellow-400">Google Workspace non connecté</p>
+            <p className="text-xs text-muted mt-0.5">Connectez Google pour accéder à Calendar, Gmail, Drive et Docs</p>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg group-hover:bg-white/15 transition-colors">
+            <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+            </svg>
+            <span className="text-sm font-medium">Connecter</span>
+            <ExternalLink className="w-3.5 h-3.5 text-muted" />
+          </div>
+        </a>
+      )}
+      {googleConnected === true && (
+        <div className="flex items-center gap-3 p-3 bg-green-500/5 border border-green-500/20 rounded-xl">
+          <Wifi className="w-4 h-4 text-green-400" />
+          <span className="text-sm text-green-400">Google Workspace connecté</span>
+          <div className="flex gap-2 ml-auto">
+            {['Calendar', 'Gmail', 'Drive', 'Docs'].map((s) => (
+              <span key={s} className="text-[10px] px-2 py-0.5 bg-green-500/10 text-green-400/70 rounded-full">{s}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Stats grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard icon={Users} label="Clients" value={stats.totalClients} sub="Notion CRM" color="bg-blue-500/10 text-blue-400" />
         <StatCard icon={FolderKanban} label="Projets actifs" value={stats.activeProjects} sub="En cours" color="bg-green-500/10 text-green-400" />
         <StatCard icon={Receipt} label="Factures en attente" value={stats.pendingInvoices} color="bg-yellow-500/10 text-yellow-400" />
-        <StatCard icon={TrendingUp} label="Revenu total" value={`${stats.totalRevenue.toLocaleString('fr-FR')} €`} color="bg-emerald-500/10 text-emerald-400" />
+        <StatCard icon={UserPlus} label="Leads" value={stats.newLeads} sub="Prospection" color="bg-orange-500/10 text-orange-400" />
         <StatCard icon={Mail} label="Emails non lus" value={emails.length} sub="Gmail" color="bg-purple-500/10 text-purple-400" />
         <StatCard icon={Calendar} label="Événements à venir" value={events.length} sub="Google Calendar" color="bg-cyan-500/10 text-cyan-400" />
       </div>

@@ -100,7 +100,7 @@ export default function DrivePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Google Drive</h1>
-          <p className="text-muted text-sm mt-1">Fichiers et dossiers via Maton.ai</p>
+          <p className="text-muted text-sm mt-1">Fichiers et dossiers Google Drive</p>
         </div>
         <div className="flex gap-2">
           <button

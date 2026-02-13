@@ -74,7 +74,7 @@ export default function CalendarPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Calendrier</h1>
-          <p className="text-muted text-sm mt-1">Google Calendar via Maton.ai</p>
+          <p className="text-muted text-sm mt-1">Google Calendar</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}

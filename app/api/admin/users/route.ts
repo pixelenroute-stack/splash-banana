@@ -24,7 +24,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, password, role, status } = body
+    const { name, email, password, role, status, phone, company, jobTitle, notes } = body
 
     if (!name || !email || !password || !role) {
       return NextResponse.json(
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const user = createUser({ name, email, password, role, status })
+    const user = createUser({ name, email, password, role, status, phone, company, jobTitle, notes })
     return NextResponse.json({ success: true, data: user }, { status: 201 })
   } catch {
     return NextResponse.json(
@@ -76,9 +76,14 @@ export async function PATCH(request: NextRequest) {
     // Only allow updating specific fields
     const allowedFields: Record<string, boolean> = {
       name: true,
+      email: true,
       role: true,
       status: true,
       password: true,
+      phone: true,
+      company: true,
+      jobTitle: true,
+      notes: true,
     }
 
     const sanitized: Record<string, string> = {}

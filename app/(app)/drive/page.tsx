@@ -98,9 +98,12 @@ export default function DrivePage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Google Drive</h1>
-          <p className="text-muted text-sm mt-1">Fichiers et dossiers Google Drive</p>
+        <div className="flex items-center gap-6">
+          <img src="/images/ref-drive.png" alt="Google Drive" className="w-48 h-auto rounded-xl border border-border shadow-lg opacity-80" />
+          <div>
+            <h1 className="text-2xl font-bold">Google Drive</h1>
+            <p className="text-muted text-sm mt-1">Fichiers et dossiers Google Drive</p>
+          </div>
         </div>
         <div className="flex gap-2">
           <button

@@ -29,6 +29,7 @@ export type ViewId =
   | 'settings'
   | 'images'
   | 'videos'
+  | 'thumbnails'
   | 'social_factory'
   | 'library'
   | 'tutorials'
@@ -240,11 +241,13 @@ export interface DriveFile {
 // ===== Tutorials (Creator Studio) =====
 export interface Tutorial {
   id: string
-  software: 'after-effects' | 'premiere-pro' | 'blender'
+  software: 'after-effects' | 'premiere-pro' | 'blender' | 'illustrator' | 'photoshop'
   title: string
   description: string
   steps: TutorialStep[]
   difficulty: 'beginner' | 'intermediate' | 'advanced'
+  estimatedTime?: string
+  prerequisites?: string[]
   createdAt: string
 }
 
@@ -270,6 +273,12 @@ export interface AdminUser {
   role: 'admin' | 'manager' | 'user'
   status: 'active' | 'inactive' | 'invited'
   password?: string
+  phone?: string
+  company?: string
+  jobTitle?: string
+  avatar?: string
+  notes?: string
+  permissions?: string[]
   createdAt: string
   updatedAt: string
   lastLoginAt?: string

@@ -103,9 +103,12 @@ export default function GmailPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Emails</h1>
-          <p className="text-muted text-sm mt-1">Gmail</p>
+        <div className="flex items-center gap-6">
+          <img src="/images/ref-gmail.png" alt="Gmail" className="w-48 h-auto rounded-xl border border-border shadow-lg opacity-80" />
+          <div>
+            <h1 className="text-2xl font-bold">Emails</h1>
+            <p className="text-muted text-sm mt-1">Gmail - Boîte de réception</p>
+          </div>
         </div>
         <button
           onClick={() => loadEmails(search)}

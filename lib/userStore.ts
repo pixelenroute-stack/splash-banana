@@ -63,6 +63,10 @@ export function createUser(data: {
   password: string
   role: 'admin' | 'manager' | 'user'
   status?: 'active' | 'inactive' | 'invited'
+  phone?: string
+  company?: string
+  jobTitle?: string
+  notes?: string
 }): AdminUser {
   const now = new Date().toISOString()
   const newUser: StoredUser = {
@@ -72,6 +76,10 @@ export function createUser(data: {
     password: data.password,
     role: data.role,
     status: data.status || 'inactive',
+    phone: data.phone,
+    company: data.company,
+    jobTitle: data.jobTitle,
+    notes: data.notes,
     createdAt: now,
     updatedAt: now,
   }
@@ -82,7 +90,7 @@ export function createUser(data: {
 
 export function updateUser(
   id: string,
-  data: Partial<Pick<StoredUser, 'name' | 'role' | 'status' | 'password' | 'lastLoginAt'>>
+  data: Partial<Pick<StoredUser, 'name' | 'email' | 'role' | 'status' | 'password' | 'lastLoginAt' | 'phone' | 'company' | 'jobTitle' | 'notes'>>
 ): AdminUser | null {
   const index = users.findIndex((u) => u.id === id)
   if (index === -1) return null

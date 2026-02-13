@@ -6,7 +6,7 @@ import {
   LayoutDashboard, MessageSquare, Newspaper, Target,
   Calendar, Mail, HardDrive,
   Users, FolderKanban, Receipt,
-  Image, Video, Share2, Library, GraduationCap,
+  Image, Video, Youtube, Share2, Library, GraduationCap,
   Settings, Shield, LogOut, ChevronLeft
 } from 'lucide-react'
 import { NAV_ITEMS, CATEGORY_LABELS } from '@/lib/navigation'
@@ -19,7 +19,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, MessageSquare, Newspaper, Target,
   Calendar, Mail, HardDrive,
   Users, FolderKanban, Receipt,
-  Image, Video, Share2, Library, GraduationCap,
+  Image, Video, Youtube, Share2, Library, GraduationCap,
   Settings, Shield,
 }
 

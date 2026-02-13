@@ -1,51 +1,73 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { GraduationCap, Loader2, ChevronDown, ChevronRight, Wand2, AlertCircle } from 'lucide-react'
+import { GraduationCap, Loader2, ChevronDown, ChevronRight, Wand2, AlertCircle, Clock, BookOpen, Keyboard } from 'lucide-react'
 import type { Tutorial, TutorialStep } from '@/types'
 
 const SOFTWARE_OPTIONS = [
   { id: 'after-effects', label: 'After Effects', color: 'bg-purple-500/10 text-purple-400', icon: '🎬' },
   { id: 'premiere-pro', label: 'Premiere Pro', color: 'bg-blue-500/10 text-blue-400', icon: '🎞️' },
   { id: 'blender', label: 'Blender', color: 'bg-orange-500/10 text-orange-400', icon: '🧊' },
+  { id: 'illustrator', label: 'Illustrator', color: 'bg-amber-500/10 text-amber-400', icon: '✏️' },
+  { id: 'photoshop', label: 'Photoshop', color: 'bg-sky-500/10 text-sky-400', icon: '🖼️' },
 ]
 
 const DIFFICULTY_OPTIONS = [
-  { id: 'beginner', label: 'Débutant', color: 'bg-green-500/10 text-green-400' },
-  { id: 'intermediate', label: 'Intermédiaire', color: 'bg-yellow-500/10 text-yellow-400' },
-  { id: 'advanced', label: 'Avancé', color: 'bg-red-500/10 text-red-400' },
+  { id: 'beginner', label: 'Debutant', color: 'bg-green-500/10 text-green-400' },
+  { id: 'intermediate', label: 'Intermediaire', color: 'bg-yellow-500/10 text-yellow-400' },
+  { id: 'advanced', label: 'Avance', color: 'bg-red-500/10 text-red-400' },
 ]
 
 const TOPIC_SUGGESTIONS: Record<string, string[]> = {
   'after-effects': [
-    'Créer un effet glitch/distortion sur du texte',
+    'Creer un effet glitch/distortion sur du texte',
     'Animation de particules avec CC Particle World',
-    'Créer un effet néon lumineux (Glow)',
-    'Compositing 3D avec caméra tracker',
+    'Creer un effet neon lumineux (Glow)',
+    'Compositing 3D avec camera tracker',
     'Transitions fluides avec Displacement Map',
-    'Motion Graphics: infographie animée',
-    'Effet de fumée et brouillard réaliste',
-    'Animation de logo cinématique',
+    'Motion Graphics: infographie animee',
+    'Effet de fumee et brouillard realiste',
+    'Animation de logo cinematique',
   ],
   'premiere-pro': [
-    'Étalonnage couleur cinématique avec Lumetri',
+    'Etalonnage couleur cinematique avec Lumetri',
     'Montage multicam professionnel',
-    'Créer des titres animés avec Essential Graphics',
-    'Stabilisation vidéo avec Warp Stabilizer',
+    'Creer des titres animes avec Essential Graphics',
+    'Stabilisation video avec Warp Stabilizer',
     'Masquage et tracking d\'objets',
     'Workflow de montage avec proxys',
     'Incrustation fond vert (Ultra Key)',
     'Correction audio et mixage professionnel',
   ],
   'blender': [
-    'Modélisation d\'un personnage low-poly',
-    'Création de matériaux PBR réalistes (Shader Editor)',
-    'Animation de fluide réaliste (Mantaflow)',
-    'Geometry Nodes: environnement procédural',
+    'Modelisation d\'un personnage low-poly',
+    'Creation de materiaux PBR realistes (Shader Editor)',
+    'Animation de fluide realiste (Mantaflow)',
+    'Geometry Nodes: environnement procedural',
     'Sculpture organique avec multires',
-    'Rendu photoréaliste Cycles (éclairage et compositing)',
-    'Simulation de tissu et vêtements',
+    'Rendu photorealiste Cycles (eclairage et compositing)',
+    'Simulation de tissu et vetements',
     'Rigging et animation de personnage',
+  ],
+  'illustrator': [
+    'Creer un logo vectoriel professionnel',
+    'Illustration isometrique 3D',
+    'Typographie creative avec effets',
+    'Motif seamless pour textile',
+    'Icones flat design pour application',
+    'Infographie data visualization',
+    'Illustration de personnage cartoon',
+    'Affiche evenementielle avec grille',
+  ],
+  'photoshop': [
+    'Retouche portrait beaute professionnelle',
+    'Compositing photo manipulation fantastique',
+    'Creation de mockup produit realiste',
+    'Effet double exposition cinematique',
+    'Restauration et colorisation photo ancienne',
+    'Digital painting paysage concept art',
+    'Design banniere web responsive',
+    'Effet texte 3D metallique',
   ],
 }
 
@@ -96,15 +118,23 @@ export default function TutorialsPage() {
     })
   }
 
+  function expandAllSteps(tutorial: Tutorial) {
+    setExpandedSteps(new Set(tutorial.steps.map((s) => s.order)))
+  }
+
+  function collapseAllSteps() {
+    setExpandedSteps(new Set())
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Tutoriels Creator Studio</h1>
-        <p className="text-muted text-sm mt-1">Génération de tutoriels détaillés avec paramètres exacts</p>
+        <p className="text-muted text-sm mt-1">Generation de tutoriels detailles avec parametres exacts pour 5 logiciels professionnels</p>
       </div>
 
       {/* Software selector */}
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         {SOFTWARE_OPTIONS.map((sw) => (
           <button
             key={sw.id}
@@ -146,7 +176,7 @@ export default function TutorialsPage() {
             className="flex items-center gap-2 px-6 py-3 bg-primary/20 text-lantean-blue rounded-lg hover:bg-primary/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed font-medium"
           >
             {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
-            <span>{isGenerating ? 'Génération...' : 'Générer'}</span>
+            <span>{isGenerating ? 'Generation...' : 'Generer'}</span>
           </button>
         </div>
 
@@ -183,7 +213,8 @@ export default function TutorialsPage() {
       {tutorials.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-muted">
           <GraduationCap className="w-12 h-12 mb-4 opacity-30" />
-          <p>Générez votre premier tutoriel</p>
+          <p>Generez votre premier tutoriel</p>
+          <p className="text-xs mt-2 opacity-60">Selectionnez un logiciel, entrez un sujet et cliquez sur Generer</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -195,35 +226,84 @@ export default function TutorialsPage() {
             return (
               <div key={tut.id} className="card">
                 <button
-                  onClick={() => setExpandedTutorial(isExpanded ? null : tut.id)}
+                  onClick={() => {
+                    setExpandedTutorial(isExpanded ? null : tut.id)
+                    if (!isExpanded) setExpandedSteps(new Set())
+                  }}
                   className="w-full flex items-start justify-between gap-3 text-left"
                 >
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${sw?.color || ''}`}>
                         {sw?.icon} {sw?.label}
                       </span>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${diff?.color || ''}`}>
                         {diff?.label}
                       </span>
+                      {tut.estimatedTime && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {tut.estimatedTime}
+                        </span>
+                      )}
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 flex items-center gap-1">
+                        <BookOpen className="w-3 h-3" />
+                        {tut.steps.length} etapes
+                      </span>
                     </div>
                     <h3 className="font-bold text-lg">{tut.title}</h3>
                     <p className="text-sm text-muted mt-1">{tut.description}</p>
-                    <p className="text-xs text-muted mt-1">{tut.steps.length} étapes</p>
                   </div>
-                  {isExpanded ? <ChevronDown className="w-5 h-5 text-muted" /> : <ChevronRight className="w-5 h-5 text-muted" />}
+                  {isExpanded ? <ChevronDown className="w-5 h-5 text-muted flex-shrink-0" /> : <ChevronRight className="w-5 h-5 text-muted flex-shrink-0" />}
                 </button>
 
                 {isExpanded && (
-                  <div className="mt-4 space-y-3 border-t border-border pt-4">
-                    {tut.steps.map((step) => (
-                      <StepCard
-                        key={step.order}
-                        step={step}
-                        isExpanded={expandedSteps.has(step.order)}
-                        onToggle={() => toggleStep(step.order)}
-                      />
-                    ))}
+                  <div className="mt-4 border-t border-border pt-4 space-y-4">
+                    {/* Prerequisites section */}
+                    {tut.prerequisites && tut.prerequisites.length > 0 && (
+                      <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
+                        <h4 className="text-sm font-semibold text-amber-400 mb-2 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Prerequis
+                        </h4>
+                        <ul className="space-y-1">
+                          {tut.prerequisites.map((prereq, i) => (
+                            <li key={i} className="text-sm text-amber-400/80 flex items-start gap-2">
+                              <span className="text-amber-500 mt-0.5">-</span>
+                              {prereq}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Expand/Collapse all */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => expandAllSteps(tut)}
+                        className="text-xs px-3 py-1.5 bg-surface border border-border rounded-lg text-muted hover:text-white transition-colors"
+                      >
+                        Tout deplier
+                      </button>
+                      <button
+                        onClick={collapseAllSteps}
+                        className="text-xs px-3 py-1.5 bg-surface border border-border rounded-lg text-muted hover:text-white transition-colors"
+                      >
+                        Tout replier
+                      </button>
+                    </div>
+
+                    {/* Steps */}
+                    <div className="space-y-3">
+                      {tut.steps.map((step) => (
+                        <StepCard
+                          key={step.order}
+                          step={step}
+                          isExpanded={expandedSteps.has(step.order)}
+                          onToggle={() => toggleStep(step.order)}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -237,29 +317,55 @@ export default function TutorialsPage() {
 
 function StepCard({ step, isExpanded, onToggle }: { step: TutorialStep; isExpanded: boolean; onToggle: () => void }) {
   return (
-    <div className="bg-background/50 rounded-lg border border-border/50">
-      <button onClick={onToggle} className="w-full flex items-center gap-3 p-3 text-left">
-        <div className="w-7 h-7 rounded-full bg-lantean-blue/20 text-lantean-blue flex items-center justify-center text-sm font-bold flex-shrink-0">
+    <div className="bg-background/50 rounded-lg border border-border/50 overflow-hidden">
+      <button onClick={onToggle} className="w-full flex items-center gap-3 p-3 text-left hover:bg-surface/30 transition-colors">
+        <div className="w-8 h-8 rounded-full bg-lantean-blue/20 text-lantean-blue flex items-center justify-center text-sm font-bold flex-shrink-0">
           {step.order}
         </div>
         <span className="font-medium text-sm flex-1">{step.title}</span>
-        {isExpanded ? <ChevronDown className="w-4 h-4 text-muted" /> : <ChevronRight className="w-4 h-4 text-muted" />}
+        {step.parameters && step.parameters.length > 0 && (
+          <span className="text-xs text-muted bg-surface/50 px-2 py-0.5 rounded-full flex-shrink-0">
+            {step.parameters.length} params
+          </span>
+        )}
+        {isExpanded ? <ChevronDown className="w-4 h-4 text-muted flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted flex-shrink-0" />}
       </button>
 
       {isExpanded && (
-        <div className="px-3 pb-3 space-y-3">
-          <p className="text-sm text-muted pl-10">{step.description}</p>
+        <div className="px-4 pb-4 space-y-3">
+          {/* Step description */}
+          <p className="text-sm text-muted pl-11 leading-relaxed">{step.description}</p>
+
+          {/* Parameters table */}
           {step.parameters && step.parameters.length > 0 && (
-            <div className="ml-10">
-              <p className="text-xs text-gold-accent font-medium mb-2">Paramètres :</p>
-              <div className="grid gap-1.5">
-                {step.parameters.map((param, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs bg-surface/50 rounded px-3 py-2">
-                    <span className="font-mono text-lantean-blue font-medium min-w-[140px]">{param.name}</span>
-                    <span className="text-gold-accent font-bold">{param.value}{param.unit ? ` ${param.unit}` : ''}</span>
-                    {param.description && <span className="text-muted ml-2">— {param.description}</span>}
-                  </div>
-                ))}
+            <div className="ml-11">
+              <div className="flex items-center gap-2 mb-2">
+                <Keyboard className="w-3.5 h-3.5 text-gold-accent" />
+                <p className="text-xs text-gold-accent font-semibold uppercase tracking-wide">Parametres & Reglages</p>
+              </div>
+              <div className="border border-border/50 rounded-lg overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-surface/60 border-b border-border/50">
+                      <th className="text-left px-3 py-2 text-muted font-medium w-[200px]">Parametre</th>
+                      <th className="text-left px-3 py-2 text-muted font-medium w-[140px]">Valeur</th>
+                      <th className="text-left px-3 py-2 text-muted font-medium">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {step.parameters.map((param, i) => (
+                      <tr key={i} className={`border-b border-border/30 last:border-b-0 ${i % 2 === 0 ? 'bg-background/30' : 'bg-surface/20'}`}>
+                        <td className="px-3 py-2 font-mono text-lantean-blue font-medium align-top">{param.name}</td>
+                        <td className="px-3 py-2 text-gold-accent font-bold align-top whitespace-nowrap">
+                          {param.value}{param.unit ? ` ${param.unit}` : ''}
+                        </td>
+                        <td className="px-3 py-2 text-muted align-top leading-relaxed">
+                          {param.description || ''}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

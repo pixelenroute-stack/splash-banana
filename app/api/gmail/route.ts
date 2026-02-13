@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { gmail } from '@/lib/maton'
+import { getGoogleToken } from '@/lib/google-token'
+import { googleGmail } from '@/lib/google'
+
+function noGoogle() {
+  return NextResponse.json({
+    success: false,
+    error: 'Google non connecté. Allez dans Paramètres > Connecter Google.',
+    needsAuth: true,
+  }, { status: 401 })
+}
 
 function decodeBase64Url(str: string): string {
   const base64 = str.replace(/-/g, '+').replace(/_/g, '/')
@@ -34,14 +43,18 @@ function extractBody(payload: Record<string, unknown>): string {
 }
 
 export async function GET(request: NextRequest) {
+  const token = await getGoogleToken()
+  if (!token) return noGoogle()
+
   try {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q') || ''
     const maxResults = parseInt(searchParams.get('maxResults') || '20')
     const messageId = searchParams.get('id')
 
+    // Single message detail
     if (messageId) {
-      const msg = await gmail.getMessage(messageId)
+      const msg = await googleGmail.getMessage(token, messageId)
       const headers = (msg.payload?.headers || []) as Array<{ name: string; value: string }>
       return NextResponse.json({
         success: true,
@@ -60,13 +73,14 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const list = await gmail.listMessages(query, maxResults)
+    // List messages
+    const list = await googleGmail.listMessages(token, query, maxResults)
     const messageIds = (list.messages || []) as Array<{ id: string; threadId: string }>
 
     const emails = await Promise.all(
       messageIds.slice(0, maxResults).map(async (m) => {
         try {
-          const msg = await gmail.getMessage(m.id)
+          const msg = await googleGmail.getMessage(token, m.id)
           const headers = (msg.payload?.headers || []) as Array<{ name: string; value: string }>
           return {
             id: msg.id,
@@ -88,6 +102,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: emails.filter(Boolean) })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erreur Gmail'
+    if (message === 'GOOGLE_TOKEN_EXPIRED') return noGoogle()
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }

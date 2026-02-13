@@ -43,8 +43,8 @@ export default function DashboardPage() {
         const [clientsRes, projectsRes, calendarRes, gmailRes] = await Promise.allSettled([
           fetch('/api/notion/clients'),
           fetch('/api/notion/projects'),
-          fetch('/api/maton/calendar'),
-          fetch('/api/maton/gmail?maxResults=5&q=is:unread'),
+          fetch('/api/calendar'),
+          fetch('/api/gmail?maxResults=5&q=is:unread'),
         ])
 
         let totalClients = 0

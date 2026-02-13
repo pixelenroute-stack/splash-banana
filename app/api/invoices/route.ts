@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getGoogleToken } from '@/lib/google-token'
+import { googleDocs } from '@/lib/google'
 
 let invoicesStore: Array<Record<string, unknown>> = []
 let contractsStore: Array<Record<string, unknown>> = []
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
     const { type } = body
 
     if (type === 'contract') {
-      const contract = {
+      const contract: Record<string, unknown> = {
         id: `CTR-${Date.now()}`,
         clientName: body.clientName,
         projectName: body.projectName,
@@ -30,21 +32,20 @@ export async function POST(request: NextRequest) {
         createdAt: new Date().toISOString(),
       }
 
-      if (process.env.MATON_API_KEY) {
+      // Try to create Google Doc via direct OAuth
+      const token = await getGoogleToken()
+      if (token) {
         try {
-          const { docs } = await import('@/lib/maton')
-          const doc = await docs.createDocument(`Contrat - ${body.clientName} - ${body.projectName}`)
+          const doc = await googleDocs.createDocument(token, `Contrat - ${body.clientName} - ${body.projectName}`)
           const docId = doc.documentId
 
-          await docs.batchUpdate(docId, [
+          await googleDocs.batchUpdate(token, docId, [
             { insertText: { location: { index: 1 }, text: `CONTRAT DE PRESTATION\n\n` } },
             { insertText: { location: { index: 25 }, text: `Client: ${body.clientName}\nProjet: ${body.projectName}\nMontant: ${body.amount || 0} EUR\nDate de début: ${body.startDate || 'À définir'}\nDate de fin: ${body.endDate || 'À définir'}\n\n---\n\nArticle 1 - Objet du contrat\nLe présent contrat a pour objet la réalisation des prestations décrites ci-dessus.\n\nArticle 2 - Durée\nLe contrat prend effet à la date de début mentionnée ci-dessus.\n\nArticle 3 - Rémunération\nLe montant total de la prestation est fixé à ${body.amount || 0} EUR HT.\n\nArticle 4 - Conditions de paiement\n30% à la signature, 70% à la livraison.\n\n---\n\nSignature Client:                    Signature Prestataire:\n\n` } },
           ])
 
-          Object.assign(contract, {
-            googleDocId: docId,
-            googleDocUrl: `https://docs.google.com/document/d/${docId}/edit`,
-          })
+          contract.googleDocId = docId
+          contract.googleDocUrl = `https://docs.google.com/document/d/${docId}/edit`
         } catch {
           // Continue without Google Docs
         }

@@ -17,7 +17,7 @@ export default function GmailPage() {
     setIsLoading(true)
     try {
       const q = filter === 'unread' ? `is:unread ${query}` : query
-      const res = await fetch(`/api/maton/gmail?q=${encodeURIComponent(q)}&maxResults=30`)
+      const res = await fetch(`/api/gmail?q=${encodeURIComponent(q)}&maxResults=30`)
       const data = await res.json()
       if (data.success) setEmails(data.data)
     } catch {
@@ -38,7 +38,7 @@ export default function GmailPage() {
     setSelectedEmail(email)
     setIsLoadingBody(true)
     try {
-      const res = await fetch(`/api/maton/gmail?id=${email.id}`)
+      const res = await fetch(`/api/gmail?id=${email.id}`)
       const data = await res.json()
       if (data.success) {
         setEmailBody(data.data.body || data.data.snippet || '')

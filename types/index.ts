@@ -167,12 +167,15 @@ export interface DashboardStats {
 // ===== Settings =====
 export interface SystemSettings {
   geminiApiKey?: string
+  openaiApiKey?: string
   claudeApiKey?: string
   perplexityApiKey?: string
   notionApiKey?: string
   notionCrmDbId?: string
   notionProjectsDbId?: string
   googleClientId?: string
+  qontoLogin?: string
+  qontoSecret?: string
   theme: 'dark' | 'light'
   language: 'fr' | 'en'
 }

@@ -47,7 +47,7 @@ export default function DrivePage() {
       const params = new URLSearchParams()
       if (folderId) params.set('folderId', folderId)
       if (query) params.set('q', `name contains '${query}'`)
-      const res = await fetch(`/api/maton/drive?${params}`)
+      const res = await fetch(`/api/drive?${params}`)
       const data = await res.json()
       if (data.success) setFiles(data.data)
     } catch {
@@ -79,7 +79,7 @@ export default function DrivePage() {
   async function createFolder() {
     if (!newFolderName.trim()) return
     try {
-      await fetch('/api/maton/drive', {
+      await fetch('/api/drive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newFolderName.trim(), parentId: currentFolderId }),

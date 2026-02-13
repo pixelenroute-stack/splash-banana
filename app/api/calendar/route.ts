@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { calendar } from '@/lib/maton'
+import { getGoogleToken } from '@/lib/google-token'
+import { googleCalendar } from '@/lib/google'
+
+function noGoogle() {
+  return NextResponse.json({
+    success: false,
+    error: 'Google non connecté. Allez dans Paramètres > Connecter Google.',
+    needsAuth: true,
+  }, { status: 401 })
+}
 
 export async function GET(request: NextRequest) {
+  const token = await getGoogleToken()
+  if (!token) return noGoogle()
+
   try {
     const { searchParams } = new URL(request.url)
-    const timeMin = searchParams.get('timeMin') || new Date().toISOString()
-    const timeMax = searchParams.get('timeMax') || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    const timeMin = searchParams.get('timeMin') || undefined
+    const timeMax = searchParams.get('timeMax') || undefined
 
-    const data = await calendar.listEvents(timeMin, timeMax)
+    const data = await googleCalendar.listEvents(token, timeMin, timeMax)
 
     const events = (data.items || []).map((e: Record<string, unknown>) => ({
       id: e.id,
@@ -23,20 +35,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: events })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erreur Calendar'
+    if (message === 'GOOGLE_TOKEN_EXPIRED') return noGoogle()
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
+  const token = await getGoogleToken()
+  if (!token) return noGoogle()
+
   try {
     const body = await request.json()
     const { summary, description, start, end, attendees } = body
 
     if (!summary || !start || !end) {
-      return NextResponse.json({ success: false, error: 'summary, start et end sont requis' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'summary, start et end requis' }, { status: 400 })
     }
 
-    const event = await calendar.createEvent({
+    const event = await googleCalendar.createEvent(token, {
       summary,
       description,
       start: { dateTime: start, timeZone: 'Europe/Paris' },
@@ -47,18 +63,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: event })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erreur Calendar'
+    if (message === 'GOOGLE_TOKEN_EXPIRED') return noGoogle()
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }
 
 export async function PATCH(request: NextRequest) {
+  const token = await getGoogleToken()
+  if (!token) return noGoogle()
+
   try {
     const body = await request.json()
     const { id, ...updates } = body
-
-    if (!id) {
-      return NextResponse.json({ success: false, error: 'id requis' }, { status: 400 })
-    }
+    if (!id) return NextResponse.json({ success: false, error: 'id requis' }, { status: 400 })
 
     const patchData: Record<string, unknown> = {}
     if (updates.summary) patchData.summary = updates.summary
@@ -66,25 +83,29 @@ export async function PATCH(request: NextRequest) {
     if (updates.start) patchData.start = { dateTime: updates.start, timeZone: 'Europe/Paris' }
     if (updates.end) patchData.end = { dateTime: updates.end, timeZone: 'Europe/Paris' }
 
-    const event = await calendar.updateEvent(id, patchData)
+    const event = await googleCalendar.updateEvent(token, id, patchData)
     return NextResponse.json({ success: true, data: event })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erreur Calendar'
+    if (message === 'GOOGLE_TOKEN_EXPIRED') return noGoogle()
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }
 
 export async function DELETE(request: NextRequest) {
+  const token = await getGoogleToken()
+  if (!token) return noGoogle()
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
-    if (!id) {
-      return NextResponse.json({ success: false, error: 'id requis' }, { status: 400 })
-    }
-    await calendar.deleteEvent(id)
+    if (!id) return NextResponse.json({ success: false, error: 'id requis' }, { status: 400 })
+
+    await googleCalendar.deleteEvent(token, id)
     return NextResponse.json({ success: true })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erreur Calendar'
+    if (message === 'GOOGLE_TOKEN_EXPIRED') return noGoogle()
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }

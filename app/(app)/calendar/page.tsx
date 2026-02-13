@@ -14,7 +14,7 @@ export default function CalendarPage() {
   async function loadEvents() {
     setIsLoading(true)
     try {
-      const res = await fetch('/api/maton/calendar')
+      const res = await fetch('/api/calendar')
       const data = await res.json()
       if (data.success) setEvents(data.data)
     } catch {
@@ -31,7 +31,7 @@ export default function CalendarPage() {
     if (!formData.summary || !formData.start || !formData.end) return
     setIsSubmitting(true)
     try {
-      const res = await fetch('/api/maton/calendar', {
+      const res = await fetch('/api/calendar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -51,7 +51,7 @@ export default function CalendarPage() {
 
   async function handleDelete(id: string) {
     try {
-      const res = await fetch(`/api/maton/calendar?id=${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/calendar?id=${id}`, { method: 'DELETE' })
       const data = await res.json()
       if (data.success) setEvents((prev) => prev.filter((e) => e.id !== id))
     } catch {

@@ -1,22 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-// Demo users for development - replace with real auth later
-const DEMO_USERS = [
-  {
-    id: '1',
-    email: 'admin@splashbanana.com',
-    password: 'admin123',
-    name: 'Admin SB',
-    role: 'admin' as const,
-  },
-  {
-    id: '2',
-    email: 'user@splashbanana.com',
-    password: 'user123',
-    name: 'Utilisateur',
-    role: 'user' as const,
-  },
-]
+import { authenticateUser } from '@/lib/userStore'
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,9 +12,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const user = DEMO_USERS.find(
-      (u) => u.email === email && u.password === password
-    )
+    // Authenticate against the shared in-memory user store
+    // This includes both the original demo users and any admin-created users
+    const user = authenticateUser(email, password)
 
     if (!user) {
       return NextResponse.json(
@@ -50,7 +33,7 @@ export async function POST(request: NextRequest) {
         email: user.email,
         name: user.name,
         role: user.role,
-        createdAt: new Date().toISOString(),
+        createdAt: user.createdAt,
       },
     })
   } catch {

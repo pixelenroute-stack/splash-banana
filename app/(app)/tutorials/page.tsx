@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { GraduationCap, Loader2, ChevronDown, ChevronRight, Wand2 } from 'lucide-react'
+import { GraduationCap, Loader2, ChevronDown, ChevronRight, Wand2, AlertCircle } from 'lucide-react'
 import type { Tutorial, TutorialStep } from '@/types'
 
 const SOFTWARE_OPTIONS = [
@@ -57,12 +57,14 @@ export default function TutorialsPage() {
   const [tutorials, setTutorials] = useState<Tutorial[]>([])
   const [expandedTutorial, setExpandedTutorial] = useState<string | null>(null)
   const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set())
+  const [error, setError] = useState<string | null>(null)
 
   async function handleGenerate(e: FormEvent) {
     e.preventDefault()
     if (!topic.trim() || isGenerating) return
 
     setIsGenerating(true)
+    setError(null)
     try {
       const res = await fetch('/api/tutorials', {
         method: 'POST',
@@ -75,9 +77,11 @@ export default function TutorialsPage() {
         setExpandedTutorial(data.data.id)
         setExpandedSteps(new Set())
         setTopic('')
+      } else {
+        setError(data.error || 'Erreur lors de la generation du tutoriel')
       }
-    } catch {
-      // Error
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur de connexion au serveur')
     } finally {
       setIsGenerating(false)
     }
@@ -163,6 +167,17 @@ export default function TutorialsPage() {
           </div>
         </div>
       </form>
+
+      {/* Error Message */}
+      {error && (
+        <div className="flex items-start gap-3 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-red-400 font-medium">Erreur de generation</p>
+            <p className="text-sm text-red-400/80 mt-0.5">{error}</p>
+          </div>
+        </div>
+      )}
 
       {/* Tutorial list */}
       {tutorials.length === 0 ? (

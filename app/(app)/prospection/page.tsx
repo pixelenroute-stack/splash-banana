@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Target, Search, Loader2, Globe, MapPin, Linkedin, RefreshCw, ExternalLink, Mail, Phone } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Target, Search, Loader2, Globe, MapPin, Linkedin, ExternalLink, Mail, Phone, Plus, X, AlertCircle, UserPlus } from 'lucide-react'
 import type { Lead } from '@/types'
 
 const STATUS_COLORS: Record<Lead['status'], string> = {
@@ -22,19 +22,49 @@ const SOURCES = [
   { id: 'web', label: 'Web Scraping', icon: Globe, description: 'Sites web' },
 ]
 
+type ExtendedLead = Lead & { phone?: string; website?: string; address?: string }
+
+const STORAGE_KEY = 'prospection_leads'
+
+function loadLeads(): ExtendedLead[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch { return [] }
+}
+
+function saveLeads(leads: ExtendedLead[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(leads))
+}
+
 export default function ProspectionPage() {
-  const [leads, setLeads] = useState<Array<Lead & { phone?: string; website?: string; address?: string }>>([])
+  const [leads, setLeads] = useState<ExtendedLead[]>([])
   const [search, setSearch] = useState('')
   const [source, setSource] = useState('google-maps')
   const [query, setQuery] = useState('')
   const [url, setUrl] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [filter, setFilter] = useState<Lead['status'] | 'all'>('all')
+  const [error, setError] = useState('')
+  const [showManualForm, setShowManualForm] = useState(false)
+  const [manualLead, setManualLead] = useState({ name: '', email: '', company: '', phone: '', website: '' })
+
+  // Load leads from localStorage on mount
+  useEffect(() => {
+    setLeads(loadLeads())
+  }, [])
+
+  // Save leads whenever they change
+  useEffect(() => {
+    if (leads.length > 0) saveLeads(leads)
+  }, [leads])
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault()
     if (!query.trim() && !url.trim()) return
     setIsSearching(true)
+    setError('')
     try {
       const res = await fetch('/api/apify/leads', {
         method: 'POST',
@@ -42,18 +72,62 @@ export default function ProspectionPage() {
         body: JSON.stringify({ source, query: query.trim(), url: url.trim() }),
       })
       const data = await res.json()
-      if (data.success && data.data) {
-        setLeads((prev) => [...data.data, ...prev])
+      if (data.success && data.data && data.data.length > 0) {
+        setLeads((prev) => {
+          const updated = [...data.data, ...prev]
+          saveLeads(updated)
+          return updated
+        })
+      } else if (data.success && (!data.data || data.data.length === 0)) {
+        setError('Aucun résultat trouvé. Essayez avec des termes différents.')
+      } else {
+        setError(data.error || 'Erreur lors de la recherche')
       }
     } catch {
-      // Error
+      setError('Impossible de se connecter au service de prospection. Vérifiez votre connexion.')
     } finally {
       setIsSearching(false)
     }
   }
 
+  function handleAddManualLead(e: React.FormEvent) {
+    e.preventDefault()
+    if (!manualLead.name.trim()) return
+    const newLead: ExtendedLead = {
+      id: `manual-${Date.now()}`,
+      name: manualLead.name.trim(),
+      email: manualLead.email.trim() || undefined,
+      company: manualLead.company.trim() || undefined,
+      phone: manualLead.phone.trim() || undefined,
+      website: manualLead.website.trim() || undefined,
+      score: 50,
+      status: 'new',
+      source: 'manual',
+      createdAt: new Date().toISOString(),
+    }
+    setLeads((prev) => {
+      const updated = [newLead, ...prev]
+      saveLeads(updated)
+      return updated
+    })
+    setManualLead({ name: '', email: '', company: '', phone: '', website: '' })
+    setShowManualForm(false)
+  }
+
   function updateLeadStatus(id: string, status: Lead['status']) {
-    setLeads((prev) => prev.map((l) => l.id === id ? { ...l, status } : l))
+    setLeads((prev) => {
+      const updated = prev.map((l) => l.id === id ? { ...l, status } : l)
+      saveLeads(updated)
+      return updated
+    })
+  }
+
+  function deleteLead(id: string) {
+    setLeads((prev) => {
+      const updated = prev.filter((l) => l.id !== id)
+      saveLeads(updated)
+      return updated
+    })
   }
 
   const filtered = leads.filter((l) => {
@@ -64,15 +138,57 @@ export default function ProspectionPage() {
     return matchesSearch && matchesFilter
   })
 
+  const statusCounts = leads.reduce<Record<string, number>>((acc, l) => {
+    acc[l.status] = (acc[l.status] || 0) + 1
+    return acc
+  }, {})
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Prospection</h1>
-          <p className="text-muted text-sm mt-1">Recherche de leads via Apify</p>
+          <p className="text-muted text-sm mt-1">Recherche et gestion de leads</p>
         </div>
-        <div className="text-sm text-muted">{leads.length} leads</div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowManualForm(!showManualForm)}
+            className="flex items-center gap-2 px-4 py-2 bg-gold-accent/10 text-gold-accent rounded-lg hover:bg-gold-accent/20 transition-colors"
+          >
+            {showManualForm ? <X className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+            <span className="text-sm">{showManualForm ? 'Annuler' : 'Ajout manuel'}</span>
+          </button>
+          <div className="text-sm text-muted">{leads.length} leads</div>
+        </div>
       </div>
+
+      {/* Stats */}
+      {leads.length > 0 && (
+        <div className="flex gap-3 flex-wrap">
+          {Object.entries(STATUS_LABELS).map(([key, label]) => (
+            <div key={key} className={`px-3 py-1.5 rounded-full text-xs ${STATUS_COLORS[key as Lead['status']]}`}>
+              {label}: {statusCounts[key] || 0}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Manual lead form */}
+      {showManualForm && (
+        <form onSubmit={handleAddManualLead} className="card space-y-3">
+          <h3 className="font-semibold text-sm">Ajouter un lead manuellement</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="text" placeholder="Nom *" value={manualLead.name} onChange={(e) => setManualLead({ ...manualLead, name: e.target.value })} className="px-4 py-2.5 bg-background border border-border rounded-lg text-white placeholder:text-muted outline-none focus:border-lantean-blue text-sm" required />
+            <input type="email" placeholder="Email" value={manualLead.email} onChange={(e) => setManualLead({ ...manualLead, email: e.target.value })} className="px-4 py-2.5 bg-background border border-border rounded-lg text-white placeholder:text-muted outline-none focus:border-lantean-blue text-sm" />
+            <input type="text" placeholder="Entreprise" value={manualLead.company} onChange={(e) => setManualLead({ ...manualLead, company: e.target.value })} className="px-4 py-2.5 bg-background border border-border rounded-lg text-white placeholder:text-muted outline-none focus:border-lantean-blue text-sm" />
+            <input type="tel" placeholder="Téléphone" value={manualLead.phone} onChange={(e) => setManualLead({ ...manualLead, phone: e.target.value })} className="px-4 py-2.5 bg-background border border-border rounded-lg text-white placeholder:text-muted outline-none focus:border-lantean-blue text-sm" />
+            <input type="url" placeholder="Site web" value={manualLead.website} onChange={(e) => setManualLead({ ...manualLead, website: e.target.value })} className="px-4 py-2.5 bg-background border border-border rounded-lg text-white placeholder:text-muted outline-none focus:border-lantean-blue text-sm" />
+          </div>
+          <button type="submit" className="px-6 py-2.5 bg-primary/20 text-lantean-blue rounded-lg hover:bg-primary/30 transition-colors font-medium text-sm">
+            Ajouter le lead
+          </button>
+        </form>
+      )}
 
       {/* Source selector */}
       <div className="flex gap-3">
@@ -131,6 +247,15 @@ export default function ProspectionPage() {
         )}
       </form>
 
+      {/* Error message */}
+      {error && (
+        <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="ml-auto"><X className="w-4 h-4" /></button>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex gap-3 items-center">
         <div className="relative flex-1">
@@ -161,7 +286,7 @@ export default function ProspectionPage() {
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-muted">
           <Target className="w-12 h-12 mb-4 opacity-30" />
-          <p>{leads.length === 0 ? 'Lancez une recherche pour trouver des leads' : 'Aucun résultat'}</p>
+          <p>{leads.length === 0 ? 'Lancez une recherche ou ajoutez un lead manuellement' : 'Aucun résultat pour ce filtre'}</p>
         </div>
       ) : (
         <div className="grid gap-3">
@@ -192,6 +317,9 @@ export default function ProspectionPage() {
                         </a>
                       )}
                     </div>
+                    <p className="text-[10px] text-muted mt-1">
+                      Source: {lead.source} | {new Date(lead.createdAt).toLocaleDateString('fr-FR')}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -205,6 +333,13 @@ export default function ProspectionPage() {
                       <option key={key} value={key}>{label}</option>
                     ))}
                   </select>
+                  <button
+                    onClick={() => deleteLead(lead.id)}
+                    className="p-1 text-muted hover:text-red-400 transition-colors"
+                    title="Supprimer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             </div>

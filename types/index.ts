@@ -262,6 +262,19 @@ export interface EffectParameter {
   description?: string
 }
 
+// ===== Admin User Management =====
+export interface AdminUser {
+  id: string
+  name: string
+  email: string
+  role: 'admin' | 'manager' | 'user'
+  status: 'active' | 'inactive' | 'invited'
+  password?: string
+  createdAt: string
+  updatedAt: string
+  lastLoginAt?: string
+}
+
 // ===== Contract =====
 export interface Contract {
   id: string

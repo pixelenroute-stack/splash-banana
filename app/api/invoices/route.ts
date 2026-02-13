@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getGoogleToken } from '@/lib/google-token'
-import { googleDocs } from '@/lib/google'
+import { googleDocs, googleDrive } from '@/lib/google'
+
+const CONTRACT_TEMPLATE_ID = '1yQSTeadQYfAVbveocp2qIrgqFPems3BCSjpU1YQJsec'
 
 let invoicesStore: Array<Record<string, unknown>> = []
 let contractsStore: Array<Record<string, unknown>> = []
@@ -32,17 +34,51 @@ export async function POST(request: NextRequest) {
         createdAt: new Date().toISOString(),
       }
 
-      // Try to create Google Doc via direct OAuth
+      // Create contract from Google Docs template via direct OAuth
       const token = await getGoogleToken()
       if (token) {
         try {
-          const doc = await googleDocs.createDocument(token, `Contrat - ${body.clientName} - ${body.projectName}`)
-          const docId = doc.documentId
+          // 1. Copy the template document
+          const title = `Contrat - ${body.clientName} - ${body.projectName}`
+          const copy = await googleDrive.copyFile(token, CONTRACT_TEMPLATE_ID, title)
+          const docId = copy.id
 
-          await googleDocs.batchUpdate(token, docId, [
-            { insertText: { location: { index: 1 }, text: `CONTRAT DE PRESTATION\n\n` } },
-            { insertText: { location: { index: 25 }, text: `Client: ${body.clientName}\nProjet: ${body.projectName}\nMontant: ${body.amount || 0} EUR\nDate de début: ${body.startDate || 'À définir'}\nDate de fin: ${body.endDate || 'À définir'}\n\n---\n\nArticle 1 - Objet du contrat\nLe présent contrat a pour objet la réalisation des prestations décrites ci-dessus.\n\nArticle 2 - Durée\nLe contrat prend effet à la date de début mentionnée ci-dessus.\n\nArticle 3 - Rémunération\nLe montant total de la prestation est fixé à ${body.amount || 0} EUR HT.\n\nArticle 4 - Conditions de paiement\n30% à la signature, 70% à la livraison.\n\n---\n\nSignature Client:                    Signature Prestataire:\n\n` } },
-          ])
+          // 2. Build replacement requests for all placeholder formats
+          const replacements: Record<string, string> = {
+            CLIENT_NAME: body.clientName || '',
+            PROJECT_NAME: body.projectName || '',
+            AMOUNT: String(body.amount || 0),
+            START_DATE: body.startDate || 'A definir',
+            END_DATE: body.endDate || 'A definir',
+            DATE: new Date().toLocaleDateString('fr-FR'),
+          }
+
+          const replaceRequests: unknown[] = []
+          for (const [key, value] of Object.entries(replacements)) {
+            // Format {{KEY}}
+            replaceRequests.push({
+              replaceAllText: {
+                containsText: { text: `{{${key}}}`, matchCase: false },
+                replaceText: value,
+              },
+            })
+            // Format [KEY]
+            replaceRequests.push({
+              replaceAllText: {
+                containsText: { text: `[${key}]`, matchCase: false },
+                replaceText: value,
+              },
+            })
+            // Format {KEY}
+            replaceRequests.push({
+              replaceAllText: {
+                containsText: { text: `{${key}}`, matchCase: false },
+                replaceText: value,
+              },
+            })
+          }
+
+          await googleDocs.batchUpdate(token, docId, replaceRequests)
 
           contract.googleDocId = docId
           contract.googleDocUrl = `https://docs.google.com/document/d/${docId}/edit`

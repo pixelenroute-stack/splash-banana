@@ -4,17 +4,10 @@ import { useState, useRef, useEffect, FormEvent } from 'react'
 import { Send, Bot, User, Loader2 } from 'lucide-react'
 import type { ChatMessage } from '@/types'
 
-const MODELS = [
-  { id: 'gemini', label: 'Gemini 2.5 Flash', color: 'text-blue-400' },
-  { id: 'claude', label: 'Claude Sonnet', color: 'text-purple-400' },
-  { id: 'openai', label: 'GPT-4o', color: 'text-green-400' },
-]
-
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [model, setModel] = useState('gemini')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -41,7 +34,7 @@ export default function ChatPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model,
+          model: 'gemini',
           messages: [...messages, userMessage].map((m) => ({
             role: m.role,
             content: m.content,
@@ -80,21 +73,8 @@ export default function ChatPage() {
       {/* Header */}
       <div className="p-4 border-b border-border flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold">Chat IA</h1>
-          <p className="text-xs text-muted">Multi-modèle : Gemini, Claude, GPT-4o</p>
-        </div>
-        <div className="flex gap-1 bg-surface border border-border rounded-lg p-1">
-          {MODELS.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => setModel(m.id)}
-              className={`px-3 py-1.5 rounded text-xs transition-colors ${
-                model === m.id ? `bg-primary/20 ${m.color} font-medium` : 'text-muted hover:text-white'
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
+          <h1 className="text-lg font-bold">Chat IA - Gemini</h1>
+          <p className="text-xs text-muted">Assistant IA propulse par Gemini 2.5 Flash</p>
         </div>
       </div>
 
@@ -104,7 +84,7 @@ export default function ChatPage() {
           <div className="flex flex-col items-center justify-center h-full text-muted">
             <Bot className="w-12 h-12 mb-4 opacity-30" />
             <p className="text-lg">Commencez une conversation</p>
-            <p className="text-sm mt-1">Posez une question à l&apos;assistant IA</p>
+            <p className="text-sm mt-1">Posez une question a l&apos;assistant IA</p>
           </div>
         )}
         {messages.map((msg) => (
@@ -160,7 +140,7 @@ export default function ChatPage() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Écrivez votre message..."
+            placeholder="Ecrivez votre message..."
             className="flex-1 px-4 py-3 bg-surface border border-border rounded-lg text-white placeholder:text-muted outline-none focus:border-lantean-blue transition-colors"
           />
           <button

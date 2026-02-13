@@ -3,7 +3,7 @@
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!
-const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://splashbanana.com/api/auth/google/callback'
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://splashbanana.com/api/auth/callback'
 
 const SCOPES = [
   'openid',
@@ -11,7 +11,7 @@ const SCOPES = [
   'profile',
   'https://www.googleapis.com/auth/calendar',
   'https://www.googleapis.com/auth/gmail.readonly',
-  'https://www.googleapis.com/auth/drive.readonly',
+  'https://www.googleapis.com/auth/drive',
   'https://www.googleapis.com/auth/documents',
 ].join(' ')
 
@@ -191,6 +191,12 @@ export const googleDrive = {
         mimeType: 'application/vnd.google-apps.folder',
         ...(parentId ? { parents: [parentId] } : {}),
       }),
+    }),
+
+  copyFile: (token: string, fileId: string, name: string) =>
+    googleApiFetch(token, `https://www.googleapis.com/drive/v3/files/${fileId}/copy`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
     }),
 }
 

@@ -1,8 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Settings, Save, Eye, EyeOff, ExternalLink, CheckCircle2, XCircle, AlertCircle, Loader2, Unplug, Wifi } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Settings, Save, Eye, EyeOff, ExternalLink, CheckCircle2, XCircle, AlertCircle, Loader2, Unplug, Wifi, Zap } from 'lucide-react'
 import type { SystemSettings } from '@/types'
+
+interface TestResult {
+  status: 'idle' | 'testing' | 'connected' | 'error' | 'missing'
+  details?: string
+  error?: string
+}
 
 interface ApiKeyFieldProps {
   label: string
@@ -38,6 +44,25 @@ function ApiKeyField({ label, value, onChange, placeholder, description }: ApiKe
   )
 }
 
+function TestBadge({ result }: { result: TestResult }) {
+  if (result.status === 'idle') return null
+  if (result.status === 'testing') return <Loader2 className="w-4 h-4 text-lantean-blue animate-spin" />
+  if (result.status === 'connected') {
+    return (
+      <span className="flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
+        <CheckCircle2 className="w-3 h-3" />
+        {result.details || 'OK'}
+      </span>
+    )
+  }
+  return (
+    <span className="flex items-center gap-1 text-xs text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full" title={result.error}>
+      <XCircle className="w-3 h-3" />
+      {result.error?.slice(0, 40) || 'Erreur'}
+    </span>
+  )
+}
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SystemSettings>({
     theme: 'dark',
@@ -48,14 +73,20 @@ export default function SettingsPage() {
   const [checkingGoogle, setCheckingGoogle] = useState(true)
   const [authError, setAuthError] = useState('')
 
+  // Test results for each service
+  const [tests, setTests] = useState<Record<string, TestResult>>({
+    gemini: { status: 'idle' },
+    notion: { status: 'idle' },
+    perplexity: { status: 'idle' },
+    google: { status: 'idle' },
+  })
+
   useEffect(() => {
-    // Load settings from localStorage
     const stored = localStorage.getItem('system_settings')
     if (stored) {
       try { setSettings(JSON.parse(stored)) } catch { /* ignore */ }
     }
 
-    // Check Google connection via API (httpOnly cookies not visible to JS)
     async function checkGoogle() {
       setCheckingGoogle(true)
       try {
@@ -70,7 +101,6 @@ export default function SettingsPage() {
     }
     checkGoogle()
 
-    // Check URL params for connection status
     const params = new URLSearchParams(window.location.search)
     if (params.get('google') === 'connected') {
       setGoogleConnected(true)
@@ -87,6 +117,31 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 2000)
   }
 
+  const testService = useCallback(async (service: string) => {
+    setTests((prev) => ({ ...prev, [service]: { status: 'testing' } }))
+    try {
+      const res = await fetch(`/api/test-connections?service=${service}`)
+      const data = await res.json()
+      if (data.success) {
+        setTests((prev) => ({ ...prev, [service]: { status: 'connected', details: data.details } }))
+      } else {
+        setTests((prev) => ({
+          ...prev,
+          [service]: { status: data.status === 'missing' ? 'missing' : 'error', error: data.error },
+        }))
+      }
+    } catch (err) {
+      setTests((prev) => ({
+        ...prev,
+        [service]: { status: 'error', error: err instanceof Error ? err.message : 'Erreur réseau' },
+      }))
+    }
+  }, [])
+
+  async function testAll() {
+    await Promise.all(['gemini', 'notion', 'perplexity', 'google'].map(testService))
+  }
+
   return (
     <div className="p-6 space-y-6 max-w-2xl">
       <div className="flex items-center justify-between">
@@ -94,15 +149,24 @@ export default function SettingsPage() {
           <h1 className="text-2xl font-bold">Paramètres</h1>
           <p className="text-muted text-sm mt-1">Configuration de la plateforme</p>
         </div>
-        <button
-          onClick={handleSave}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-            saved ? 'bg-green-500/20 text-green-400' : 'bg-primary/20 text-lantean-blue hover:bg-primary/30'
-          }`}
-        >
-          {saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-          <span className="text-sm font-medium">{saved ? 'Sauvegardé !' : 'Sauvegarder'}</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={testAll}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors"
+          >
+            <Zap className="w-4 h-4" />
+            <span className="text-sm font-medium">Tester tout</span>
+          </button>
+          <button
+            onClick={handleSave}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              saved ? 'bg-green-500/20 text-green-400' : 'bg-primary/20 text-lantean-blue hover:bg-primary/30'
+            }`}
+          >
+            {saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            <span className="text-sm font-medium">{saved ? 'Sauvegardé !' : 'Sauvegarder'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Error Banner */}
@@ -130,6 +194,13 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => testService('google')}
+              className="text-xs text-muted hover:text-lantean-blue transition-colors px-2 py-1 rounded hover:bg-lantean-blue/10"
+            >
+              Tester
+            </button>
+            <TestBadge result={tests.google} />
             {checkingGoogle ? (
               <Loader2 className="w-4 h-4 text-muted animate-spin" />
             ) : googleConnected ? (
@@ -180,31 +251,76 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Services Configuration */}
+      {/* Services IA */}
       <div className="card space-y-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Settings className="w-5 h-5 text-lantean-blue" />
-          <h2 className="font-semibold">Services IA</h2>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Settings className="w-5 h-5 text-lantean-blue" />
+            <h2 className="font-semibold">Services IA</h2>
+          </div>
         </div>
-        <ApiKeyField
-          label="Gemini API Key"
-          value={settings.geminiApiKey || ''}
-          onChange={(v) => setSettings({ ...settings, geminiApiKey: v })}
-          placeholder="AIzaSy..."
-          description="Utilisé pour Chat IA, Image Studio, Video Studio et Tutoriels"
-        />
-        <ApiKeyField
-          label="Perplexity API Key"
-          value={settings.perplexityApiKey || ''}
-          onChange={(v) => setSettings({ ...settings, perplexityApiKey: v })}
-          placeholder="pplx-..."
-          description="Utilisé pour les Actualités et la veille"
-        />
+
+        {/* Gemini */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Google Gemini</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => testService('gemini')}
+                className="text-xs text-muted hover:text-lantean-blue transition-colors px-2 py-1 rounded hover:bg-lantean-blue/10"
+              >
+                Tester
+              </button>
+              <TestBadge result={tests.gemini} />
+            </div>
+          </div>
+          <ApiKeyField
+            label=""
+            value={settings.geminiApiKey || ''}
+            onChange={(v) => setSettings({ ...settings, geminiApiKey: v })}
+            placeholder="AIzaSy..."
+            description="Chat IA, Image Studio, Video Studio, Tutoriels, Vignettes YouTube"
+          />
+        </div>
+
+        {/* Perplexity */}
+        <div className="space-y-2 pt-3 border-t border-border">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Perplexity</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => testService('perplexity')}
+                className="text-xs text-muted hover:text-lantean-blue transition-colors px-2 py-1 rounded hover:bg-lantean-blue/10"
+              >
+                Tester
+              </button>
+              <TestBadge result={tests.perplexity} />
+            </div>
+          </div>
+          <ApiKeyField
+            label=""
+            value={settings.perplexityApiKey || ''}
+            onChange={(v) => setSettings({ ...settings, perplexityApiKey: v })}
+            placeholder="pplx-..."
+            description="Actualités et veille technologique"
+          />
+        </div>
       </div>
 
       {/* Notion */}
       <div className="card space-y-4">
-        <h2 className="font-semibold">Notion CRM</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">Notion CRM</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => testService('notion')}
+              className="text-xs text-muted hover:text-lantean-blue transition-colors px-2 py-1 rounded hover:bg-lantean-blue/10"
+            >
+              Tester
+            </button>
+            <TestBadge result={tests.notion} />
+          </div>
+        </div>
         <ApiKeyField
           label="Notion API Key"
           value={settings.notionApiKey || ''}

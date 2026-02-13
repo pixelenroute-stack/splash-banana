@@ -72,8 +72,10 @@ export default function CalendarPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <img src="/images/ref-calendar.png" alt="Google Calendar" className="w-48 h-auto rounded-xl border border-border shadow-lg opacity-80" />
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-blue-500/10">
+            <CalendarIcon className="w-6 h-6 text-blue-400" />
+          </div>
           <div>
             <h1 className="text-2xl font-bold">Calendrier</h1>
             <p className="text-muted text-sm mt-1">Google Calendar - Événements</p>

@@ -1,4 +1,4 @@
-import { supabaseAdmin } from './supabase'
+import { supabaseAdmin, isSupabaseConfigured } from './supabase'
 
 export type AuditAction =
   | 'user.login'
@@ -18,6 +18,7 @@ export async function logAudit(
   details?: Record<string, unknown>,
   ipAddress?: string
 ) {
+  if (!isSupabaseConfigured) return
   try {
     await supabaseAdmin.from('audit_log').insert({
       action,

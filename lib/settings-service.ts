@@ -1,7 +1,7 @@
 // Server-side settings service
 // Reads API keys from: 1) Supabase app_settings 2) env vars (fallback)
 
-import { supabaseAdmin } from './supabase'
+import { supabaseAdmin, isSupabaseConfigured } from './supabase'
 
 // Settings keys
 const SETTING_KEYS = [
@@ -39,6 +39,10 @@ let cacheTimestamp = 0
 const CACHE_TTL = 5 * 60 * 1000
 
 async function refreshCache() {
+  if (!isSupabaseConfigured) {
+    cacheTimestamp = Date.now()
+    return
+  }
   try {
     const { data } = await supabaseAdmin
       .from('app_settings')
@@ -52,6 +56,7 @@ async function refreshCache() {
     }
   } catch {
     // Supabase not available, use env vars only
+    cacheTimestamp = Date.now()
   }
 }
 
@@ -88,6 +93,7 @@ export async function getAllSettings(): Promise<Record<string, string>> {
 
 // Save a setting
 export async function saveSetting(key: SettingKey, value: string): Promise<boolean> {
+  if (!isSupabaseConfigured) return false
   try {
     const { error } = await supabaseAdmin
       .from('app_settings')
@@ -102,6 +108,7 @@ export async function saveSetting(key: SettingKey, value: string): Promise<boole
 
 // Save multiple settings at once
 export async function saveSettings(settings: Partial<Record<SettingKey, string>>): Promise<boolean> {
+  if (!isSupabaseConfigured) return false
   try {
     const rows = Object.entries(settings)
       .filter(([, v]) => v !== undefined && v !== '')

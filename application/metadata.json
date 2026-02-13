@@ -1,7 +1,0 @@
-{
-  "name": "Copy of Copy of Splash Banana - Suite de Production Vidéo IA",
-  "description": "Plateforme SaaS tout-en-un pour monteurs vidéo : gestion client, studio IA (texte, image, vidéo), facturation et intégrations Google Workspace.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
-}

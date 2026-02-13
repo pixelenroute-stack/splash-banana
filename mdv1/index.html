@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Splash Banana - Accès Atlantis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --lantean-blue: #00e5ff;
+            --lantean-glow: rgba(0, 229, 255, 0.6);
+            --deep-space: #050b14;
+            --gold-accent: #d4af37;
+            --glass-bg: rgba(10, 20, 35, 0.65);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--deep-space);
+            background-image: 
+                radial-gradient(circle at 50% 50%, #1a2a40 0%, #000000 100%);
+            font-family: 'Rajdhani', sans-serif;
+            height: 100vh;
+            overflow: hidden; /* Empêche le scroll */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            perspective: 1000px; /* Pour l'effet 3D */
+        }
+
+        /* --- Fond Étoilé Animé --- */
+        .stars {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/stardust.png');
+            opacity: 0.5;
+            animation: drift 200s linear infinite;
+            z-index: 0;
+        }
+
+        /* --- Éléments 3D (Planètes/Vaisseaux) --- */
+        .planet-big {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #4a90e2, #001f3f);
+            box-shadow: 0 0 50px rgba(74, 144, 226, 0.2);
+            top: 10%;
+            left: 10%;
+            z-index: 1;
+            transform: translateZ(-100px);
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .moon {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #d3d3d3, #696969);
+            top: 15%;
+            left: 28%;
+            z-index: 2;
+            animation: float 25s infinite ease-in-out reverse;
+        }
+
+        /* Placeholder pour le vaisseau (Remplace l'URL par une image PNG d'un Puddle Jumper ou Aurora) */
+        .ancient-ship {
+            position: absolute;
+            bottom: 15%;
+            right: 10%;
+            width: 250px;
+            height: 150px;
+            /* Ici j'utilise un dégradé pour simuler, mais mets une image url('vaisseau.png') */
+            background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+            border: 1px solid var(--gold-accent); 
+            clip-path: polygon(10% 0, 100% 20%, 90% 100%, 0% 80%);
+            z-index: 2;
+            animation: shipHover 8s infinite ease-in-out;
+            backdrop-filter: blur(2px);
+        }
+        
+        .ancient-ship::after {
+            content: "CLASS AURORA DETECTED";
+            position: absolute;
+            bottom: -20px;
+            right: 0;
+            font-size: 10px;
+            color: var(--gold-accent);
+            letter-spacing: 2px;
+        }
+
+        /* --- La Porte des Étoiles (CSS Pur) --- */
+        .stargate-container {
+            position: absolute;
+            z-index: 1;
+            width: 600px;
+            height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0.8;
+        }
+
+        .stargate-ring {
+            width: 100%;
+            height: 100%;
+            border: 15px solid #3a4a5a;
+            border-radius: 50%;
+            box-shadow: 0 0 30px var(--lantean-blue), inset 0 0 20px black;
+            position: relative;
+            animation: spin 60s linear infinite;
+        }
+
+        /* Symboles sur la porte */
+        .symbol {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--gold-accent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--gold-accent);
+        }
+        /* Positionnement approximatif de quelques symboles */
+        .s1 { top: 10px; left: 50%; }
+        .s2 { bottom: 10px; left: 50%; }
+        .s3 { left: 10px; top: 50%; }
+        .s4 { right: 10px; top: 50%; }
+
+        .event-horizon {
+            position: absolute;
+            width: 85%;
+            height: 85%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,229,255,0.8) 0%, rgba(0,100,255,0.4) 70%, transparent 100%);
+            box-shadow: 0 0 60px var(--lantean-blue);
+            animation: pulseWater 4s infinite ease-in-out;
+        }
+
+        /* --- Interface de Connexion (Style Panneau de Contrôle) --- */
+        .login-panel {
+            position: relative;
+            z-index: 10;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            padding: 40px;
+            width: 400px;
+            border: 1px solid var(--lantean-blue);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+            text-align: center;
+            /* Clip path pour donner une forme hexagonale/tech */
+            clip-path: polygon(
+                5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%, 0 5%
+            );
+        }
+
+        .login-panel::before {
+            /* Ligne décorative style ancien */
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--lantean-blue), transparent);
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--lantean-blue);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px var(--lantean-blue);
+        }
+
+        .subtitle {
+            font-size: 0.9em;
+            color: var(--gold-accent);
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid #334;
+            border-left: 3px solid var(--lantean-blue);
+            color: white;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1em;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            background: rgba(0, 229, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            border-left: 3px solid var(--gold-accent);
+        }
+
+        .btn-connect {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #005f73, #0a9396);
+            border: none;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-connect:hover {
+            background: linear-gradient(45deg, #0a9396, #00e5ff);
+            box-shadow: 0 0 20px var(--lantean-blue);
+        }
+
+        .links {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+        }
+
+        a {
+            color: #aaa;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        a:hover {
+            color: var(--lantean-blue);
+            text-shadow: 0 0 5px var(--lantean-blue);
+        }
+
+        /* --- Animations --- */
+        @keyframes drift {
+            from { background-position: 0 0; }
+            to { background-position: 1000px 500px; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes shipHover {
+            0%, 100% { transform: translateX(0) rotate(1deg); }
+            50% { transform: translateX(10px) rotate(-1deg); }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulseWater {
+            0% { opacity: 0.7; transform: scale(0.98); }
+            50% { opacity: 0.9; transform: scale(1.02); }
+            100% { opacity: 0.7; transform: scale(0.98); }
+        }
+
+        /* Overlay hexagonal style bouclier */
+        .hex-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill-opacity='0.05' fill='%2300e5ff' fill-rule='evenodd'/%3E%3C/svg%3E");
+            z-index: 11;
+            pointer-events: none; /* Laisse passer les clics */
+            opacity: 0.3;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="stars"></div>
+    <div class="hex-overlay"></div>
+
+    <div class="planet-big"></div>
+    <div class="moon"></div>
+    <div class="ancient-ship"></div>
+
+    <div class="stargate-container">
+        <div class="stargate-ring">
+            <div class="symbol s1"></div>
+            <div class="symbol s2"></div>
+            <div class="symbol s3"></div>
+            <div class="symbol s4"></div>
+        </div>
+        <div class="event-horizon"></div>
+    </div>
+
+    <div class="login-panel">
+        <h1>Splash Banana</h1>
+        <p class="subtitle">AUTHORIZATION CODE: ATLANTIS</p>
+
+        <form>
+            <div class="input-group">
+                <input type="email" placeholder="IDENTIFIANT (Email)" required>
+            </div>
+            <div class="input-group">
+                <input type="password" placeholder="CODE D'ACCÈS" required>
+            </div>
+            
+            <button type="submit" class="btn-connect">Enclencher</button>
+
+            <div class="links">
+                <a href="#">Mots de passe oublié ?</a>
+                <a href="#">Créer un compte</a>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

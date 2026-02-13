@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Atlantis Theme Variables ===== */
+:root {
+  --lantean-blue: #00e5ff;
+  --lantean-glow: rgba(0, 229, 255, 0.6);
+  --deep-space: #050b14;
+  --gold-accent: #d4af37;
+  --glass-bg: rgba(10, 20, 35, 0.65);
+  --background: #0f172a;
+  --surface: #1e293b;
+  --border: #334155;
+  --muted: #94a3b8;
+}
+
+/* ===== Base Styles ===== */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-white;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--background);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+  }
+}
+
+/* ===== Component Utilities ===== */
+@layer components {
+  /* Glass panel effect */
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 10px;
+  }
+
+  /* Lantean glow border */
+  .lantean-border {
+    border: 1px solid var(--lantean-blue);
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+  }
+
+  /* Tech clip path (hexagonal corners) */
+  .clip-tech {
+    clip-path: polygon(5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%, 0 5%);
+  }
+
+  /* Top decorative line */
+  .deco-line-top::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--lantean-blue), transparent);
+  }
+
+  /* Sidebar item */
+  .sidebar-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-muted transition-all duration-200 cursor-pointer;
+  }
+
+  .sidebar-item:hover {
+    @apply bg-surface-hover text-white;
+  }
+
+  .sidebar-item.active {
+    @apply bg-primary/10 text-lantean-blue;
+    box-shadow: inset 3px 0 0 var(--lantean-blue);
+  }
+
+  /* Card component */
+  .card {
+    @apply bg-surface border border-border rounded-lg p-4;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-200;
+  }
+
+  .card-hover:hover {
+    @apply border-lantean-blue/30;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+  }
+}
+
+/* ===== Hex overlay pattern ===== */
+.hex-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill-opacity='0.05' fill='%2300e5ff' fill-rule='evenodd'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* ===== Starfield background ===== */
+.starfield {
+  background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
+  opacity: 0.5;
+}

@@ -11,6 +11,13 @@
         "N8N_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyZGFjN2Y4Mi0xZWE2LTQ5ZGUtYmY2MS0wZGZhOWY5NjM5NWYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzY5NzgxNzE0fQ.TqXC7X6bN78-gtvrQGFmG-Zoh-wuLBUS1T8gMirhszU"
       }
     },
+    "hostinger-mcp": {
+      "command": "npx",
+      "args": ["hostinger-api-mcp@latest"],
+      "env": {
+        "API_TOKEN": "lFzct1xfXw8psQAGYi1MbLgQoQvEgZS8DHfx0KGy916309e7"
+      }
+    },
     "supabase": {
       "command": "npx",
       "args": [

@@ -4,8 +4,9 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
   LayoutDashboard, MessageSquare, Newspaper, Target,
+  Calendar, Mail, HardDrive,
   Users, FolderKanban, Receipt,
-  Image, Video, Share2, Library, Palette,
+  Image, Video, Share2, Library, GraduationCap,
   Settings, Shield, LogOut, ChevronLeft
 } from 'lucide-react'
 import { NAV_ITEMS, CATEGORY_LABELS } from '@/lib/navigation'
@@ -16,8 +17,9 @@ import { useState } from 'react'
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, MessageSquare, Newspaper, Target,
+  Calendar, Mail, HardDrive,
   Users, FolderKanban, Receipt,
-  Image, Video, Share2, Library, Palette,
+  Image, Video, Share2, Library, GraduationCap,
   Settings, Shield,
 }
 

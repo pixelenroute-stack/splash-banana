@@ -20,6 +20,9 @@ export type ViewId =
   | 'chat'
   | 'news'
   | 'prospection'
+  | 'calendar'
+  | 'gmail'
+  | 'drive'
   | 'clients'
   | 'projects'
   | 'invoices'
@@ -28,7 +31,7 @@ export type ViewId =
   | 'videos'
   | 'social_factory'
   | 'library'
-  | 'scripts'
+  | 'tutorials'
   | 'admin'
 
 export interface NavItem {
@@ -193,12 +196,78 @@ export interface SocialPost {
   status: 'draft' | 'scheduled' | 'published' | 'failed'
 }
 
-// ===== Moodboard / Scripts =====
-export interface MoodboardItem {
+// ===== Calendar =====
+export interface CalendarEvent {
   id: string
+  summary: string
+  description?: string
+  start: string
+  end: string
+  location?: string
+  attendees?: string[]
+  htmlLink?: string
+}
+
+// ===== Gmail =====
+export interface Email {
+  id: string
+  threadId: string
+  from: string
+  to: string
+  subject: string
+  snippet: string
+  body?: string
+  date: string
+  isUnread: boolean
+  labels: string[]
+}
+
+// ===== Google Drive =====
+export interface DriveFile {
+  id: string
+  name: string
+  mimeType: string
+  size?: string
+  modifiedTime: string
+  webViewLink?: string
+  iconLink?: string
+  parents?: string[]
+}
+
+// ===== Tutorials (Creator Studio) =====
+export interface Tutorial {
+  id: string
+  software: 'after-effects' | 'premiere-pro' | 'blender'
   title: string
-  type: 'image' | 'text' | 'color' | 'link'
-  content: string
-  position: { x: number; y: number }
-  size: { width: number; height: number }
+  description: string
+  steps: TutorialStep[]
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  createdAt: string
+}
+
+export interface TutorialStep {
+  order: number
+  title: string
+  description: string
+  parameters?: EffectParameter[]
+}
+
+export interface EffectParameter {
+  name: string
+  value: string
+  unit?: string
+  description?: string
+}
+
+// ===== Contract =====
+export interface Contract {
+  id: string
+  clientName: string
+  projectName: string
+  amount: number
+  startDate: string
+  endDate: string
+  status: 'draft' | 'sent' | 'signed'
+  googleDocId?: string
+  googleDocUrl?: string
 }

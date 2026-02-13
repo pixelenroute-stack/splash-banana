@@ -6,6 +6,9 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'chat', label: 'Chat IA', icon: 'MessageSquare', category: 'general' },
   { id: 'news', label: 'Actualités', icon: 'Newspaper', category: 'general' },
   { id: 'prospection', label: 'Prospection', icon: 'Target', category: 'general' },
+  { id: 'calendar', label: 'Calendrier', icon: 'Calendar', category: 'general' },
+  { id: 'gmail', label: 'Emails', icon: 'Mail', category: 'general' },
+  { id: 'drive', label: 'Google Drive', icon: 'HardDrive', category: 'general' },
 
   // Management
   { id: 'clients', label: 'Clients CRM', icon: 'Users', category: 'management' },
@@ -15,9 +18,9 @@ export const NAV_ITEMS: NavItem[] = [
   // Creator Studio
   { id: 'images', label: 'Image Studio', icon: 'Image', category: 'creator' },
   { id: 'videos', label: 'Video Studio', icon: 'Video', category: 'creator' },
+  { id: 'tutorials', label: 'Tutoriels', icon: 'GraduationCap', category: 'creator' },
   { id: 'social_factory', label: 'Social Factory', icon: 'Share2', category: 'creator' },
   { id: 'library', label: 'Médiathèque', icon: 'Library', category: 'creator' },
-  { id: 'scripts', label: 'Moodboard', icon: 'Palette', category: 'creator' },
 
   // Admin
   { id: 'settings', label: 'Paramètres', icon: 'Settings', category: 'admin' },

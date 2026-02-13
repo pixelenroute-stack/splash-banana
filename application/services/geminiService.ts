@@ -1,8 +1,5 @@
 
-import { GoogleGenerativeAI, GenerativeModel, GenerateContentResult } from "@google/generative-ai";
-
-// Type alias pour compatibilité
-type GoogleGenAI = GoogleGenerativeAI;
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { db } from './mockDatabase';
 import { MoodboardData, CreativeAnalysisData, SystemReport } from '../types';
 import { metricsCollector } from './metricsCollector';
@@ -76,7 +73,7 @@ export class GeminiService {
   private getAI(useBackup: boolean = false, overrideKey?: string): GoogleGenAI {
     // 0. Override Key (For specific temporary usage like audit)
     if (overrideKey) {
-        return new GoogleGenerativeAI( overrideKey);
+        return new GoogleGenAI({ apiKey: overrideKey });
     }
 
     // 1. Admin Settings Override (Highest priority, managed by app UI)
@@ -87,7 +84,7 @@ export class GeminiService {
     if (adminKey) {
         try {
             const key = this.validateApiKey(adminKey, 'Admin Settings');
-            return new GoogleGenerativeAI( key);
+            return new GoogleGenAI({ apiKey: key });
         } catch (e) {
             // Si la validation échoue, on continue pour voir si une variable d'env existe
             console.debug("Clé Admin invalide ou manquante, vérification ENV...");
@@ -111,7 +108,7 @@ export class GeminiService {
     // L'appel échouera proprement plus tard.
     const finalKey = selectedKey || "mock_key_to_prevent_init_crash";
     
-    return new GoogleGenerativeAI( finalKey);
+    return new GoogleGenAI({ apiKey: finalKey });
   }
 
   private isRetryableError(error: any): boolean {
@@ -205,11 +202,13 @@ export class GeminiService {
   public async testApiKey(key?: string): Promise<boolean> {
       try {
           // Utilise la clé fournie ou celle par défaut
-          const ai = key ? new GoogleGenerativeAI( key) : this.getAI();
+          const ai = key ? new GoogleGenAI({ apiKey: key }) : this.getAI();
 
           // Test simple avec génération de contenu
-          const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
-          await model.generateContent('ping');
+          await ai.models.generateContent({
+              model: SUPPORTED_MODELS.TEXT_FAST,
+              contents: 'ping'
+          });
           return true;
       } catch (e: any) {
           console.error("[Gemini] Health Check Failed:", e.message);
@@ -443,7 +442,7 @@ export class GeminiService {
       `;
 
       try {
-          const ai = apiKey ? new GoogleGenerativeAI({ apiKey) : this.getAI();
+          const ai = apiKey ? new GoogleGenAI({ apiKey }) : this.getAI();
           const response = await ai.models.generateContent({
               model: SUPPORTED_MODELS.TEXT_PRO, // Utilise le modèle Pro pour une analyse profonde
               contents: { parts: [{ text: prompt }] },

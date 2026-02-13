@@ -1,5 +1,5 @@
 
-import { GoogleGenerativeAI as GoogleGenAI, GenerateContentResult as GenerateContentResponse } from "@google/generative-ai";
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { db } from './mockDatabase';
 import { MoodboardData, CreativeAnalysisData, SystemReport } from '../types';
 import { metricsCollector } from './metricsCollector';

@@ -1,13 +1,17 @@
 'use client'
 
 import { useState, useRef, useEffect, FormEvent } from 'react'
-import { Send, Bot, User, Loader2 } from 'lucide-react'
+import { Send, Bot, User, Loader2, Zap } from 'lucide-react'
 import type { ChatMessage } from '@/types'
+
+type ChatMode = 'gemini' | 'jarvis'
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [mode, setMode] = useState<ChatMode>('jarvis')
+  const [chatId] = useState(() => crypto.randomUUID())
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -34,7 +38,8 @@ export default function ChatPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'gemini',
+          mode,
+          chatId,
           messages: [...messages, userMessage].map((m) => ({
             role: m.role,
             content: m.content,
@@ -73,8 +78,38 @@ export default function ChatPage() {
       {/* Header */}
       <div className="p-4 border-b border-border flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold">Chat IA - Gemini</h1>
-          <p className="text-xs text-muted">Assistant IA propulse par Gemini 2.5 Flash</p>
+          <h1 className="text-lg font-bold">
+            Chat IA - {mode === 'jarvis' ? 'JARVIS Multi-Agent' : 'Gemini'}
+          </h1>
+          <p className="text-xs text-muted">
+            {mode === 'jarvis'
+              ? 'Assistant multi-agent: CRM, Email, Calendrier, Recherche, Creative, Voyage'
+              : 'Assistant IA propulse par Gemini 2.5 Flash'}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setMode('gemini')}
+            className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
+              mode === 'gemini'
+                ? 'bg-primary/30 text-lantean-blue border border-lantean-blue/30'
+                : 'bg-surface text-muted hover:text-white'
+            }`}
+          >
+            <Bot className="w-3 h-3 inline mr-1" />
+            Gemini
+          </button>
+          <button
+            onClick={() => setMode('jarvis')}
+            className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
+              mode === 'jarvis'
+                ? 'bg-gold-accent/20 text-gold-accent border border-gold-accent/30'
+                : 'bg-surface text-muted hover:text-white'
+            }`}
+          >
+            <Zap className="w-3 h-3 inline mr-1" />
+            JARVIS
+          </button>
         </div>
       </div>
 
